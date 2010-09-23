@@ -60,6 +60,7 @@ include $(ARMAROWDIR)/platform/config.mk
 # -----------------------------------------------------------------------------
 GCCVERSION  = gcc-$(shell $(CXX) -dumpversion)
 
+BASEDOC     = $(ARMAROWDIR)/doc
 BASEEXTERNAL= $(ARMAROWDIR)/external
 BASELIB     = $(ARMAROWDIR)/lib
 INCDIR      = $(ARMAROWDIR)/include

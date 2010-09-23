@@ -44,9 +44,12 @@
 include ./platform/Makefile
 # -----------------------------------------------------------------------------
 # definition of targets
-.PHONY: all clean external
+.PHONY: all clean doc external
 
 all: $(LIBDIR) external $(ADDITIONAL_BUILDS)
+
+doc:
+	@doxygen $(BASEDOC)/doxygen.cfg
 
 $(LIBDIR):
 	@mkdir -p $@
@@ -58,11 +61,13 @@ external:
 
 clean:
 	@echo ========== Cleaning ==========
+	@rm -rf $(BASEDOC)/html $(BASEDOC)/latex
 	@make -C $(BASEEXTERNAL) clean
 
 distclean:
 	@echo ========== Cleaning ==========
 	@find . -name \*~ -exec rm -f {} \;
 	@find . -name "#*#" -exec rm -f {} \;
+	@rm -rf $(BASEDOC)/html $(BASEDOC)/latex
 	@rm -rf $(BASELIB)
 	@make -C $(BASEEXTERNAL) distclean
