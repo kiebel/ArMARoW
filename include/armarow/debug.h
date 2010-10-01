@@ -81,7 +81,7 @@ void __assert_failed_handler(ExprT expr, FileT file, LineT line) {
     log::emit() << file << ':' << line
         << PROGMEMSTRING(": Assertion '") << expr
         << PROGMEMSTRING("' failed.") << log::endl;
-    abort();
+    cli();while(true);
 }
 
 
