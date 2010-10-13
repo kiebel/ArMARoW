@@ -49,5 +49,5 @@ endif
 
 $(LIBAVR): $(HALIBDIR)
 	@echo Building needed avr-halib for $(MCU)
-	@make -C $(HALIBDIR) ${MCU} portmapgen
+	@make -C $(HALIBDIR) CHIP=${MCU}
 	@cp $(HALIBDIR)/build/libavr-halib-${MCU}.a ${LIBDIR}
