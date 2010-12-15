@@ -45,26 +45,15 @@
 #define CPU_FREQUENCY F_CPU
 #include <avr-halib/avr/portmap.h>
 #include <avr-halib/share/freq.h>
-#include <avr-halib/avr/spi.h>
+#include <armarow/common/spi.h>
 /* === types ================================================================ */
 using avr_halib::config::Frequency;
 typedef Frequency< F_CPU > CPUClock;
 
 namespace armarow {
     namespace platform {
-        struct icradio {
-            struct SpiCfg : public Spi<CPUClock> {
-                typedef CPUClock Controller_Configuration;
-                enum {
-                    useInterupt    = false,
-                    dataDirection  = msb,
-                    leadingEdge    = rising,
-                    sampleEdge     = leading,
-                    clockPrescaler = ps2,
-                    busywaitput    = true
-                };
-            };
-            struct PortmapRC {      // portmap for atmega1281
+        namespace icradio {
+            struct PortmapRC {  // portmap for atmega1281
                 union
                 {
                     struct		// pin interrupt: d 4;
@@ -138,7 +127,19 @@ namespace armarow {
                     } miso;
                 };
             };
-        };
-    };
-};
+            struct SpiCfg : public Spi<CPUClock> {
+                typedef CPUClock Controller_Configuration;
+                enum {
+                    useInterupt    = false,
+                    dataDirection  = msb,
+                    leadingEdge    = rising,
+                    sampleEdge     = leading,
+                    clockPrescaler = ps2,
+                    busywaitput    = true
+                };
+            };
+            typedef typename armarow::common::SPI<PortmapRC,SpiCfg> SPI;
+        }
+    }
+}
 #endif  // __ARMAROW_PLATFORM_ICRADIO_h__

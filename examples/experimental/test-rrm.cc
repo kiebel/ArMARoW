@@ -46,6 +46,34 @@
 
 #include <armarow/armarow.h>            // ArMARoW main include
 #include <armarow/debug.h>              // ArMARoW logging and debugging
+/* === types ================================================================ */
+typedef armarow::platform::icradio::PortmapRC RegMap;
+typedef armarow::platform::icradio::SPI baseSpi;
+/* === globals ============================================================== */
+/* === functions ============================================================ */
+void init() {
+    UseRegmap(rm, RegMap);
+    rm.reset.ddr  = true;
+    rm.reset.port = false;
+    rm.sleep.ddr  = true;
+    rm.sleep.port = false;
+    SyncRegmap(rm);
+    delay_ms( 1 );
+    rm.reset.port = true;
+    SyncRegmap(rm);
+    delay_ms( 1 );
+}
+void testRegister() {
+    uint8_t value;
+
+    (baseSpi::getInstance()).enable();
+    (baseSpi::getInstance()).write( 0x80 | 0x1E );
+    (baseSpi::getInstance()).read( value );
+    (baseSpi::getInstance()).disable();
+
+    ::logging::log::emit() << PROGMEMSTRING("R: ")
+        << ::logging::log::bin << value << ::logging::log::endl;
+}
 /* === main ================================================================= */
 int main() {
     sei();                              // enable interrupts
@@ -53,6 +81,9 @@ int main() {
         << PROGMEMSTRING("proof of concept for the idea of remote regmaps")
         << ::logging::log::endl << ::logging::log::endl;
 
+    //---------------------------------------------------------------
+    init();
+    testRegister();                     // test register access
     //---------------------------------------------------------------
     do {                                // duty cycle
     } while (true);
