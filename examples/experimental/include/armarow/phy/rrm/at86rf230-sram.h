@@ -37,43 +37,47 @@
  * $Id$
  *
  ******************************************************************************/
-/*! \file   examples/experimental/test-rrm.cc
- *  \brief  Proof of concept for the idea of remote regmaps.
- */
-/* === includes ============================================================= */
-#include "armarow/platform/icradio.h"   // platform dependent software config
-#include <avr-halib/share/delay.h>      // delays and timings
+#ifndef __ARMAROW_EXP_AT86RF230_SPEC_SRAM_h__
+#define __ARMAROW_EXP_AT86RF230_SPEC_SRAM_h__
 
-#include <armarow/armarow.h>            // ArMARoW main include
-#include <armarow/debug.h>              // ArMARoW logging and debugging
-#include <armarow/phy/rrm/at86rf230-spec.h>
-#include <armarow/phy/rrm/rrm-rc.h>
-/* === definitions ========================================================== */
-namespace platform {
-    struct config {
-        private:
-            typedef armarow::platform::icradio::PortmapRC halRc_t;
-            typedef armarow::platform::icradio::SPI baseSpi;
-            typedef armarow::phy::specification::At86Rf230<halRc_t,baseSpi> spec;
-        public:
-            typedef armarow::phy::Rrm<halRc_t,spec> rc_t;
-    };
+namespace armarow {
+    namespace phy {
+        namespace specification {
+            namespace at86rf230 {
+                template <typename Interface>
+                struct Sram {
+                    enum address {
+                        sram_txfifo   = 0x00,
+                        sram_rxfifo   = 0x80,
+                    };
+                    static void read (
+                            uint16_t pAddress,
+                            uint8_t* pBuffer,
+                            uint8_t pSize)
+                    {
+                        (Interface::getInstance()).enable();
+                        (Interface::getInstance()).write( 0x00 );
+                        (Interface::getInstance()).write( pAddress );
+                        while(pSize--)
+                            (Interface::getInstance()).read( *(pBuffer++) );
+                        (Interface::getInstance()).disable();
+                    }
+                    static void write(
+                            uint16_t pAddress,
+                            uint8_t* pBuffer,
+                            uint8_t pSize)
+                    {
+                        (Interface::getInstance()).enable();
+                        (Interface::getInstance()).write( 0x40 );
+                        (Interface::getInstance()).write( pAddress );
+                        while(pSize--)
+                            (Interface::getInstance()).write( *(pBuffer++) );
+                        (Interface::getInstance()).disable();
+                    }
+                };
+            }
+        }
+    }
 }
-/* === globals ============================================================== */
-platform::config::rc_t radio;
-/* === main ================================================================= */
-int main() {
-    sei();                              // enable interrupts
-    ::logging::log::emit()
-        << PROGMEMSTRING("proof of concept for the idea of remote regmaps")
-        << ::logging::log::endl << ::logging::log::endl;
 
-    //---------------------------------------------------------------
-    radio.init();
-    radio.testRegister();               // test register access
-    radio.testSRAM();                   // test SRAM access
-    radio.testTrxFiFo();                // test access to TRXFIFO
-    //---------------------------------------------------------------
-    do {                                // duty cycle
-    } while (true);
-}
+#endif  //__ARMAROW_EXP_AT86RF230_SPEC_SRAM_h__

@@ -37,43 +37,44 @@
  * $Id$
  *
  ******************************************************************************/
-/*! \file   examples/experimental/test-rrm.cc
- *  \brief  Proof of concept for the idea of remote regmaps.
- */
-/* === includes ============================================================= */
-#include "armarow/platform/icradio.h"   // platform dependent software config
-#include <avr-halib/share/delay.h>      // delays and timings
+#ifndef __ARMAROW_EXP_AT86RF230_SPEC_FIFO_h__
+#define __ARMAROW_EXP_AT86RF230_SPEC_FIFO_h__
 
-#include <armarow/armarow.h>            // ArMARoW main include
-#include <armarow/debug.h>              // ArMARoW logging and debugging
-#include <armarow/phy/rrm/at86rf230-spec.h>
-#include <armarow/phy/rrm/rrm-rc.h>
-/* === definitions ========================================================== */
-namespace platform {
-    struct config {
-        private:
-            typedef armarow::platform::icradio::PortmapRC halRc_t;
-            typedef armarow::platform::icradio::SPI baseSpi;
-            typedef armarow::phy::specification::At86Rf230<halRc_t,baseSpi> spec;
-        public:
-            typedef armarow::phy::Rrm<halRc_t,spec> rc_t;
-    };
-}
-/* === globals ============================================================== */
-platform::config::rc_t radio;
-/* === main ================================================================= */
-int main() {
-    sei();                              // enable interrupts
-    ::logging::log::emit()
-        << PROGMEMSTRING("proof of concept for the idea of remote regmaps")
-        << ::logging::log::endl << ::logging::log::endl;
+namespace armarow {
+    namespace phy {
+        namespace specification {
+            namespace rrm {
+                template <typename Interface>
+                struct TrxFiFo {
+                    //TODO CRC uint8_t readRxFifo(uint8_t pSize, uint8_t *pData, uint8_t *pLqi, bool &pCrc) {return 0;}
+                    static uint8_t read (uint8_t* pBuffer, uint8_t pSize) {
+                        uint8_t count = 0;
 
-    //---------------------------------------------------------------
-    radio.init();
-    radio.testRegister();               // test register access
-    radio.testSRAM();                   // test SRAM access
-    radio.testTrxFiFo();                // test access to TRXFIFO
-    //---------------------------------------------------------------
-    do {                                // duty cycle
-    } while (true);
+                        (Interface::getInstance()).enable();
+                        (Interface::getInstance()).write( 0x20 );
+                        (Interface::getInstance()).read( count );
+                        if ( pSize >= count) pSize = 0;
+                        while(pSize--)
+                            (Interface::getInstance()).read( *(pBuffer++) );
+                        (Interface::getInstance()).disable();
+                        //TODO 2011-01-10 read LQI value
+                        return ( (pSize >= count) ? count : 0 );
+                    }
+                    //TODO CRC void writeTxFifo(uint8_t pSize, const uint8_t *pData) {}
+                    static bool write(uint8_t* pBuffer, uint8_t pSize) {
+                        (Interface::getInstance()).enable();
+                        if (pSize > 127) return false; //TODO 2011-01-10 use information about frame size
+                        (Interface::getInstance()).write( 0x60  );
+                        (Interface::getInstance()).write( pSize );
+                        while(pSize--)
+                            (Interface::getInstance()).write( *(pBuffer++) );
+                        (Interface::getInstance()).disable();
+                        return true;
+                    }
+                };
+            }
+        }
+    }
 }
+
+#endif  //__ARMAROW_EXP_AT86RF230_SPEC_FIFO_h__
