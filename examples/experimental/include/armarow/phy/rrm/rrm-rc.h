@@ -64,11 +64,14 @@ namespace armarow {
             };
         };
 
+        using namespace phy::specification::at86rf230;
+
         template <typename HW, typename SPEC, typename CFG = struct RrmCFG>
         class Rrm {
             public:
                 /*! \brief  definition of the class type*/
                 typedef Rrm<HW,SPEC,CFG> type;
+                typedef typename SPEC::RegMap RegMap;
             private:
             public:
                 void init() {
@@ -83,26 +86,23 @@ namespace armarow {
                     SyncRegmap(rm);
                     delay_us( SPEC::timings::TRX_CHIP_RESET_TIME_US );
                 }
-                void testRegister() {
-                    typename SPEC::regval_t value;
-                    value.value = 0;
 
-                    // test register RR
-                    SPEC::reg_man_id_0::read(value);        // read register
+                void testRegister() {
+                    UseRegMap(rm, RegMap);
+                    //SyncRegister(rm, MAN_IDRegister);
+
                     ::logging::log::emit() << "RR: "
-                        << (uint16_t)value.value << ::logging::log::endl;
+                        << (uint16_t)rm.man_id << ::logging::log::endl;
 
                     // TODO 2011-01-04 test register WR
                     // test register RWR
-                    SPEC::reg_trx_state::read(value);
-                    value.reg_trx_state.trx_cmd = 0x08;
-                    SPEC::reg_trx_state::write(value);      // write register
+                    rm.trx_cmd=0x08;
+                    SyncRegister(rm, TRX_StateRegister);
 
-                    value.value = 0;
-                    SPEC::reg_trx_state::read(value);       // read register
                     ::logging::log::emit() << "RW: "
-                        << (uint16_t)value.value << ::logging::log::endl;
+                        << (uint16_t)rm.trx_cmd << ::logging::log::endl;
                 }
+
                 void testSRAM() {
                     uint8_t buffer[128];
                     uint8_t count = 0;

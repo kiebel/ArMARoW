@@ -49,18 +49,14 @@ namespace armarow {
         namespace specification {
             template < typename HW, typename SPI >
             struct At86Rf230 {
-                /*! \brief  register address data type*/
-                typedef typename at86rf230::Register::address regadd_t;
-                /*! \brief  register value data type*/
-                typedef typename at86rf230::Register::mapping regval_t;
+                /*! \brief  register definition for the AT86RF230
+                 *          radio controller */
+                typedef at86rf230::RRMTestRegMap<SPI> RegMap;
 
-                typedef typename at86rf230::Register::template Access<SPI,at86rf230::Register::reg_trx_status> reg_trx_status;
-                typedef typename at86rf230::Register::template Access<SPI,at86rf230::Register::reg_trx_state>  reg_trx_state;
-                typedef typename at86rf230::Register::template Access<SPI,at86rf230::Register::reg_man_id_0>   reg_man_id_0;
-
-                /*! \brief  definition of SRAM access */
+                /*! \brief  SRAM definition for the AT86RF230 radio controller */
                 typedef typename at86rf230::Sram<SPI> sram;
-                /*! \brief  definition of TRXFIFO access */
+                /*! \brief  TRX framebuffer definition for the AT86RF230
+                 *          radio controller */
                 typedef typename rrm::TrxFiFo<SPI> trxfb;
 
                 struct timings {

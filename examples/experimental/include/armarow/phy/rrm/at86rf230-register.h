@@ -40,43 +40,108 @@
 #ifndef __ARMAROW_EXP_AT86RF230_SPEC_REGISTER_h__
 #define __ARMAROW_EXP_AT86RF230_SPEC_REGISTER_h__
 
+#include <armarow/common/spi.h>
+#include <avr-halib/share/singleton.h>
+#include <avr-halib/regmaps/base/remoteRegMap.h>
+#include <avr-halib/regmaps/regmaps.h>
+#include <boost/mpl/list.hpp>
+
 namespace armarow {
     namespace phy {
         namespace specification {
             namespace at86rf230 {
-                struct Register {
-                    enum  address { reg_trx_status = 0x01, reg_trx_state = 0x02, reg_man_id_0 = 0x1E };
-                    union mapping {
-                        struct {
-                            uint8_t trx_status  : 5;
-                            bool    reserved    : 1;
-                            bool    cca_status  : 1;
-                            bool    cca_done    : 1;
-                        } reg_trx_status;
-                        struct {
-                            uint8_t trx_cmd     : 5;
-                            uint8_t trac_status : 3;
-                        } reg_trx_state;
-                        uint8_t value;
-                    };
-                    enum  value   { reg_default_trx_status = 0x00, reg_default_trx_state = 0x00 };
+                using common::helpers::SpiImpl;
+                using avr_halib::object::Singleton;
+                using avr_halib::regmaps::base::RemoteRegMap;
+                using namespace avr_halib::regmaps;
+                using boost::mpl::list;
 
-                    template <typename Interface, address ADDR>
-                    struct Access {
-                        static void read(mapping& pValue) {
-                            (Interface::getInstance()).enable();
-                            (Interface::getInstance()).write( ADDR | 0x80 );
-                            (Interface::getInstance()).read( pValue.value );
-                            (Interface::getInstance()).disable();
-                        }
-                        static void write(const mapping pValue) {
-                            (Interface::getInstance()).enable();
-                            (Interface::getInstance()).write( ADDR | 0xC0 );
-                            (Interface::getInstance()).write( pValue.value );
-                            (Interface::getInstance()).disable();
-                        }
+                struct TRX_StatusRegister
+                {
+                    enum RegisterParameters
+                    {
+                        address=0x01,
+                        mode=base::read,
+                        defaultValue=0x0
+                    };
+
+                    struct
+                    {
+                        uint8_t trx_status  : 5;
+                        bool    reserved    : 1;
+                        bool    cca_status  : 1;
+                        bool    cca_done    : 1;
                     };
                 };
+                struct TRX_StateRegister
+                {
+                    enum RegisterParameters
+                    {
+                        address=0x02,
+                        mode=base::both,
+                        defaultValue=0x0
+                    };
+
+                    struct
+                    {
+                        uint8_t trx_cmd     : 5;
+                        uint8_t trac_status : 3;
+                    };
+                };
+                struct MAN_IDRegister
+                {
+                    enum RegisterParameters
+                    {
+                        address=0x01E,
+                        mode=base::read,
+                        defaultValue=0x0
+                    };
+
+                    uint8_t man_id;
+                };
+
+                typedef typename list<
+                                        TRX_StatusRegister,
+                                        TRX_StateRegister,
+                                        MAN_IDRegister
+                                    >::type RRMTestRegisterList;
+
+                template <typename SpiImpl>
+                struct InternalSpiImpl : public SpiImpl::noSingleton
+                {
+
+                    static const uint8_t readOpMask  = 0x80;
+                    static const uint8_t writeOpMask = 0xC0;
+
+                    typedef typename SpiImpl::noSingleton Base;
+
+                    bool read(uint8_t address, uint8_t& data)
+                    {
+                        this->enable();
+                        this->Base::write( address | readOpMask );
+                        this->Base::read( data );
+                        this->disable();
+                        return true;
+                    }
+                    bool write(uint8_t address, const uint8_t data)
+                    {
+                        this->enable();
+                        this->Base::write( address | writeOpMask );
+                        this->Base::write( data );
+                        this->disable();
+                        return true;
+                    }
+                };
+
+                template<typename SpiImpl>
+                struct Spi : public Singleton<InternalSpiImpl<SpiImpl> >{};
+
+                template<typename SpiImpl>
+                struct RRMTestRegMap :
+                    public base::RemoteRegMap<
+                                            Spi<SpiImpl>,
+                                            RRMTestRegisterList
+                                            >{};
             }
         }
     }
