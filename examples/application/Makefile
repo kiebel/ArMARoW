@@ -41,7 +41,6 @@
 ################################################################################
 include ../../platform/Makefile
 
-LDFLAGS= $(LIB) $(ADDITIONAL_LIBS)
 CXXFLAGS+= -ggdb3 -Os -UNDEBUG
 
 filtered=$(filter-out %.cc %.h %.py %Makefile,$(shell find . -maxdepth 1 -type f))

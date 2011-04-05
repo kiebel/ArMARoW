@@ -41,7 +41,8 @@
 # -----------------------------------------------------------------------------
 #                             CONFIGURATION
 # -----------------------------------------------------------------------------
-#LOGLIBDIR = # configure location for logging library
+# configure location for logging library
+#LOGLIBDIR = /logging/include
 # -----------------------------------------------------------------------------
 PLATFORM ?= default
 include $(ARMAROWDIR)/platform/$(PLATFORM)/config.mk

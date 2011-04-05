@@ -40,41 +40,40 @@
 ################################################################################
 RULEECHO = echo "$(notdir $<) -> $@"
 
+TARGETS=$(basename $(wildcard *.cc *.c *.S))
+
+.PHONY: ${TARGETS}
+
+.PRECIOUS: %.elf %.o
+
+${TARGETS}: %: %.elf
+
 # How to compile an ELF file from a C++ file.
-%.elf:%.cc
+%.elf: %.o
 	@$(RULEECHO) ; \
-	$(CXX) $< -o $@ $(CXXFLAGS) $(LDFLAGS)
-
-# How to compile an HEX file from a C++ file.
-%.hex:%.elf
-	@$(RULEECHO) ; \
-	$(OBJCOPY) -j .text -j .data -O ihex $< $@
-
-# How to program a HEX file.
-%.program:%.hex
-	@$(AVRDUDE) $(AVRDUDE_FLAGS) -U f:w:$<:a
+	$(LD) $< -o $@ ${CFLAGS} $(LDFLAGS)
 
 # How to compile a C++ file.
 %.o:    %.cc
 	@$(RULEECHO) ; \
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(CXXOPTIONS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 # How to compile a C file.
 %.o:    %.c
 	@$(RULEECHO) ; \
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(CCOPTIONS) -o $@ -c $<
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 # How to compile a C file.
 %.o:    %.C
 	@$(RULEECHO) ; \
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(CXXFLAGS) $(CXXOPTIONS) -o $@ -c $<
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 # How to compile an assembler file.
 %.o: %.S
 	@$(RULEECHO) ; \
-	$(CC) -c $< -o $@
+	$(CC) -c ${ASMFLAGS} $< -o $@
 
 # How to assemble a C++ file.
-%.s:    %.cc
+%.S:    %.cc
 	@$(RULEECHO) ; \
-	$(CXX) $(ASMOUT) $(CFLAGS) $(CPPFLAGS) $(CXXFLAGS) $(CXXOPTIONS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) -o $@ -S $<

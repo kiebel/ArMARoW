@@ -38,54 +38,13 @@
 ## $Id$
 ##
 ################################################################################
-# if ARMAROWDIR isn't defined, the root directory is automatically determind
-ifeq ($(ARMAROWDIR),)
-ARMAROWCWD := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-ARMAROWDIR := $(patsubst %/platform/,%,$(ARMAROWCWD))
-endif
+RULEECHO = echo "$(notdir $<) -> $@"
 
-ifneq ($(shell test -f $(ARMAROWDIR)/platform/rules.mk && echo success), success)
-$(info )
-$(info The ARMAROWDIR you gave to the make-system is wrong. The make-system could )
-$(info not find all needed files. In general the make-system is able to determine )
-$(info its root directory automatically. Thus, you have three options:            )
-$(info    - First, you don't define ARMAROWDIR and let the make-system do the job.)
-$(info    - Second, you define the ARMAROWDIR environment variable.               )
-$(info    - Third, you start make as follows "make ARMAROWDIR="root-dir".         )
-$(info )
-$(error root directory is given wrong)
-endif
+# How to compile an HEX file from a C++ file.
+%.hex:%.elf
+	@$(RULEECHO) ; \
+	$(OBJCOPY) -j .text -j .data -O ihex $< $@
 
-include $(ARMAROWDIR)/platform/config.mk
-# -----------------------------------------------------------------------------
-GCCVERSION  = gcc-$(shell $(CXX) -dumpversion)
-
-BASEDOC     = $(ARMAROWDIR)/doc
-BASEEXTERNAL= $(ARMAROWDIR)/external
-BASELIB     = $(ARMAROWDIR)/lib
-INCDIR      = $(ARMAROWDIR)/include
-LIBDIR      = $(BASELIB)/$(GCCVERSION)
-
-LIB         = -L$(LIBDIR)
-INCLUDE     = -I$(INCDIR)
-
-ARMAROW_DEBUG ?= -g -DNDEBUG
-
-# external header dependencies
-LOGLIBDIR   ?= $(BASEEXTERNAL)/include
-EXTERNALS    = $(LOGLIBDIR)
-
-ADDITIONAL_BUILDS   = $(LIBAVR)
-ADDITIONAL_LIBS    += $(ADDITIONAL_BUILDS)
-ADDITIONAL_INCLUDE += -I$(HALIBDIR)/include $(patsubst %,-I%,$(EXTERNALS)) -I$(ARMAROWDIR)/platform/$(PLATFORM) -I$(HALIBDIR)/experimental/include
-ADDITIONAL_CFLAGS  += -fno-strict-aliasing $(ADDITIONAL_INCLUDE)
-
-ASMFLAGS   += -Wall
-
-CFLAGS     += -Wall $(ARMAROW_DEBUG) -I$(INCDIR) $(ADDITIONAL_CFLAGS)
-
-CXXFLAGS   += ${CFLAGS}
-
-LDFLAGS    += $(ADDITIONAL_LIBS) $(ADDITIONAL_LDFLAGS)
-# -----------------------------------------------------------------------------
-include $(ARMAROWDIR)/platform/rules.mk
+# How to program a HEX file.
+%.program:%.hex
+	@$(AVRDUDE) $(AVRDUDE_FLAGS) -U f:w:$<:a

@@ -41,12 +41,13 @@
 # -----------------------------------------------------------------------------
 #                             CONFIGURATION
 # -----------------------------------------------------------------------------
-#HALIBDIR   = # configure location for avr halib library
+HALIBDIR   = $(ARMAROWDIR)/external/avr-halib
 HAEXTDIR   = $(ARMAROWDIR)/external/avr-halib
 HALIBDIR  ?= $(HAEXTDIR)
 ifeq ($(HALIBDIR), $(HAEXTDIR))
-	ADDITIONAL_DIR += $(HALIBDIR)
+	ADDITIONAL_DIR += $(HALIBDIR) /usr/x86_64-pc-linux-gnu/avr/lib
 endif
+
 # -----------------------------------------------------------------------------
 AR      = avr-ar
 ARFLAGS = ru
@@ -54,19 +55,16 @@ AS      = avr-as
 AVRDUDE = avrdude
 CC      = avr-gcc
 CXX     = avr-g++
-LD      = avr-ld
+LD      = avr-g++
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 PMGEN   = $(HALIBDIR)/tools/portmapgen/avr-halib-pmg
 RANLIB  = avr-ranlib
 SIZE    = avr-size
 
-AVRDUDE_PROGRAMMER ?= avr911
-AVRDUDE_PORT       ?= /dev/ttyUSB0
 AVRDUDE_FLAGS       = -v -P $(AVRDUDE_PORT) -u -c $(AVRDUDE_PROGRAMMER) -p $(MCU)
 # -----------------------------------------------------------------------------
-MCU                ?= at90can128
-CPU_CLOCK          ?= 16000000
 LIBAVR              = $(LIBDIR)/libavr-halib-$(MCU).a
 
 ADDITIONAL_CFLAGS  += -DF_CPU=${CPU_CLOCK}ULL -DAVR -mmcu=$(MCU) -fno-threadsafe-statics
+ADDITIONAL_LDFLAGS += $(addprefix -L,${ADDITIONAL_DIR})

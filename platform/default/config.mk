@@ -41,8 +41,10 @@
 # -----------------------------------------------------------------------------
 #                             CONFIGURATION
 # -----------------------------------------------------------------------------
-#MCU       = at90can128
-CPU_CLOCK = 16000000
-AVRDUDE_PROGRAMMER ?= stk500
+MCU                ?= at90can128
+CPU_CLOCK          ?= 16000000
+AVRDUDE_PROGRAMMER ?= jtag2
+AVRDUDE_PORT       ?= usb
 # -----------------------------------------------------------------------------
 include $(ARMAROWDIR)/platform/avr.mk
+include $(ARMAROWDIR)/platform/avr-rules.mk
