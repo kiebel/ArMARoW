@@ -1,8 +1,8 @@
 ################################################################################
 ##
 ## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-##               2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
-##               2010 Christoph Steup <christoph.steup@student.ovgu.de>
+##               2010 Thomas Kiebel   <kiebel@ivs.cs.uni-magdeburg.de>
+##               2010 Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
 ## All rights reserved.
 ##
 ##    Redistribution and use in source and binary forms, with or without
@@ -38,18 +38,19 @@
 ## $Id$
 ##
 ################################################################################
-ARCH=avr
-MCU=atmega128
+ARMAROWDIR=../../../../
 
-# How to compile an HEX file from a C++ file.
-%.hex:%.elf
-	@$(RULEECHO) ; \
-	$(OBJCOPY) -j .text -j .data -O ihex $< $@
+PLATFORM = ICradioStick
 
-# How to program a HEX file.
-%.program:%.hex
-	@$(AVRDUDE) $(AVRDUDE_FLAGS) -U f:w:$<:a
+CXXFLAGS+=-Wall -Os
 
-%.dump: %.elf
-	@echo "(OBJDMP) $(notdir $<) -> $@"
-	${OBJDUMP} -Cxd $< > $@
+BIN=./bin
+SRC=.
+BUILD=./build
+INCLUDE=.
+
+.PHONY: default
+
+default: help
+
+include ${ARMAROWDIR}/make/example.mk

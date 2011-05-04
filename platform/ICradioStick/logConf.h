@@ -2,9 +2,12 @@
 
 #include <avr-halib/ext/loggingDevice.h>
 #include <avr-halib/ext/uartLogging.h>
+#include <avr-halib/avr/uartSync.h>
 #include <avr-halib/avr/regmaps.h>
 #include <boost/mpl/list.hpp>
 #include <avr-halib/avr/sleep.h>
+#include <avr-halib/avr/uartSync.h>
+
 
 typedef Uart1<CPUClock,115200> logConf;
 
