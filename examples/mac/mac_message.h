@@ -44,10 +44,11 @@ namespace MAC{
 typedef uint8_t DeviceAddress; 
 
 
+
 //typedef rc_t::platform::config::mob_t  platform::config::mob_t;
 
 //typedef armarow::PHY::rc_t::platform::config::mob_t platform::config::mob_t
-typedef platform::config::mob_t mob_t;
+//typedef platform::config::mob_t mob_t;
 
 //typedef MAC_Message platform::config::mob_t;
 
@@ -149,6 +150,9 @@ struct MAC_Message{
 
 	//MAC_Payload payload;
 
+  //this constructor have to be used with the palcement new operator, hence it may not called directly
+  private:
+
 	explicit MAC_Message(platform::config::mob_t& physical_layer_message){
 
 		//init header	
@@ -192,6 +196,21 @@ struct MAC_Message{
 	
 
 	}
+
+
+	public:
+
+	explicit MAC_Message(){
+
+		DeviceAddress send_adress=25;
+		DeviceAddress receive_adress=38;
+
+		MAC_Message(DATA, send_adress, receive_adress, (char*) 0, 0);
+
+
+	}
+
+
 
 	explicit MAC_Message(MessageType msgtyp, DeviceAddress send_adress, DeviceAddress receive_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer){
 

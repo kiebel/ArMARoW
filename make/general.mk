@@ -83,3 +83,6 @@ CFLAGS   += $(addprefix -I,${INCLUDES})
 CXXFLAGS += $(addprefix -I,${INCLUDES})
 LDFLAGS  += $(addprefix -L,${LDPATHS})
 LDFLAGS  += $(addprefix -l,${LIBS})
+ADDITIONAL_CFLAGS  += -DF_CPU=${CPU_CLOCK}ULL -DAVR -mmcu=$(MCU) -fno-threadsafe-statics
+ADDITIONAL_LDFLAGS += $(addprefix -L,${ADDITIONAL_DIR})
+include $(ARMAROWDIR)/platform/avr-rules.mk

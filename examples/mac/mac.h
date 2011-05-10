@@ -22,9 +22,6 @@
 #include "armarow/phy/phy.h"            // physical layer
 
 /* CLOCK */
-//#include <avr-halib/regmaps/local.h>
-//#include <avr-halib/avr/clock.h>
-//#include <avr-halib/avr/sleep.h>
 
 #include <avr-halib/regmaps/local.h>
 #include <avr-halib/avr/clock.h>
@@ -32,10 +29,11 @@
 #include <avr-halib/ext/led.h>
 #include <avr-halib/ext/button.h>
 
-
+//typedef avr_halib::power::Morpheus<MorpheusSyncList> Morpheus;
 
 //activates clock interrupt
-UseInterrupt(SIG_OUTPUT_COMPARE1A);
+//UseInterrupt(SIG_OUTPUT_COMPARE1A);
+UseInterrupt(SIG_OUTPUT_COMPARE2A);
 
 using avr_halib::drivers::Clock;
 
@@ -57,22 +55,25 @@ namespace armarow{
 
 	namespace MAC{
 
-		/* CLOCK
-		struct ClockConfig
-		{
-			typedef uint16_t TickValueType;
-			typedef Frequency<1000> TargetFrequency; //create an interrupt 1000 times a second
-			typedef CPUClock TimerFrequency;
-			typedef local::Timer1 Timer;
-		};
+	typedef MAC_Message mob_t;
+
+		// CLOCK
+	struct ClockConfig
+	{
+		typedef uint16_t TickValueType;
+		typedef Frequency<1> TargetFrequency;
+		typedef Frequency<32768> TimerFrequency; //CPUClock
+		typedef local::Timer2 Timer;
+	};
 
 		typedef Clock<ClockConfig> MAC_Clock;
-		*/
+		
 
 
 		typedef void* AttributType;
 		typedef uint8_t DeviceAddress; 
 		
+
 
 
 		//template <uint8_t channel>
@@ -86,9 +87,9 @@ namespace armarow{
 				platform::config::rc_t  rc;
 				uint8_t channel;                   // channel number the node is sending and receiving data
 				uint16_t nav; //network allocation vector -> Zeitdauer, die das Medium voraussichtlich belegt sein wird
-				/* CLOCK 
+				// CLOCK 
 				MAC_Clock clock;
-				*/
+				
 
 				DeviceAddress mac_adress;
 
@@ -189,6 +190,18 @@ namespace armarow{
 				}
 
 
+				static void onTick()
+				{
+					//MAC_Clock::Time t;
+					//clock.getTime(t);
+					//::logging::log::emit() << "Tick: " << t.ticks << ", " << t.microTicks << ::logging::log::endl;
+					//led.toggle();
+					::logging::log::emit() << "es ist eine weitere Sekunde vergangen..." << ::logging::log::endl;				
+
+
+				}
+
+
 				void callback_periodic_timer_activation_event(){
 
 					//MAC* mythis;// = MAC.pointer_auf_sich_selbst;
@@ -212,6 +225,9 @@ namespace armarow{
 					rc.onReceive.bind<callback_receive_message>();
 
 					//registerCallback<T, &T::onConversionComplete>(t);
+
+					clock.registerCallback<&onTick>();
+
 
 					// Set a method as timer event handler
 					//setDelegateMethod(b.timer.onTimerDelegate, Blinker, Blinker::onTimer1, b);
@@ -242,6 +258,95 @@ namespace armarow{
 				void set_MAC_Attribut(mac_attributes attributes,  AttributType value){
 
 				}
+
+
+
+				int send(MAC_Message& mac_message){
+
+				
+
+			
+
+					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
+					<< "Sending MAC_Message... " << ::logging::log::endl;
+					mac_message.print();
+
+					
+					//wait a random time
+					delay_ms(1000); //TODO: make random time!!!
+
+
+					//for a Clear Channel assesment we need to change into Receive State
+					rc.setStateTRX(armarow::PHY::RX_ON);
+
+					armarow::PHY::State status=rc.doCCA();
+
+					if(status==armarow::PHY::IDLE){
+
+						::logging::log::emit()
+							<< PROGMEMSTRING("Medium frei!!!")
+							<< ::logging::log::endl << ::logging::log::endl;						
+						
+
+					}else if (status==armarow::PHY::BUSY){
+
+						::logging::log::emit()
+							<< PROGMEMSTRING("Medium belegt!!!")
+							<< ::logging::log::endl << ::logging::log::endl;
+					
+					}else if (status==armarow::PHY::TRX_OFF){
+						
+						
+						::logging::log::emit()
+							<< PROGMEMSTRING("Controller nicht im Receive State!!!")
+							<< ::logging::log::endl << ::logging::log::endl;	
+	
+					}else{
+
+						::logging::log::emit()
+							<< PROGMEMSTRING("armarow::PHY::State return Value of Clear channel Assessment not in {BUSY,IDLE,TRX_OFF}!!!")
+							<< ::logging::log::endl << ::logging::log::endl;	
+					}
+
+
+					//we want to send (tranceiver on)
+					rc.setStateTRX(armarow::PHY::TX_ON);
+
+					rc.send(*mac_message.getPhysical_Layer_Message());
+
+
+				
+
+					//rc.setStateTRX(armarow::PHY::TX_OFF);
+					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
+					<< "End of SEND Methode reached" <<::logging::log::endl;
+					return 0;
+				}
+
+
+				int receive(MAC_Message& mac_message){
+
+
+					mac_message.setPayloadNULL();
+
+
+					rc.setStateTRX(armarow::PHY::RX_ON);
+					rc.receive_blocking(message);
+
+					armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
+
+					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) return -1;
+
+					mac_message = *mac_msg;
+
+
+					return mac_msg->size;
+				}
+
+
+
+
+
 
 
 				int send(char* buffer,size_t buffer_size){
