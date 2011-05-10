@@ -33,7 +33,7 @@
 
 	 //mac.send(node_mac_adress,buffer,sizeof(buffer));
 	while(1){
-	delay(3000);
+	//delay(3000);
 	 mac.send(buffer,sizeof(buffer));
 
 	 //mac.receive(buffer,sizeof(buffer));

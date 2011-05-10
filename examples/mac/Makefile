@@ -41,7 +41,6 @@
 PLATFORM = ICradioStick
 ################################################################################
 #ADDITIONAL_INCLUDE += -DBOOST_NO_STDLIB_CONFIG -D__NO_STL__ -I../../external/avr-halib/externals/include -I../../external/avr-halib/externals/include/boost/compatibility/cpp_c_headers/
-include ../../platform/Makefile
 
 LDFLAGS= $(LIB) $(ADDITIONAL_LIBS)
 CXXFLAGS+= -ggdb3 -Os -UNDEBUG
@@ -49,13 +48,13 @@ CXXFLAGS+= -ggdb3 -Os -UNDEBUG
 filtered=$(filter-out %.cc %.h %.py %Makefile,$(shell find . -maxdepth 1 -type f))
 
 
-CXXFLAGS+=-fno-keep-inline-functions -ffunction-sections -fshort-enums #-DLOGGING_DISABLE  -DBOOST_NO_STDLIB_CONFIG -D__NO_STL__ -I../../external/avr-halib/externals/include -I../../external/avr-halib/externals/include/boost/compatibility/cpp_c_headers/
+CXXFLAGS+=-fno-keep-inline-functions -ffunction-sections -fshort-enums -DBOOST_NO_STDLIB_CONFIG -D__NO_STL__ #-DLOGGING_DISABLE   -I../../external/avr-halib/externals/include -I../../external/avr-halib/externals/include/boost/compatibility/cpp_c_headers/
 LDFLAGS+= -Wl,--gc-sections #-Wl,--section-start=.text=0x1FC00
 #Locations
 #INCLUDES=../../include/ ../../platform/ ../../platform/default/
-INCLUDE+= -I../../external/avr-halib/externals/include/boost/type_traits
+ADDITIONAL_INCLUDE+= -I../../external/avr-halib/externals/include -I../../external/avr-halib/externals/include/boost/compatibility/cpp_c_headers
 LDPATHS=
-
+include ../../platform/Makefile
 #BIN=.
 #/bin
 #BUILD=.

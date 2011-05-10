@@ -14,27 +14,8 @@
 //#define DeviceAddress uint32_t
 
 
-//#define uint16_t short
-
-//#define MAX_NUMBER_OF_DATABYTES 127
-
-
-
-//#define ::logging::log::emit() log::emit()
-//#define ::logging::log::endl log::::logging::log::endl
-
-//#define ::logging::log::emit() ::logging::log::emit()
-//#define ::logging::log::endl ::logging::log::::logging::log::endl
-
-
-//#define MAX_NUMBER_OF_DATABYTES (128-sizeof(uint8_t)-sizeof(MAC_Header))
 #define MAX_NUMBER_OF_DATABYTES (101-sizeof(uint8_t)-sizeof(MAC_Header))
 
-//böser hack!!!
-//#define .data .payload.data
-//#define ->data ->payload.data
-
-//#define uint8_t char
 
 /*from armarow start*/ 
 

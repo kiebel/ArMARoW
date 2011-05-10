@@ -22,16 +22,22 @@
 #include "armarow/phy/phy.h"            // physical layer
 
 /* CLOCK */
+//#include <avr-halib/regmaps/local.h>
+//#include <avr-halib/avr/clock.h>
+//#include <avr-halib/avr/sleep.h>
+
 #include <avr-halib/regmaps/local.h>
 #include <avr-halib/avr/clock.h>
-#include <avr-halib/avr/sleep.h>
+#include <avr-halib/portmaps/icstick_portmap.h>
+#include <avr-halib/ext/led.h>
+#include <avr-halib/ext/button.h>
+
 
 
 //activates clock interrupt
 UseInterrupt(SIG_OUTPUT_COMPARE1A);
 
 using avr_halib::drivers::Clock;
-using avr_halib::power::sleep;
 
 using namespace avr_halib::regmaps;
 /**/
@@ -45,20 +51,6 @@ return buffer;
 
 
 #include "mac_message.h"
-
-
-
-
-
-
-
-
-//#define SIZE_OF_SEND_MESSAGE_BUFFER 10
-//#define SIZE_OF_RECEIVE_MESSAGE_BUFFER 10
-
-
-//#define MAX_NUMBER_OF_DATABYTES 126
-//#define SIZE_OF_RECEIVE_RINGBUFFER 10
 
 
 namespace armarow{
