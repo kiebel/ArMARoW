@@ -95,7 +95,7 @@ void callback_recv() {
 	mac_msg->print();
 	//mac_msg->hexdump();
 
-	::logging::log::emit() << "msg: " << (void*)mac_msg << " mac_header: " << (void*)&mac_msg->header << " mac_payload data: " << (void*)&mac_msg->payload.data << ::logging::log::endl;
+	//::logging::log::emit() << "msg: " << (void*)mac_msg << " mac_header: " << (void*)&mac_msg->header << " mac_payload data: " << (void*)&mac_msg->payload.data << ::logging::log::endl;
 
 }
 /*! \brief  Initializes the physical layer.*/
@@ -108,6 +108,8 @@ void init() {
 /* === main ================================================================= */
 int main() {
 
+    armarow::MAC::mob_t messageobject;
+
     sei();                              // enable interrupts
     ::logging::log::emit()
         << PROGMEMSTRING("Starting sniffer!")
@@ -115,8 +117,8 @@ int main() {
 
     init();                             // initialize famouso
 
-    size_t buffersize=sizeof(platform::config::mob_t);
-    char buffer[sizeof(platform::config::mob_t)];
+    //size_t buffersize=sizeof(platform::config::mob_t);
+    //char buffer[sizeof(platform::config::mob_t)];
     //char buffer[10];
 	
     do {                                // duty cycle
@@ -125,15 +127,36 @@ int main() {
     //    << PROGMEMSTRING("Starting sniffer!")
     //    << ::logging::log::endl << ::logging::log::endl;
 
+	/*
 		int numberofreceivedbytes = mac.receive(buffer,buffersize);
 
 		 ::logging::log::emit()
         << PROGMEMSTRING("Number of Received bytes: ") << numberofreceivedbytes
         << ::logging::log::endl << ::logging::log::endl;
 
-		 ::logging::log::emit()
-        << PROGMEMSTRING("[Content:] ") << buffer
-        << ::logging::log::endl << ::logging::log::endl;
+	*/
+
+	if(mac.receive(messageobject)!=0){
+		
+		struct mesg{
+			uint32_t counter;
+			char message[];
+		};
+		
+		::logging::log::emit()
+        	<< PROGMEMSTRING("[Content:] ") << ((mesg*)&messageobject.payload)->message
+		<< PROGMEMSTRING("Message Number: ") << ((mesg*)&messageobject.payload)->counter
+        	<< ::logging::log::endl << ::logging::log::endl;
+
+	}else{
+
+		::logging::log::emit()
+        	<< PROGMEMSTRING("Failed receiving message!") 
+        	<< ::logging::log::endl << ::logging::log::endl;
+
+	}
+
+
 		 
 
     } while (true);

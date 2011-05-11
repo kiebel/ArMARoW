@@ -77,14 +77,14 @@ int main() {
     armarow::MAC::mob_t messageobject;
 
 
-   const char* messagecontent = "MAC LAYER TEST";    
+   const char messagecontent[] = "MAC LAYER TEST";    
 
-    for(unsigned int i=0;i<14;i++)
-    messageobject.payload[i]=messagecontent[i];
+//    for(unsigned int i=0;i<sizeof(messagecontent);i++)
+//    messageobject.payload[i]=messagecontent[i];
 
-    messageobject.size=14;
+//    messageobject.size=sizeof(messagecontent); //15;
     //messageobject.header.messagetype=armarow::MAC::DATA;
-    messageobject.print();
+//    messageobject.print();
 
 	    ::logging::log::emit()
             << PROGMEMSTRING("Sending the following message ") << (int32_t)cnt++
@@ -112,9 +112,29 @@ int main() {
         << PROGMEMSTRING("Starting bubbler (repeated send of the same message)!")
         << ::logging::log::endl << ::logging::log::endl;
 
+    uint32_t message_counter=0x34343434;
+
     //init();                             // initialize famouso
     do {
-  
+	++message_counter;
+
+	struct mesg{
+			uint32_t counter;
+			char message[sizeof(messagecontent)] ;
+		};
+	
+	mesg message;
+	message.counter=message_counter;
+	for(unsigned int i=0;i<sizeof(messagecontent);i++)
+   		message.message[i]=messagecontent[i];
+
+	 for(unsigned int i=0;i<sizeof(message);i++)
+	    messageobject.payload[i]=((char*)&message)[i];
+
+
+	messageobject.size=sizeof(message);
+
+
 	//char* buffer = "Hallo du da!";
 
         //armarow::MAC::MAC_Message mac_msg(armarow::MAC::DATA,sender,receiver,buffer,buffersize);

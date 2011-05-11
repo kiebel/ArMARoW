@@ -226,7 +226,7 @@ namespace armarow{
 
 				void callback_periodic_timer_activation_event(){
 
-					//MAC* mythis;// = MAC.pointer_auf_sich_selbst;
+					
 					//decrement network allocation vector, because we "wait" for nav == 0, if we want to send a message
 					//if(nav>0) nav--;
 
@@ -237,6 +237,7 @@ namespace armarow{
 					*/
 
 
+/*
 						int randomnumber = rand();
 					
 					//delay_ms((randomnumber*maximal_waiting_time_in_milliseconds)/RAND_MAX);	
@@ -244,6 +245,7 @@ namespace armarow{
 
 
 					::logging::log::emit() << "es ist eine weitere Sekunde vergangen... Random Number: " << randomnumber << " normalized Random Number: " << ( ((uint32_t)randomnumber*maximal_waiting_time_in_milliseconds) / (0x8000)) << " MAX RANDOM NUMBER: " << RAND_MAX << ::logging::log::endl;				
+*/
 
 					led.toggle();
 
@@ -261,7 +263,10 @@ namespace armarow{
 
 					//registerCallback<T, &T::onConversionComplete>(t);
 
-					srandom(5);  //TODO: make seed value dependent on Node id!!!
+					//srandom(5);  //TODO: make seed value dependent on Node id!!!
+
+					//sets the seed value for the pseudo random numbers used for a random waiting time for medium access controll
+					srandom(mac_adress_of_node);
 
 					
 					//typeof *this = MAC_Base
@@ -315,18 +320,6 @@ namespace armarow{
 					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
 					<< "Sending MAC_Message... " << ::logging::log::endl;
 					mac_message.print();
-
-					
-					//wait a random time
-					//delay_ms(1000); //TODO: make random time!!!
-
-					//delay_ms(random()%maximal_waiting_time_in_milliseconds);
-
-					//int randomnumber = random();
-
-					//if(randomnumber<0) randomnumber *=-1;
-					
-					//delay_ms((randomnumber*maximal_waiting_time_in_milliseconds)/RAND_MAX);
 
 
 					//for a Clear Channel assesment we need to change into Receive State
@@ -393,14 +386,16 @@ namespace armarow{
 
 
 					rc.setStateTRX(armarow::PHY::RX_ON);
-					rc.receive_blocking(message);
+					//rc.receive_blocking(message);
+
+					rc.receive(message);
 
 					armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
 
 					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) return 0;
 
 					mac_message = *mac_msg;
-
+					if(mac_message.header.messagetype!=DATA) mac_message.print(); //just for debug purposes
 
 					return mac_msg->size;
 				}
