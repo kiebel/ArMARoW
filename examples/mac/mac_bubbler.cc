@@ -97,14 +97,14 @@ int main() {
         message.payload[i]=buffer[i];
     }
     */
-	char* buffer="Ein langer Text erfordert bei der übertragung über ein Funkmedium eine Aufteilung in mehrere Packete, da die Nachrichtenlänge sehr begrenzt ist. Nichts desto trotz wollen wir eine große Nachricht auf der Ebene höhere Protokolle versenden, ohne ums um Details kümmern zu müssen. Es ist daher naheliegend, sie automatisch aufteilen und wieder zusammensetzen zu lassen.";
+	//char* buffer="Ein langer Text erfordert bei der übertragung über ein Funkmedium eine Aufteilung in mehrere Packete, da die Nachrichtenlänge sehr begrenzt ist. Nichts desto trotz wollen wir eine große Nachricht auf der Ebene höhere Protokolle versenden, ohne ums um Details kümmern zu müssen. Es ist daher naheliegend, sie automatisch aufteilen und wieder zusammensetzen zu lassen.";
 
 
 
 	//armarow::MAC::DeviceAddress sender = 25;
 	//armarow::MAC::DeviceAddress receiver = 38;
 
-	size_t buffersize = 373; //13 //sizeof(buffer);
+	//size_t buffersize = 373; //13 //sizeof(buffer);
 
 
     sei();                              // enable interrupts
@@ -127,7 +127,7 @@ int main() {
             <<::logging::log::endl << ::logging::log::endl;
 		*/
                             // duty cycle
-        delay_ms(5000);
+        //delay_ms(5000);
         //rc.setStateTRX(armarow::PHY::TX_ON);
         //rc.send(message);
 	//rc.send(*mac_msg.getPhysical_Layer_Message());
@@ -137,7 +137,13 @@ int main() {
 
 	//uint32_t number_of_bytes_send=0;
 
-	mac.send(messageobject);
+	if(mac.send(messageobject)<0){
+
+			 ::logging::log::emit()
+           << PROGMEMSTRING("couldn't transmit message because medium was busy...") 
+           << ::logging::log::endl << ::logging::log::endl;
+
+	}
 
 	//number_of_bytes_send = mac.send(buffer,buffersize);
 

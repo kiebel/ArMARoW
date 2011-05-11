@@ -98,7 +98,9 @@ namespace armarow{
 				MAC_Clock clock;
 				//const long maximal_waiting_time_in_milliseconds;
 
-				DeviceAddress mac_adress;
+				Led<Led0> led;
+
+				DeviceAddress mac_adress_of_node;
 
 				//enum MessageType{RTS,CTS,DATA,ACK};
 
@@ -182,6 +184,8 @@ namespace armarow{
 
 				MAC_Base(){   // : channel(11), mac_adress(0){
 					channel=11;
+					mac_adress_of_node=28;          //this parameter can be configured 
+
 					//maximal_waiting_time_in_milliseconds=100;
 					init();	
 
@@ -208,9 +212,13 @@ namespace armarow{
 					//MAC_Clock::Time t;
 					//clock.getTime(t);
 					//::logging::log::emit() << "Tick: " << t.ticks << ", " << t.microTicks << ::logging::log::endl;
-					//led.toggle();
-					long randomnumber=random();
-					::logging::log::emit() << "es ist eine weitere Sekunde vergangen... Random Number: " << randomnumber << " normalized Random Number: " << randomnumber%maximal_waiting_time_in_milliseconds << " MAX RANDOM NUMBER: " << RAND_MAX << ::logging::log::endl;				
+					int randomnumber = rand();
+					
+					//delay_ms((randomnumber*maximal_waiting_time_in_milliseconds)/RAND_MAX);	
+				//led.toggle();
+
+
+					::logging::log::emit() << "es ist eine weitere Sekunde vergangen... Random Number: " << randomnumber << " normalized Random Number: " << ( ((uint32_t)randomnumber*maximal_waiting_time_in_milliseconds) / (0x8000)) << " MAX RANDOM NUMBER: " << RAND_MAX << ::logging::log::endl;				
 
 
 				}
@@ -228,6 +236,19 @@ namespace armarow{
 					::logging::log::emit() << "Tick: " << t.ticks << ", " << t.microTicks << ::logging::log::endl;
 					*/
 
+
+						int randomnumber = rand();
+					
+					//delay_ms((randomnumber*maximal_waiting_time_in_milliseconds)/RAND_MAX);	
+				//led.toggle();
+
+
+					::logging::log::emit() << "es ist eine weitere Sekunde vergangen... Random Number: " << randomnumber << " normalized Random Number: " << ( ((uint32_t)randomnumber*maximal_waiting_time_in_milliseconds) / (0x8000)) << " MAX RANDOM NUMBER: " << RAND_MAX << ::logging::log::endl;				
+
+					led.toggle();
+
+
+
 				}
 
 
@@ -243,8 +264,8 @@ namespace armarow{
 					srandom(5);  //TODO: make seed value dependent on Node id!!!
 
 					
-
-					clock.registerCallback<&onTick>();
+					//typeof *this = MAC_Base
+					clock.registerCallback<typeof *this, &MAC_Base::callback_periodic_timer_activation_event>(*this);
 
 
 					// Set a method as timer event handler
@@ -284,6 +305,11 @@ namespace armarow{
 
 				
 
+					//random waiting time
+					int randomnumber = rand();
+					uint32_t waitingtime = ( ((uint32_t)randomnumber*maximal_waiting_time_in_milliseconds) / (0x8000)); //0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
+
+					delay_ms(waitingtime);	
 			
 
 					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
@@ -294,9 +320,13 @@ namespace armarow{
 					//wait a random time
 					//delay_ms(1000); //TODO: make random time!!!
 
-					delay_ms(random()%maximal_waiting_time_in_milliseconds);
+					//delay_ms(random()%maximal_waiting_time_in_milliseconds);
 
+					//int randomnumber = random();
 
+					//if(randomnumber<0) randomnumber *=-1;
+					
+					//delay_ms((randomnumber*maximal_waiting_time_in_milliseconds)/RAND_MAX);
 
 
 					//for a Clear Channel assesment we need to change into Receive State
@@ -317,19 +347,28 @@ namespace armarow{
 							<< PROGMEMSTRING("Medium belegt!!!")
 							<< ::logging::log::endl << ::logging::log::endl;
 					
+							return -1;
+
 					}else if (status==armarow::PHY::TRX_OFF){
 						
 						
 						::logging::log::emit()
 							<< PROGMEMSTRING("Controller nicht im Receive State!!!")
 							<< ::logging::log::endl << ::logging::log::endl;	
-	
+							return -1;
 					}else{
 
 						::logging::log::emit()
 							<< PROGMEMSTRING("armarow::PHY::State return Value of Clear channel Assessment not in {BUSY,IDLE,TRX_OFF}!!!")
-							<< ::logging::log::endl << ::logging::log::endl;	
+							<< ::logging::log::endl << ::logging::log::endl;
+
+					return -1;	
 					}
+
+
+				
+
+
 
 
 					//we want to send (tranceiver on)
@@ -358,7 +397,7 @@ namespace armarow{
 
 					armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
 
-					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) return -1;
+					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) return 0;
 
 					mac_message = *mac_msg;
 

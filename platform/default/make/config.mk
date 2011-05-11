@@ -40,3 +40,16 @@
 ################################################################################
 ARCH=avr
 MCU=atmega128
+
+# How to compile an HEX file from a C++ file.
+%.hex:%.elf
+	@$(RULEECHO) ; \
+	$(OBJCOPY) -j .text -j .data -O ihex $< $@
+
+# How to program a HEX file.
+%.program:%.hex
+	@$(AVRDUDE) $(AVRDUDE_FLAGS) -U f:w:$<:a
+
+%.dump: %.elf
+	@echo "(OBJDMP) $(notdir $<) -> $@"
+	${OBJDUMP} -Cxd $< > $@
