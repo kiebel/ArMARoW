@@ -205,8 +205,11 @@ struct MAC_Message{
 		DeviceAddress send_adress=25;
 		DeviceAddress receive_adress=38;
 
-		MAC_Message(DATA, send_adress, receive_adress, (char*) 0, 0);
+		//MAC_Message(DATA, send_adress, receive_adress, (char*) 0, 0);
 
+		new (&header) MAC_Header( DATA, send_adress, receive_adress);
+		setPayloadNULL();
+		size=0;
 
 	}
 

@@ -29,6 +29,10 @@
 #include <avr-halib/ext/led.h>
 #include <avr-halib/ext/button.h>
 
+//AVR includes
+#include <stdlib.h>
+
+
 //typedef avr_halib::power::Morpheus<MorpheusSyncList> Morpheus;
 
 //activates clock interrupt
@@ -83,13 +87,16 @@ namespace armarow{
 
 			protected:
 
+
+				enum maxwaitingtime{maximal_waiting_time_in_milliseconds=100};
+
 				platform::config::mob_t message; //= {0,{0}};
 				platform::config::rc_t  rc;
 				uint8_t channel;                   // channel number the node is sending and receiving data
 				uint16_t nav; //network allocation vector -> Zeitdauer, die das Medium voraussichtlich belegt sein wird
 				// CLOCK 
 				MAC_Clock clock;
-				
+				//const long maximal_waiting_time_in_milliseconds;
 
 				DeviceAddress mac_adress;
 
@@ -175,6 +182,7 @@ namespace armarow{
 
 				MAC_Base(){   // : channel(11), mac_adress(0){
 					channel=11;
+					//maximal_waiting_time_in_milliseconds=100;
 					init();	
 
 				}
@@ -192,11 +200,17 @@ namespace armarow{
 
 				static void onTick()
 				{
+
+
+					//const long maximal_waiting_time_in_milliseconds=100;
+
+
 					//MAC_Clock::Time t;
 					//clock.getTime(t);
 					//::logging::log::emit() << "Tick: " << t.ticks << ", " << t.microTicks << ::logging::log::endl;
 					//led.toggle();
-					::logging::log::emit() << "es ist eine weitere Sekunde vergangen..." << ::logging::log::endl;				
+					long randomnumber=random();
+					::logging::log::emit() << "es ist eine weitere Sekunde vergangen... Random Number: " << randomnumber << " normalized Random Number: " << randomnumber%maximal_waiting_time_in_milliseconds << " MAX RANDOM NUMBER: " << RAND_MAX << ::logging::log::endl;				
 
 
 				}
@@ -226,12 +240,17 @@ namespace armarow{
 
 					//registerCallback<T, &T::onConversionComplete>(t);
 
+					srandom(5);  //TODO: make seed value dependent on Node id!!!
+
+					
+
 					clock.registerCallback<&onTick>();
 
 
 					// Set a method as timer event handler
 					//setDelegateMethod(b.timer.onTimerDelegate, Blinker, Blinker::onTimer1, b);
-					//setDelegateMethod(clock.onTimerDelegate, MAC_Message, MAC_Message::callback_periodic_timer_activation_event, *this);
+
+					//setDelegateMethod(clock.timer.onTimerDelegate, MAC_Base, MAC_Base::callback_periodic_timer_activation_event, *this);
 
 
 					return 0;
@@ -261,7 +280,7 @@ namespace armarow{
 
 
 
-				int send(MAC_Message& mac_message){
+				int send(MAC_Message mac_message){
 
 				
 
@@ -273,7 +292,11 @@ namespace armarow{
 
 					
 					//wait a random time
-					delay_ms(1000); //TODO: make random time!!!
+					//delay_ms(1000); //TODO: make random time!!!
+
+					delay_ms(random()%maximal_waiting_time_in_milliseconds);
+
+
 
 
 					//for a Clear Channel assesment we need to change into Receive State
@@ -318,8 +341,8 @@ namespace armarow{
 				
 
 					//rc.setStateTRX(armarow::PHY::TX_OFF);
-					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
-					<< "End of SEND Methode reached" <<::logging::log::endl;
+					//::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
+					//<< "End of SEND Methode reached" <<::logging::log::endl;
 					return 0;
 				}
 

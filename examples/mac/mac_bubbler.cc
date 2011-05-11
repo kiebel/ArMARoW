@@ -74,7 +74,17 @@ void init() {
 int main() {
     uint16_t cnt = 0;
 
- 
+    armarow::MAC::mob_t messageobject;
+
+
+   const char* messagecontent = "MAC LAYER TEST";    
+
+    for(unsigned int i=0;i<14;i++)
+    messageobject.payload[i]=messagecontent[i];
+
+    messageobject.size=14;
+    //messageobject.header.messagetype=armarow::MAC::DATA;
+    messageobject.print();
 
 	    ::logging::log::emit()
             << PROGMEMSTRING("Sending the following message ") << (int32_t)cnt++
@@ -123,15 +133,17 @@ int main() {
 	//rc.send(*mac_msg.getPhysical_Layer_Message());
 
 
+	
 
+	//uint32_t number_of_bytes_send=0;
 
-	uint32_t number_of_bytes_send=0;
+	mac.send(messageobject);
 
-	number_of_bytes_send = mac.send(buffer,buffersize);
+	//number_of_bytes_send = mac.send(buffer,buffersize);
 
-	 ::logging::log::emit()
-            << PROGMEMSTRING("Message transmitted. Number of transmitted bytes: ") << number_of_bytes_send
-            <<::logging::log::endl << ::logging::log::endl;
+	 //::logging::log::emit()
+         //   << PROGMEMSTRING("Message transmitted. Number of transmitted bytes: ") << number_of_bytes_send
+         //   <<::logging::log::endl << ::logging::log::endl;
 
         /*::logging::log::emit()
             << PROGMEMSTRING("Sending message ") << (int32_t)cnt++
