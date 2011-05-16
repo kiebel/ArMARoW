@@ -1,0 +1,5 @@
+#!/bin/bash
+
+rm $1.o $1.hex $1.elf; make $1.hex
+
+exit 0

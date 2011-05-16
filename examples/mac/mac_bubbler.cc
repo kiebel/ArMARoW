@@ -79,32 +79,14 @@ int main() {
 
    const char messagecontent[] = "MAC LAYER TEST";    
 
-//    for(unsigned int i=0;i<sizeof(messagecontent);i++)
-//    messageobject.payload[i]=messagecontent[i];
-
-//    messageobject.size=sizeof(messagecontent); //15;
-    //messageobject.header.messagetype=armarow::MAC::DATA;
-//    messageobject.print();
-
 	    ::logging::log::emit()
             << PROGMEMSTRING("Sending the following message ") << (int32_t)cnt++
             << ::logging::log::endl << ::logging::log::endl;
 
+ for(unsigned int i=0;i<sizeof(message);i++)
+	    messageobject.payload[i]=messagecontent[i];
 
-
-    /*message.size=13;
-    for(uint8_t i=0;i<message.size;i++){
-        message.payload[i]=buffer[i];
-    }
-    */
-	//char* buffer="Ein langer Text erfordert bei der übertragung über ein Funkmedium eine Aufteilung in mehrere Packete, da die Nachrichtenlänge sehr begrenzt ist. Nichts desto trotz wollen wir eine große Nachricht auf der Ebene höhere Protokolle versenden, ohne ums um Details kümmern zu müssen. Es ist daher naheliegend, sie automatisch aufteilen und wieder zusammensetzen zu lassen.";
-
-
-
-	//armarow::MAC::DeviceAddress sender = 25;
-	//armarow::MAC::DeviceAddress receiver = 38;
-
-	//size_t buffersize = 373; //13 //sizeof(buffer);
+	messageobject.size=sizeof(messagecontent);
 
 
     sei();                              // enable interrupts
@@ -112,12 +94,13 @@ int main() {
         << PROGMEMSTRING("Starting bubbler (repeated send of the same message)!")
         << ::logging::log::endl << ::logging::log::endl;
 
-    uint32_t message_counter=0x34343434;
+    //uint8_t message_counter=0;
 
     //init();                             // initialize famouso
     do {
-	++message_counter;
+	//messageobject.header.sequencenumber=message_counter++;
 
+	/*
 	struct mesg{
 			uint32_t counter;
 			char message[sizeof(messagecontent)] ;
@@ -127,35 +110,14 @@ int main() {
 	message.counter=message_counter;
 	for(unsigned int i=0;i<sizeof(messagecontent);i++)
    		message.message[i]=messagecontent[i];
-
+ 
 	 for(unsigned int i=0;i<sizeof(message);i++)
 	    messageobject.payload[i]=((char*)&message)[i];
-
+        
 
 	messageobject.size=sizeof(message);
+       */
 
-
-	//char* buffer = "Hallo du da!";
-
-        //armarow::MAC::MAC_Message mac_msg(armarow::MAC::DATA,sender,receiver,buffer,buffersize);
-  
-	//mac_msg.print();
-	//mac_msg.hexdump();
-		/*
- 	    ::logging::log::emit()
-            << PROGMEMSTRING("Size of Physical Layer Message ") << (int32_t)mac_msg.getPhysical_Layer_Message()->size
-            <<::logging::log::endl << ::logging::log::endl;
-		*/
-                            // duty cycle
-        //delay_ms(5000);
-        //rc.setStateTRX(armarow::PHY::TX_ON);
-        //rc.send(message);
-	//rc.send(*mac_msg.getPhysical_Layer_Message());
-
-
-	
-
-	//uint32_t number_of_bytes_send=0;
 
 	if(mac.send(messageobject)<0){
 
@@ -165,16 +127,7 @@ int main() {
 
 	}
 
-	//number_of_bytes_send = mac.send(buffer,buffersize);
 
-	 //::logging::log::emit()
-         //   << PROGMEMSTRING("Message transmitted. Number of transmitted bytes: ") << number_of_bytes_send
-         //   <<::logging::log::endl << ::logging::log::endl;
-
-        /*::logging::log::emit()
-            << PROGMEMSTRING("Sending message ") << (int32_t)cnt++
-            << ::logging::log::endl;
-	*/
     } while (true);
 }
 

@@ -5,15 +5,8 @@
 #define __MAC_MESSAGE__
 
 
-/* === amarow includes ============================================================= */
-//#include "platform-cfg.h"               // platform dependent software config
 
-//#include "logConf.h"
-
-
-//#define DeviceAddress uint32_t
-
-
+//TODO: REPLACE 101 with the a value directly coming from the physical layer
 #define MAX_NUMBER_OF_DATABYTES (101-sizeof(uint8_t)-sizeof(MAC_Header))
 
 
@@ -40,41 +33,71 @@ namespace armarow{
 
 namespace MAC{
 
-//typedef uint32_t DeviceAddress; 
-typedef uint8_t DeviceAddress; 
+
+typedef uint16_t DeviceAddress; 
+typedef uint16_t PANAddress; 
 
 
 
-//typedef rc_t::platform::config::mob_t  platform::config::mob_t;
 
-//typedef armarow::PHY::rc_t::platform::config::mob_t platform::config::mob_t
-//typedef platform::config::mob_t mob_t;
+uint8_t get_global_sequence_number(){
 
-//typedef MAC_Message platform::config::mob_t;
+        static uint8_t global_sequencenumber=0; //will overflow all 256 MAC Frames
+
+	return global_sequencenumber++;
+
+}
 
 void send(char* buffer,unsigned int buffersize);
 
 
-enum MessageType{RTS,CTS,DATA,ACK};
+enum MessageType{RTS=256,CTS=257,DATA=258,ACK=259}; //we have the compiler option short enums enabled, thats we we only get 1 byte size instead of 2 byte -> but the IEEE standard wants it to be 16 Bit, so we enter values that doesn't fit into one byte, so that the compiler have to keep 16 bit values 
 
 
 struct MAC_Header{
 
-	DeviceAddress send_adress;
-	DeviceAddress receive_adress;
-	MessageType messagetype;
+	MessageType messagetype;   //16 Bit
+	uint8_t sequencenumber;    //8 Bit
+	PANAddress dest_pan;       //16 Bit
+	DeviceAddress dest_adress; //16 Bit
+	PANAddress source_pan;     //16 Bit
+	DeviceAddress source_adress; //16 Bit
 
 	MAC_Header(){
 
 	}
 
-	MAC_Header(MessageType a_messagetype, DeviceAddress a_send_adress, DeviceAddress a_receive_adress ){
+	MAC_Header(MessageType a_messagetype, DeviceAddress a_source_adress, DeviceAddress a_dest_adress){
 
-		send_adress=a_send_adress;
-		receive_adress=a_receive_adress;
+		source_adress=a_source_adress;
+		dest_adress=a_dest_adress;
 		messagetype=a_messagetype;
 
+		sequencenumber=get_global_sequence_number();
+
+		//we doesn't support this yet, so we just set this part of the header null
+		dest_pan=0; 
+		source_pan=0;
+
 	}
+
+
+
+	void printFrameFormat(){
+
+	::logging::log::emit() << "SIZE OF MAC_HEADER:" << sizeof(MAC_Header) << ::logging::log::endl;
+	::logging::log::emit() << "SIZE OF message_type: " << sizeof(messagetype) << ::logging::log::endl << ::logging::log::endl;
+	::logging::log::emit() << "SIZE OF sequencenumber: " << sizeof(sequencenumber) << ::logging::log::endl << ::logging::log::endl;
+	::logging::log::emit() << "SIZE OF dest_pan: " << sizeof(dest_pan) << ::logging::log::endl;
+	::logging::log::emit() << "SIZE OF dest_adress: " << sizeof(dest_adress) << ::logging::log::endl;
+	::logging::log::emit() << "SIZE OF source_pan: " << sizeof(source_pan) << ::logging::log::endl;
+	::logging::log::emit() << "SIZE OF source_adress: " <<  sizeof(source_adress) << ::logging::log::endl;
+
+
+		
+
+	}
+
 
 	explicit MAC_Header(platform::config::mob_t physical_layer_message){
 	
@@ -86,60 +109,6 @@ struct MAC_Header{
 
 } __attribute__((packed));
 
-
-/*
-struct MAC_Payload{
-
-
-	char data[MAX_NUMBER_OF_DATABYTES]; 
-
-	explicit MAC_Payload(){
-
-	}
-
-	explicit MAC_Payload(char* pointer_to_buffer, uint8_t size_of_databuffer){
-
-		setPayloadNULL();
-
-		if(MAX_NUMBER_OF_DATABYTES<size_of_databuffer){
-
-			::logging::log::emit() << "ERROR: MAC_Payload: number of bytes in databuffer does not fit in MAC_Payload! -> decrease size of databuffer or transmit multiple MAC_Messages!" << ::logging::log::endl;
-			return;
-
-		}
-
-		//payloadsize=size_of_databuffer;
-
-		for(int i=0;i<size_of_databuffer;i++){
-
-			data[i]=pointer_to_buffer[i];
-
-		}
-
-
-	}
-
-
-	explicit MAC_Payload(platform::config::mob_t& physical_layer_message) {
-
-		//init payload
-
-
-	}
-
-
-	void setPayloadNULL(){
-
-		for(unsigned int i=0;i<MAX_NUMBER_OF_DATABYTES;i++){
-
-			data[i]='\0'; //set memory to zero
-			//::logging::log::emit() << i << ::logging::log::endl;
-		}
-
-	}
-
-} __attribute__((packed));
-*/
 
 
 struct MAC_Message{
@@ -153,14 +122,14 @@ struct MAC_Message{
   //this constructor have to be used with the palcement new operator, hence it may not called directly
   private:
 
-	explicit MAC_Message(platform::config::mob_t& physical_layer_message){
+	explicit MAC_Message(platform::config::mob_t& physical_layer_message, bool& decoding_was_successful){
 
 		//init header	
-		if(physical_layer_message.size<sizeof(header)-sizeof(uint8_t)){
+		if(physical_layer_message.size<sizeof(header)){
 
 			::logging::log::emit() << "ERROR: MAC_Message constructor: physical Message to short, to contain a MAC_Header!" << ::logging::log::endl;
-			::logging::log::emit() << "Minimal Size: " << sizeof(header)-sizeof(uint8_t) << " size of current MAC_Frame: " << physical_layer_message.size << ::logging::log::endl;
-
+			::logging::log::emit() << "Minimal Size: " << sizeof(header) << " size of current MAC_Frame: " << physical_layer_message.size << ::logging::log::endl;
+			decoding_was_successful=false;
 
 			::logging::log::emit() << ::logging::log::endl;
 
@@ -168,11 +137,19 @@ struct MAC_Message{
 	
 			::logging::log::emit() << ::logging::log::endl << ::logging::log::endl << ::logging::log::endl;
 
+			return;
+
 		}
 
 		//set the correct size value for this layer (size refers always only to the payload, the Headerlength is not included. Since the MAC_Header is part of the Payload of the physical Message, its length has to be subtracted from the size value of the physical message, so that value specifies now the Number of Bytes in the MAC_Payload)
 		size = physical_layer_message.size - sizeof(MAC_Header);
 
+
+
+		if(decoding_was_successful) decoding_was_successful = isValid();
+
+
+		/*
 		if(header.messagetype==RTS){
 
 			::logging::log::emit() << "RTS Message" << ::logging::log::endl;
@@ -191,23 +168,26 @@ struct MAC_Message{
 
 		}else{
 			::logging::log::emit() << "FATAL ERROR: failed decoding MAC Message" << ::logging::log::endl;
+			decoding_was_successful=false;
 		}
 
-	
+	*/
 
 	}
 
 
 	public:
 
+
+
 	explicit MAC_Message(){
 
-		DeviceAddress send_adress=25;
-		DeviceAddress receive_adress=38;
+		DeviceAddress source_adress=25;
+		DeviceAddress dest_adress=38;
 
-		//MAC_Message(DATA, send_adress, receive_adress, (char*) 0, 0);
+		//MAC_Message(DATA, source_adress, dest_adress, (char*) 0, 0);
 
-		new (&header) MAC_Header( DATA, send_adress, receive_adress);
+		new (&header) MAC_Header( DATA, source_adress, dest_adress);
 		setPayloadNULL();
 		size=0;
 
@@ -215,7 +195,7 @@ struct MAC_Message{
 
 
 
-	explicit MAC_Message(MessageType msgtyp, DeviceAddress send_adress, DeviceAddress receive_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer){
+	explicit MAC_Message(MessageType msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer){
 
 		if(size_of_databuffer>MAX_NUMBER_OF_DATABYTES){
 
@@ -224,7 +204,7 @@ struct MAC_Message{
 
 		}
 
-		new (&header) MAC_Header( msgtyp, send_adress, receive_adress);
+		new (&header) MAC_Header( msgtyp, source_adress, dest_adress);
 		//new (&payload) MAC_Payload(pointer_to_databuffer, size_of_databuffer);
 
 		setPayloadNULL();
@@ -264,13 +244,27 @@ struct MAC_Message{
 
 	void print(){
 
+	/*
 	::logging::log::emit() << "MAC_HEADER:" << ::logging::log::endl;
-	::logging::log::emit() << "sender_adress: " <<  (int) header.send_adress << ::logging::log::endl;
-	::logging::log::emit() << "receiver_adress: " << (int) header.receive_adress << ::logging::log::endl;
+	::logging::log::emit() << "sender_adress: " <<  (int) header.source_adress << ::logging::log::endl;
+	::logging::log::emit() << "receiver_adress: " << (int) header.dest_adress << ::logging::log::endl;
 	::logging::log::emit() << "message_type: " << (int) header.messagetype << ::logging::log::endl;
 
 	::logging::log::emit() << "MAC_PAYLOAD:" << ::logging::log::endl;
 	::logging::log::emit() << "size of Payload: " << (int) size << ::logging::log::endl;
+	*/
+
+
+	::logging::log::emit() << "MAC_HEADER:" << ::logging::log::endl;
+	::logging::log::emit() << "message_type: " << (int) header.messagetype << ::logging::log::endl << ::logging::log::endl;
+	::logging::log::emit() << "sequencenumber: " << (int) header.sequencenumber << ::logging::log::endl << ::logging::log::endl;
+	::logging::log::emit() << "dest_pan: " << (int) header.dest_pan << ::logging::log::endl;
+	::logging::log::emit() << "dest_adress: " << (int) header.dest_adress << ::logging::log::endl;
+	::logging::log::emit() << "source_pan: " << (int) header.source_pan << ::logging::log::endl;
+	::logging::log::emit() << "source_adress: " <<  (int) header.source_adress << ::logging::log::endl;
+
+
+
 
 		if (size > 0){
 			::logging::log::emit() << "content of Payload: ";
@@ -339,6 +333,50 @@ struct MAC_Message{
 
 
 
+
+
+	bool isValid(){
+
+		::logging::log::emit() << "Validate MAC Frame..." << ::logging::log::endl;
+
+		if(size>MAX_NUMBER_OF_DATABYTES){
+
+			::logging::log::emit() << "Size of Payload to large! MAX Value: " << MAX_NUMBER_OF_DATABYTES << " Value of Frame: " << (int) size << ::logging::log::endl;
+			return false;
+
+		}
+
+		if(header.messagetype==RTS){
+
+			::logging::log::emit() << "RTS Message" << ::logging::log::endl;
+
+		}else if(header.messagetype==CTS){
+
+			::logging::log::emit() << "CTS Message" << ::logging::log::endl;
+
+		}else if(header.messagetype==DATA){
+
+			::logging::log::emit() << "DATA Message" << ::logging::log::endl;
+
+		}else if(header.messagetype==ACK){
+
+			::logging::log::emit() << "ACK Message" << ::logging::log::endl;
+
+		}else{
+			::logging::log::emit() << "FATAL ERROR: failed decoding MAC Message" << ::logging::log::endl;
+			return false;
+		}
+
+		::logging::log::emit() << "Success..." << ::logging::log::endl;
+		return true;
+	}
+
+
+
+
+
+
+
 	platform::config::mob_t* getPhysical_Layer_Message(){
 		size += sizeof(MAC_Header); //the size value now have to correspond to the payload of the physical layer Message, and the the MAC_Header of the MAC_Message is part of that payload 
 		return (platform::config::mob_t*) this;
@@ -346,8 +384,15 @@ struct MAC_Message{
 
 	static MAC_Message* create_MAC_Message_from_Physical_Message(platform::config::mob_t& physical_layer_message){
 
-		return (MAC_Message*) new(&physical_layer_message) MAC_Message(physical_layer_message);
+		bool decoding_was_successful=true;
 
+		MAC_Message* tmp = (MAC_Message*) new(&physical_layer_message) MAC_Message(physical_layer_message,decoding_was_successful);
+
+		if(decoding_was_successful){
+			return tmp;
+		}else{
+			return (MAC_Message*) 0;
+		}
 
 	}
 
@@ -359,40 +404,24 @@ struct MAC_Message{
 
 void send_test(char* buffer,unsigned int buffersize){
 
-//string received_data;
-
-//int size=buffersize;
 int offset=0;
 
 while(buffersize>0){
-
-
-	//int counterlimit=min(buffersize,MAX_NUMBER_OF_DATABYTES);
 
 	int counterlimit;
 	if(buffersize<MAX_NUMBER_OF_DATABYTES) counterlimit=buffersize; else counterlimit=MAX_NUMBER_OF_DATABYTES;
 
 
-	//for(int i=0;i<counterlimit;i++){
 
 		MAC_Message mac_message1(DATA,25,38,&buffer[offset],counterlimit);
 		::logging::log::emit() << ::logging::log::endl << ::logging::log::endl << "Sending MAC_Message... " << ::logging::log::endl;
 		mac_message1.print();
-		
 
-		//string s(mac_message1.payload.databuffer);
-		//received_data += s;
-		
-
-	//}
 
 	offset += counterlimit;
 	buffersize -= MAX_NUMBER_OF_DATABYTES;
 
 }
-
-	//::logging::log::emit() << received_data << ::logging::log::endl;
-
 
 
 

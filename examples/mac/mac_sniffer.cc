@@ -136,8 +136,10 @@ int main() {
 
 	*/
 
+	messageobject.header.printFrameFormat();
+
 	if(mac.receive(messageobject)!=0){
-		
+		/*
 		struct mesg{
 			uint32_t counter;
 			char message[];
@@ -146,6 +148,12 @@ int main() {
 		::logging::log::emit()
         	<< PROGMEMSTRING("[Content:] ") << ((mesg*)&messageobject.payload)->message
 		<< PROGMEMSTRING("Message Number: ") << ((mesg*)&messageobject.payload)->counter
+        	<< ::logging::log::endl << ::logging::log::endl;
+		*/
+		
+		::logging::log::emit()
+        	<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
+		<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
         	<< ::logging::log::endl << ::logging::log::endl;
 
 	}else{

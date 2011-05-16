@@ -75,7 +75,7 @@ namespace armarow{
 
 
 		typedef void* AttributType;
-		typedef uint8_t DeviceAddress; 
+		typedef uint16_t DeviceAddress; 
 		
 
 
@@ -308,9 +308,9 @@ namespace armarow{
 
 				int send(MAC_Message mac_message){
 
-				
+				        mac_message.header.sequencenumber=get_global_sequence_number();
 
-					//random waiting time
+					//random waiting time (from 0 to 100 ms) -> should be adjusted for real usage
 					int randomnumber = rand();
 					uint32_t waitingtime = ( ((uint32_t)randomnumber*maximal_waiting_time_in_milliseconds) / (0x8000)); //0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
 
@@ -395,7 +395,10 @@ namespace armarow{
 					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) return 0;
 
 					mac_message = *mac_msg;
-					if(mac_message.header.messagetype!=DATA) mac_message.print(); //just for debug purposes
+					if(mac_message.header.messagetype!=DATA) {
+						mac_message.print(); //just for debug purposes
+						return 0;            //the application is only interested in application data, special packages have to be filtered out
+					}
 
 					return mac_msg->size;
 				}
