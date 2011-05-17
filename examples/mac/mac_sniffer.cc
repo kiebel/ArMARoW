@@ -59,68 +59,77 @@ return buffer;
 #include "mac_message.h"
 */
 
-#include "mac.h"
+//#include "mac.h"
+#include "mac_csma_ca.h"
+
 
 /* === globals ============================================================== */
 platform::config::mob_t message = {0,{0}};
 //platform::config::rc_t  rc;             // radio controller
-armarow::MAC::MAC_Base mac;
+
+//armarow::MAC::MAC_Base mac;
+armarow::MAC::MAC_CSMA_CA mac;
+armarow::MAC::mob_t messageobject;
+
 uint8_t channel = 11;                   // channel number
 /* === functions ============================================================ */
 /*! \brief  Callback triggered by an interrupt of the radio controller.
  *  \todo   Add Information for LQI and RSSI values.
  */
 void callback_recv() {
-    //rc.receive(message);
-    ::logging::log::emit()
-        << PROGMEMSTRING("[CHANNEL: ") << (int32_t)channel
-        << PROGMEMSTRING(", [DATA: [LENGTH: ") << (int32_t)message.size
-        << PROGMEMSTRING("], [CONTENT: \"");
 
-/*
-    for (uint8_t index = 0; index < message.size; index++) {
-        char aChar = (char)message.payload[index];
-        //if ((aChar >= '!') && (aChar >= '~')) ::logging::log::emit() << aChar;
-	::logging::log::emit() << aChar;
-    }
-*/
-    ::logging::log::emit()
-        << PROGMEMSTRING("\"]]]")
-        << ::logging::log::endl;
+ 	if(mac.receive(messageobject)!=0){
+		/*
+		struct mesg{
+			uint32_t counter;
+			char message[];
+		};
+		
+		::logging::log::emit()
+        	<< PROGMEMSTRING("[Content:] ") << ((mesg*)&messageobject.payload)->message
+		<< PROGMEMSTRING("Message Number: ") << ((mesg*)&messageobject.payload)->counter
+        	<< ::logging::log::endl << ::logging::log::endl;
+		*/
+		
+		::logging::log::emit()
+        	<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
+		<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
+        	<< ::logging::log::endl << ::logging::log::endl;
 
-//	armarow::MAC::MAC_Message mac_msg(message);
+	}else{
 
-	armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
+		::logging::log::emit()
+        	<< PROGMEMSTRING("Failed receiving message!") 
+        	<< ::logging::log::endl << ::logging::log::endl;
 
-	mac_msg->print();
-	//mac_msg->hexdump();
-
-	//::logging::log::emit() << "msg: " << (void*)mac_msg << " mac_header: " << (void*)&mac_msg->header << " mac_payload data: " << (void*)&mac_msg->payload.data << ::logging::log::endl;
+	}
 
 }
 /*! \brief  Initializes the physical layer.*/
-void init() {
-    //rc.init();
-    //rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-    //rc.setStateTRX(armarow::PHY::RX_ON);
-    //rc.onReceive.bind<callback_recv>();
+void test_asynchron_receive() {
+
+    mac.onMessageReceiveDelegate.bind<callback_recv>();
+    while(1);
 }
 /* === main ================================================================= */
 int main() {
 
-    armarow::MAC::mob_t messageobject;
+    
 
     sei();                              // enable interrupts
     ::logging::log::emit()
         << PROGMEMSTRING("Starting sniffer!")
         << ::logging::log::endl << ::logging::log::endl;
 
-    init();                             // initialize famouso
+    //test_asynchron_receive();                            
 
-    //size_t buffersize=sizeof(platform::config::mob_t);
-    //char buffer[sizeof(platform::config::mob_t)];
-    //char buffer[10];
-	
+   //sychron receive test
+   
+
+
+
+
+
     do {                                // duty cycle
         //delay_ms(1000);
     //::logging::log::emit()
@@ -136,7 +145,7 @@ int main() {
 
 	*/
 
-	messageobject.header.printFrameFormat();
+	//messageobject.header.printFrameFormat();
 
 	if(mac.receive(messageobject)!=0){
 		/*

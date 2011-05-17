@@ -7,7 +7,11 @@
 
 
 //TODO: REPLACE 101 with the a value directly coming from the physical layer
-#define MAX_NUMBER_OF_DATABYTES (101-sizeof(uint8_t)-sizeof(MAC_Header))
+//#define MAX_NUMBER_OF_DATABYTES (101-sizeof(uint8_t)-sizeof(MAC_Header))
+
+//armarow::PHY::aMaxPHYPacketSize is the brutto payload. Since we can activate CRC, we could get additional overhead, that is considered in rc_t::info::payload
+//rc_t::info::payload = available payload considering frame size and overhead
+#define MAX_NUMBER_OF_DATABYTES (platform::config::rc_t::info::payload - sizeof(MAC_Header))
 
 
 /*from armarow start*/ 
@@ -37,6 +41,27 @@ namespace MAC{
 typedef uint16_t DeviceAddress; 
 typedef uint16_t PANAddress; 
 
+
+/*see IEEE 802.15.4 page 112 for more details*/
+
+
+enum IEEE_frametype{Beacon,Data,Acknowledgment,MAC_command};
+
+struct IEEE_Frame_Control_Field{
+
+   //Bits: 0–2 3 4 5 6 7–9 10–11 12–13 14–15
+
+   unsigned int frametype : 3; //Bits: 0–2
+   unsigned int securityenabled : 1; //Bit 3
+   unsigned int framepending : 1; //Bit 4
+   unsigned int ackrequest : 1; //Bit 5
+   unsigned int intraPAN : 1; //Bit 6
+   unsigned int reserved : 2; //Bits 7-9
+   unsigned int destaddressingmode : 2; //Bits 10-11 
+   unsigned int reserved2 : 2; //Bits 12-13
+   unsigned int sourceaddressingmode : 2; //Bits 14-15
+
+} __attribute__((packed));
 
 
 
@@ -244,16 +269,6 @@ struct MAC_Message{
 
 	void print(){
 
-	/*
-	::logging::log::emit() << "MAC_HEADER:" << ::logging::log::endl;
-	::logging::log::emit() << "sender_adress: " <<  (int) header.source_adress << ::logging::log::endl;
-	::logging::log::emit() << "receiver_adress: " << (int) header.dest_adress << ::logging::log::endl;
-	::logging::log::emit() << "message_type: " << (int) header.messagetype << ::logging::log::endl;
-
-	::logging::log::emit() << "MAC_PAYLOAD:" << ::logging::log::endl;
-	::logging::log::emit() << "size of Payload: " << (int) size << ::logging::log::endl;
-	*/
-
 
 	::logging::log::emit() << "MAC_HEADER:" << ::logging::log::endl;
 	::logging::log::emit() << "message_type: " << (int) header.messagetype << ::logging::log::endl << ::logging::log::endl;
@@ -262,8 +277,6 @@ struct MAC_Message{
 	::logging::log::emit() << "dest_adress: " << (int) header.dest_adress << ::logging::log::endl;
 	::logging::log::emit() << "source_pan: " << (int) header.source_pan << ::logging::log::endl;
 	::logging::log::emit() << "source_adress: " <<  (int) header.source_adress << ::logging::log::endl;
-
-
 
 
 		if (size > 0){

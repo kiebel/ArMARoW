@@ -16,6 +16,7 @@
 
 
 #include "avr-halib/share/delay.h"      // delays and timings
+#include "avr-halib/share/delegate.h"   //Delegator for user defined interrupt service routines
 
 #include "armarow/armarow.h"            // main ArMARoW include
 #include "armarow/debug.h"              // ArMARoW logging and debugging
@@ -107,69 +108,6 @@ namespace armarow{
 				//TODO: put real message sizes here
 				//enum MessageSize{RTS_SIZE=14,CTS_SIZE=14,DATA_SIZE=126,ACK_SIZE=14};
 
-				void sendControlMessage(MessageType msgtype, DeviceAddress receiver){
-
-
-					/*
-					struct MAC_Message* msg = (struct MAC_Message*) message.payload;
-
-					if(msgtype==RTS){
-
-						message.size=RTS_SIZE;
-						msg->messagetyp=RTS; //RTS
-
-						msg->messagetype.rts.sender_mac_adress=mac_adress;
-						msg->messagetype.rts.receiver_mac_adress=receiver;
-
-					}else if(msgtype==CTS){
-
-						message.size=CTS_SIZE;
-						msg->messagetyp=CTS; //RTS
-
-						msg->messagetype.cts.sender_mac_adress=mac_adress;
-						msg->messagetype.cts.receiver_mac_adress=receiver;
-
-					}else if(msgtype==ACK){
-
-						message.size=ACK_SIZE;
-						msg->messagetyp=ACK; //RTS
-
-						msg->messagetype.ack.sender_mac_adress=mac_adress;
-						msg->messagetype.ack.receiver_mac_adress=receiver;
-
-					}
-					*/
-
-					/*
-
-					rc.setStateTRX(armarow::PHY::TX_ON);
-
-					armarow::PHY::State status;
-
-
-					for(int i=0;i<3;i++){
-						if((status=rc.send(message))==armarow::PHY::SUCCESS) break;
-
-					}
-
-					if(armarow::PHY::SUCCESS != status){
-						::logging::log::emit()
-							<< PROGMEMSTRING("tried to send message 3 times and always failed!!!")
-							<< ::logging::log::endl << ::logging::log::endl;
-					}
-
-					rc.setStateTRX(armarow::PHY::SUCCESS);
-
-					*/
-
-				}
-
-				void sendDATA(DeviceAddress receiver,void* buffer,size_t buffersize){
-
-
-				}
-
-
 
 
 				enum mac_attributes{TA,C,S};
@@ -195,7 +133,7 @@ namespace armarow{
 
 
 				/*receiver Thread, if the mac protocol needs an asyncron receive routine*/
-				static void callback_receive_message(){
+				void callback_receive_message(){
 
 
 
@@ -259,7 +197,13 @@ namespace armarow{
 					rc.init();
 					rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
 					rc.setStateTRX(armarow::PHY::RX_ON);
-					rc.onReceive.bind<callback_receive_message>();
+					//rc.onReceive.bind<callback_receive_message>();
+					//rc.onReceive<MAC_Base,&MAC_Base::callback_receive_message>(*this);
+
+					//setDelegateMethod(rc.onReceive,MAC_Base,MAC_Base::callback_receive_message,*this);
+
+//typeof *this
+//clock.registerCallback<typeof *this, &MAC_CSMA_CA::callback_periodic_timer_activation_event>(*this);
 
 					//registerCallback<T, &T::onConversionComplete>(t);
 
@@ -270,7 +214,7 @@ namespace armarow{
 
 					
 					//typeof *this = MAC_Base
-					clock.registerCallback<typeof *this, &MAC_Base::callback_periodic_timer_activation_event>(*this);
+					//clock.registerCallback<typeof *this, &MAC_Base::callback_periodic_timer_activation_event>(*this);
 
 
 					// Set a method as timer event handler
@@ -303,8 +247,6 @@ namespace armarow{
 				void set_MAC_Attribut(mac_attributes attributes,  AttributType value){
 
 				}
-
-
 
 				int send(MAC_Message mac_message){
 

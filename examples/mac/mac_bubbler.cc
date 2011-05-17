@@ -57,12 +57,16 @@ return buffer;
 #include "mac_message.h"
 */
 
-#include "mac.h"
+//#include "mac.h"
+#include "mac_csma_ca.h"
 
 /* === globals ============================================================== */
 platform::config::mob_t message = {10,{'0','1','2','3','4','5','6','7','8','9'}};
 //platform::config::rc_t  rc;             // radio controller
-armarow::MAC::MAC_Base mac;
+
+//armarow::MAC::MAC_Base mac;
+armarow::MAC::MAC_CSMA_CA mac;
+
 uint8_t channel = 11;                   // channel number the sniffer checks
 /* === functions ============================================================ */
 /*! \brief  Initializes the physical layer.*/
