@@ -65,13 +65,7 @@ struct IEEE_Frame_Control_Field{
 
 
 
-uint8_t get_global_sequence_number(){
 
-        static uint8_t global_sequencenumber=0; //will overflow all 256 MAC Frames
-
-	return global_sequencenumber++;
-
-}
 
 void send(char* buffer,unsigned int buffersize);
 
@@ -98,7 +92,7 @@ struct MAC_Header{
 		dest_adress=a_dest_adress;
 		messagetype=a_messagetype;
 
-		sequencenumber=get_global_sequence_number();
+		sequencenumber=0; //get_global_sequence_number();
 
 		//we doesn't support this yet, so we just set this part of the header null
 		dest_pan=0; 
@@ -196,7 +190,7 @@ struct MAC_Message{
 			decoding_was_successful=false;
 		}
 
-	*/
+		*/
 
 	}
 

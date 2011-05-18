@@ -56,7 +56,7 @@ namespace armarow{
 				platform::config::rc_t::mob_t physical_layer_receive_buffer;
 
 				//we don't want to deliver the same message twice, so we need a flag for that
-				bool has_message_ready_for_delivery;
+				volatile bool has_message_ready_for_delivery;
 
 				
 
@@ -298,7 +298,7 @@ namespace armarow{
 					while(has_message_ready_for_delivery==false){
 
 						//if(has_message_ready_for_delivery) 
-						::logging::log::emit() << "has_message_ready_for_delivery=" << (int) has_message_ready_for_delivery << ::logging::log::endl;
+						//::logging::log::emit() << "has_message_ready_for_delivery=" << (int) has_message_ready_for_delivery << ::logging::log::endl;
 
 
 						//delay_ms(1);

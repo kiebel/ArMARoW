@@ -139,6 +139,13 @@ namespace armarow{
 
 				}
 
+				uint8_t get_global_sequence_number(){
+
+        				static uint8_t global_sequencenumber=0; //will overflow all 256 MAC Frames
+
+					return global_sequencenumber++;
+
+				}
 
 				static void onTick()
 				{

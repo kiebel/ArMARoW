@@ -76,6 +76,9 @@ uint8_t channel = 11;                   // channel number
 /*! \brief  Callback triggered by an interrupt of the radio controller.
  *  \todo   Add Information for LQI and RSSI values.
  */
+
+
+//erst notifizieren, und dann receive aufrufen, wo man receive puffer übergibt
 void callback_recv() {
 
  	if(mac.receive(messageobject)!=0){
@@ -121,7 +124,7 @@ int main() {
         << PROGMEMSTRING("Starting sniffer!")
         << ::logging::log::endl << ::logging::log::endl;
 
-    //test_asynchron_receive();                            
+    test_asynchron_receive();                            
 
    //sychron receive test
    
