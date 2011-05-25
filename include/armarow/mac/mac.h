@@ -82,7 +82,7 @@ namespace armarow{
 
 
 		//template <uint8_t channel>
-		class MAC_Base{
+		class MAC_Base : public platform::config::rc_t {
 
 			//T mac_protocoll;
 
@@ -92,7 +92,7 @@ namespace armarow{
 				enum maxwaitingtime{maximal_waiting_time_in_milliseconds=100};
 
 				platform::config::mob_t message; //= {0,{0}};
-				platform::config::rc_t  rc;
+				//platform::config::rc_t  rc;
 				uint8_t channel;                   // channel number the node is sending and receiving data
 				uint16_t nav; //network allocation vector -> Zeitdauer, die das Medium voraussichtlich belegt sein wird
 				// CLOCK 
@@ -201,13 +201,13 @@ namespace armarow{
 
 				int init(){
 					//message={0,{0}};
-					rc.init();
-					rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-					rc.setStateTRX(armarow::PHY::RX_ON);
-					//rc.onReceive.bind<callback_receive_message>();
-					//rc.onReceive<MAC_Base,&MAC_Base::callback_receive_message>(*this);
+					platform::config::rc_t::init();
+					platform::config::rc_t::setAttribute(armarow::PHY::phyCurrentChannel, &channel);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
+					//platform::config::rc_t::onReceive.bind<callback_receive_message>();
+					//platform::config::rc_t::onReceive<MAC_Base,&MAC_Base::callback_receive_message>(*this);
 
-					//setDelegateMethod(rc.onReceive,MAC_Base,MAC_Base::callback_receive_message,*this);
+					//setDelegateMethod(platform::config::rc_t::onReceive,MAC_Base,MAC_Base::callback_receive_message,*this);
 
 //typeof *this
 //clock.registerCallback<typeof *this, &MAC_CSMA_CA::callback_periodic_timer_activation_event>(*this);
@@ -235,7 +235,7 @@ namespace armarow{
 
 				int reset(){
 
-					rc.reset();
+					platform::config::rc_t::reset();
 					init();
 
 					return 0;
@@ -272,9 +272,9 @@ namespace armarow{
 
 
 					//for a Clear Channel assesment we need to change into Receive State
-					rc.setStateTRX(armarow::PHY::RX_ON);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
 
-					armarow::PHY::State status=rc.doCCA();
+					armarow::PHY::State status=platform::config::rc_t::doCCA();
 
 					if(status==armarow::PHY::IDLE){
 
@@ -314,14 +314,14 @@ namespace armarow{
 
 
 					//we want to send (tranceiver on)
-					rc.setStateTRX(armarow::PHY::TX_ON);
+					platform::config::rc_t::setStateTRX(armarow::PHY::TX_ON);
 
-					rc.send(*mac_message.getPhysical_Layer_Message());
+					platform::config::rc_t::send(*mac_message.getPhysical_Layer_Message());
 
 
 				
 
-					//rc.setStateTRX(armarow::PHY::TX_OFF);
+					//platform::config::rc_t::setStateTRX(armarow::PHY::TX_OFF);
 					//::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
 					//<< "End of SEND Methode reached" <<::logging::log::endl;
 					return 0;
@@ -334,17 +334,17 @@ namespace armarow{
 					mac_message.setPayloadNULL();
 
 
-					rc.setStateTRX(armarow::PHY::RX_ON);
-					//rc.receive_blocking(message);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
+					//platform::config::rc_t::receive_blocking(message);
 
-					rc.receive(message);
+					platform::config::rc_t::receive(message);
 
 					armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
 
 					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) return 0;
 
 					mac_message = *mac_msg;
-					if(mac_message.header.messagetype!=DATA) {
+					if(mac_message.header.controlfield.frametype!=DATA) {
 						mac_message.print(); //just for debug purposes
 						return 0;            //the application is only interested in application data, special packages have to be filtered out
 					}
@@ -394,9 +394,9 @@ namespace armarow{
 
 
 					//for a Clear Channel assesment we need to change into Receive State
-					rc.setStateTRX(armarow::PHY::RX_ON);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
 
-					armarow::PHY::State status=rc.doCCA();
+					armarow::PHY::State status=platform::config::rc_t::doCCA();
 
 					if(status==armarow::PHY::IDLE){
 
@@ -427,14 +427,14 @@ namespace armarow{
 
 
 					//we want to send (tranceiver on)
-					rc.setStateTRX(armarow::PHY::TX_ON);
+					platform::config::rc_t::setStateTRX(armarow::PHY::TX_ON);
 
-					rc.send(*mac_message1.getPhysical_Layer_Message());
+					platform::config::rc_t::send(*mac_message1.getPhysical_Layer_Message());
 
 
 /*
 					for(int i=0;i<3;i++){
-						if((status=rc.send(*mac_message1.getPhysical_Layer_Message()))==armarow::PHY::SUCCESS) break;
+						if((status=platform::config::rc_t::send(*mac_message1.getPhysical_Layer_Message()))==armarow::PHY::SUCCESS) break;
 
 					}
 
@@ -454,7 +454,7 @@ namespace armarow{
 
 				}
 
-					//rc.setStateTRX(armarow::PHY::TX_OFF);
+					//platform::config::rc_t::setStateTRX(armarow::PHY::TX_OFF);
 					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
 					<< "End of SEND Methode reached" <<::logging::log::endl;
 					return offset;
@@ -491,8 +491,8 @@ namespace armarow{
 					}
 
 
-					rc.setStateTRX(armarow::PHY::RX_ON);
-					rc.receive_blocking(message);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
+					platform::config::rc_t::receive_blocking(message);
 
 					armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
 

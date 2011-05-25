@@ -61,7 +61,7 @@ uint8_t channel = 11;                   // channel number
 void callback_recv() {
 
  	if(mac.receive(messageobject)!=0){
-		/*
+		
 
 		::logging::log::emit()
         	<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
@@ -93,7 +93,7 @@ int main() {
         << PROGMEMSTRING("Starting sniffer!")
         << ::logging::log::endl << ::logging::log::endl;
 
-    test_asynchron_receive();    //aus bzw. einkommentieren für aynchronen/synchronen test                       
+    //test_asynchron_receive();    //aus bzw. einkommentieren für aynchronen/synchronen test                       
 
    //sychron receive test
    
@@ -104,7 +104,7 @@ int main() {
 
     do {                                // duty cycle
 
-	//messageobject.header.printFrameFormat();
+	messageobject.header.printFrameFormat();
 
 	if(mac.receive(messageobject)!=0){
 

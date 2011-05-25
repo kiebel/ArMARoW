@@ -56,7 +56,7 @@ namespace armarow{
 				platform::config::rc_t::mob_t physical_layer_receive_buffer;
 
 				//we don't want to deliver the same message twice, so we need a flag for that
-				volatile bool has_message_ready_for_delivery;
+				volatile bool has_message_ready_for_delivery; //and we declare it as volatile, so that the compiler doesn't do anything fishy to it (optimization)
 
 				
 
@@ -85,7 +85,7 @@ namespace armarow{
 				void callback_receive_message(){
 
 
-					rc.receive(physical_layer_receive_buffer);
+					platform::config::rc_t::receive(physical_layer_receive_buffer);
 
 					has_message_ready_for_delivery=true;
 				
@@ -102,7 +102,7 @@ namespace armarow{
 					}
 
 					send_receive_buffer = *mac_msg;
-					if(send_receive_buffer.header.messagetype!=DATA) {
+					if(send_receive_buffer.header.controlfield.frametype!=DATA) {
 						send_receive_buffer.print(); //just for debug purposes
 						has_message_ready_for_delivery=false;  //the application is only interested in application data, special packages have to be filtered out
 						::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
@@ -155,11 +155,11 @@ namespace armarow{
 
 
 					/*
-					rc.init();
-					rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-					rc.setStateTRX(armarow::PHY::RX_ON);
+					platform::config::rc_t::init();
+					platform::config::rc_t::setAttribute(armarow::PHY::phyCurrentChannel, &channel);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
 					
-					//rc.onReceive.bind<callback_receive_message>();
+					//platform::config::rc_t::onReceive.bind<callback_receive_message>();
 
 					//registerCallback<T, &T::onConversionComplete>(t);
 
@@ -169,7 +169,7 @@ namespace armarow{
 					
 					//typeof *this = MAC_CSMA_CA
 					clock.registerCallback<typeof *this, &MAC_CSMA_CA::callback_periodic_timer_activation_event>(*this);
-					setDelegateMethod(rc.onReceive,MAC_CSMA_CA,MAC_CSMA_CA::callback_receive_message,*this);
+					setDelegateMethod(platform::config::rc_t::onReceive,MAC_CSMA_CA,MAC_CSMA_CA::callback_receive_message,*this);
 
 					has_message_ready_for_delivery=false;
 
@@ -186,7 +186,7 @@ namespace armarow{
 				int reset(){
 
 					//here we need to call the radio controller directly, because a MAC_Base::init() wouldn't consider the extensions from this class
-					rc.reset();
+					platform::config::rc_t::reset();
 					init();
 
 					return 0;
@@ -223,9 +223,9 @@ namespace armarow{
 
 
 					//for a Clear Channel assessment we need to change into Receive State
-					rc.setStateTRX(armarow::PHY::RX_ON);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
 
-					armarow::PHY::State status=rc.doCCA();
+					armarow::PHY::State status=platform::config::rc_t::doCCA();
 
 					if(status==armarow::PHY::IDLE){
 
@@ -265,14 +265,14 @@ namespace armarow{
 
 
 					//we want to send (tranceiver on)
-					rc.setStateTRX(armarow::PHY::TX_ON);
+					platform::config::rc_t::setStateTRX(armarow::PHY::TX_ON);
 
-					rc.send(*mac_message.getPhysical_Layer_Message());
+					platform::config::rc_t::send(*mac_message.getPhysical_Layer_Message());
 
 					//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
-					rc.setStateTRX(armarow::PHY::RX_ON);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
 
-					//rc.setStateTRX(armarow::PHY::TX_OFF);
+					//platform::config::rc_t::setStateTRX(armarow::PHY::TX_OFF);
 					//::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
 					//<< "End of SEND Methode reached" <<::logging::log::endl;
 					return 0;
@@ -290,8 +290,8 @@ namespace armarow{
 					mac_message.setPayloadNULL();
 
 
-					rc.setStateTRX(armarow::PHY::RX_ON);
-					//rc.receive_blocking(message);
+					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
+					//platform::config::rc_t::receive_blocking(message);
 
 
 					//TODO: replace busy wait with something like sleep that wakes up if an interupt occures to avoid energy waste
@@ -311,7 +311,7 @@ namespace armarow{
 					has_message_ready_for_delivery=false;
 
 
-					//rc.receive(message);
+					//platform::config::rc_t::receive(message);
 
 					//armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
 					mac_message = send_receive_buffer;

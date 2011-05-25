@@ -49,6 +49,26 @@ enum IEEE_frametype{Beacon,Data,Acknowledgment,MAC_command};
 
 struct IEEE_Frame_Control_Field{
 
+
+   IEEE_Frame_Control_Field(){
+
+	//TODO: aus Standard "richtige" Werte raussuchen
+
+	frametype = Data;
+        securityenabled = 0; //Bit 3
+        framepending = 0; //Bit 4
+        ackrequest = 0; //Bit 5
+        intraPAN = 0; //Bit 6
+        reserved = 0; //Bits 7-9
+        destaddressingmode = 0; //Bits 10-11 
+        reserved2 = 0; //Bits 12-13
+        sourceaddressingmode = 0; //Bits 14-15
+
+
+   }
+
+
+
    //Bits: 0–2 3 4 5 6 7–9 10–11 12–13 14–15
 
    unsigned int frametype : 3; //Bits: 0–2
@@ -69,13 +89,14 @@ struct IEEE_Frame_Control_Field{
 
 void send(char* buffer,unsigned int buffersize);
 
-
-enum MessageType{RTS=256,CTS=257,DATA=258,ACK=259}; //we have the compiler option short enums enabled, thats we we only get 1 byte size instead of 2 byte -> but the IEEE standard wants it to be 16 Bit, so we enter values that doesn't fit into one byte, so that the compiler have to keep 16 bit values 
+enum MessageType{RTS,CTS,DATA,ACK}; 
+//enum MessageType{RTS=256,CTS=257,DATA=258,ACK=259}; //we have the compiler option short enums enabled, thats we we only get 1 byte size instead of 2 byte -> but the IEEE standard wants it to be 16 Bit, so we enter values that doesn't fit into one byte, so that the compiler have to keep 16 bit values 
 
 
 struct MAC_Header{
 
-	MessageType messagetype;   //16 Bit
+	//MessageType messagetype;   //16 Bit
+	IEEE_Frame_Control_Field controlfield;  //16 Bit
 	uint8_t sequencenumber;    //8 Bit
 	PANAddress dest_pan;       //16 Bit
 	DeviceAddress dest_adress; //16 Bit
@@ -90,7 +111,9 @@ struct MAC_Header{
 
 		source_adress=a_source_adress;
 		dest_adress=a_dest_adress;
-		messagetype=a_messagetype;
+		//messagetype=a_messagetype;
+
+		controlfield.frametype=a_messagetype;
 
 		sequencenumber=0; //get_global_sequence_number();
 
@@ -105,15 +128,17 @@ struct MAC_Header{
 	void printFrameFormat(){
 
 	::logging::log::emit() << "SIZE OF MAC_HEADER:" << sizeof(MAC_Header) << ::logging::log::endl;
-	::logging::log::emit() << "SIZE OF message_type: " << sizeof(messagetype) << ::logging::log::endl << ::logging::log::endl;
+	//::logging::log::emit() << "SIZE OF message_type: " << sizeof(messagetype) << ::logging::log::endl << ::logging::log::endl;
 	::logging::log::emit() << "SIZE OF sequencenumber: " << sizeof(sequencenumber) << ::logging::log::endl << ::logging::log::endl;
 	::logging::log::emit() << "SIZE OF dest_pan: " << sizeof(dest_pan) << ::logging::log::endl;
 	::logging::log::emit() << "SIZE OF dest_adress: " << sizeof(dest_adress) << ::logging::log::endl;
 	::logging::log::emit() << "SIZE OF source_pan: " << sizeof(source_pan) << ::logging::log::endl;
 	::logging::log::emit() << "SIZE OF source_adress: " <<  sizeof(source_adress) << ::logging::log::endl;
 
-
+	::logging::log::emit() << "===== DEBUG: size of message components =====" << ::logging::log::endl;
 		
+	::logging::log::emit() << "SIZE OF IEEE_Frame_Control_Field: " <<  sizeof(IEEE_Frame_Control_Field) << ::logging::log::endl;
+
 
 	}
 
@@ -265,7 +290,7 @@ struct MAC_Message{
 
 
 	::logging::log::emit() << "MAC_HEADER:" << ::logging::log::endl;
-	::logging::log::emit() << "message_type: " << (int) header.messagetype << ::logging::log::endl << ::logging::log::endl;
+	::logging::log::emit() << "message_type: " << (int) header.controlfield.frametype << ::logging::log::endl << ::logging::log::endl;
 	::logging::log::emit() << "sequencenumber: " << (int) header.sequencenumber << ::logging::log::endl << ::logging::log::endl;
 	::logging::log::emit() << "dest_pan: " << (int) header.dest_pan << ::logging::log::endl;
 	::logging::log::emit() << "dest_adress: " << (int) header.dest_adress << ::logging::log::endl;
@@ -353,19 +378,19 @@ struct MAC_Message{
 
 		}
 
-		if(header.messagetype==RTS){
+		if(header.controlfield.frametype==RTS){
 
 			::logging::log::emit() << "RTS Message" << ::logging::log::endl;
 
-		}else if(header.messagetype==CTS){
+		}else if(header.controlfield.frametype==CTS){
 
 			::logging::log::emit() << "CTS Message" << ::logging::log::endl;
 
-		}else if(header.messagetype==DATA){
+		}else if(header.controlfield.frametype==DATA){
 
 			::logging::log::emit() << "DATA Message" << ::logging::log::endl;
 
-		}else if(header.messagetype==ACK){
+		}else if(header.controlfield.frametype==ACK){
 
 			::logging::log::emit() << "ACK Message" << ::logging::log::endl;
 
