@@ -1,0 +1,8 @@
+#!/bin/bash
+
+
+
+avrdude -P /dev/ttyUSB$1 -p atmega1281 -c avr911 -U f:w:$2.hex
+
+
+exit 0
