@@ -45,12 +45,12 @@ typedef uint16_t PANAddress;
 /*see IEEE 802.15.4 page 112 for more details*/
 
 
-enum IEEE_frametype{Beacon,Data,Acknowledgment,MAC_command};
+enum IEEE_Frametype{Beacon,Data,Acknowledgment,MAC_command};
 
 struct IEEE_Frame_Control_Field{
 
 
-   IEEE_Frame_Control_Field(){
+   void init(){
 
 	//TODO: aus Standard "richtige" Werte raussuchen
 
@@ -107,7 +107,7 @@ struct MAC_Header{
 
 	}
 
-	MAC_Header(MessageType a_messagetype, DeviceAddress a_source_adress, DeviceAddress a_dest_adress){
+	MAC_Header(IEEE_Frametype a_messagetype, DeviceAddress a_source_adress, DeviceAddress a_dest_adress){
 
 		source_adress=a_source_adress;
 		dest_adress=a_dest_adress;
@@ -231,7 +231,7 @@ struct MAC_Message{
 
 		//MAC_Message(DATA, source_adress, dest_adress, (char*) 0, 0);
 
-		new (&header) MAC_Header( DATA, source_adress, dest_adress);
+		new (&header) MAC_Header( Data, source_adress, dest_adress);
 		setPayloadNULL();
 		size=0;
 
@@ -239,7 +239,7 @@ struct MAC_Message{
 
 
 
-	explicit MAC_Message(MessageType msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer){
+	explicit MAC_Message(IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer){
 
 		if(size_of_databuffer>MAX_NUMBER_OF_DATABYTES){
 
@@ -377,22 +377,23 @@ struct MAC_Message{
 			return false;
 
 		}
+                //valid values are: Beacon,Data,Acknowledgment,MAC_command
 
-		if(header.controlfield.frametype==RTS){
+		if(header.controlfield.frametype==Beacon){
 
-			::logging::log::emit() << "RTS Message" << ::logging::log::endl;
+			::logging::log::emit() << "Beacon Message" << ::logging::log::endl;
 
-		}else if(header.controlfield.frametype==CTS){
+		}else if(header.controlfield.frametype==MAC_command){
 
-			::logging::log::emit() << "CTS Message" << ::logging::log::endl;
+			::logging::log::emit() << "MAC_command Message" << ::logging::log::endl;
 
-		}else if(header.controlfield.frametype==DATA){
+		}else if(header.controlfield.frametype==Data){
 
-			::logging::log::emit() << "DATA Message" << ::logging::log::endl;
+			::logging::log::emit() << "Data Message" << ::logging::log::endl;
 
-		}else if(header.controlfield.frametype==ACK){
+		}else if(header.controlfield.frametype==Acknowledgment){
 
-			::logging::log::emit() << "ACK Message" << ::logging::log::endl;
+			::logging::log::emit() << "Acknowledgment Message" << ::logging::log::endl;
 
 		}else{
 			::logging::log::emit() << "FATAL ERROR: failed decoding MAC Message" << ::logging::log::endl;
@@ -445,7 +446,7 @@ while(buffersize>0){
 
 
 
-		MAC_Message mac_message1(DATA,25,38,&buffer[offset],counterlimit);
+		MAC_Message mac_message1(Data,25,38,&buffer[offset],counterlimit);
 		::logging::log::emit() << ::logging::log::endl << ::logging::log::endl << "Sending MAC_Message... " << ::logging::log::endl;
 		mac_message1.print();
 

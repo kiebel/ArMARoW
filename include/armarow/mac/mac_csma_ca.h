@@ -32,6 +32,20 @@ namespace armarow{
 		
 
 
+		struct MAC_Configuration{
+
+			enum {
+
+				channel=11,
+				mac_adress=28 //Node ID	
+
+			};
+
+		};
+
+
+
+
 
 		//template <uint8_t channel>
 		class MAC_CSMA_CA : public MAC_Base{
@@ -57,9 +71,12 @@ namespace armarow{
 
 				//we don't want to deliver the same message twice, so we need a flag for that
 				volatile bool has_message_ready_for_delivery; //and we declare it as volatile, so that the compiler doesn't do anything fishy to it (optimization)
-
 				
 
+				//bit we need for timer interrupt routine, to decide if there is a message to send (asynchron message delivery)
+				volatile bool has_message_to_send;
+				
+				MAC_Message send_buffer;
 
 				
 
@@ -102,7 +119,7 @@ namespace armarow{
 					}
 
 					send_receive_buffer = *mac_msg;
-					if(send_receive_buffer.header.controlfield.frametype!=DATA) {
+					if(send_receive_buffer.header.controlfield.frametype!=Data) {
 						send_receive_buffer.print(); //just for debug purposes
 						has_message_ready_for_delivery=false;  //the application is only interested in application data, special packages have to be filtered out
 						::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
@@ -120,13 +137,13 @@ namespace armarow{
 
 					
 					//decrement network allocation vector, because we "wait" for nav == 0, if we want to send a message
-					//if(nav>0) nav--;
+					if(nav>0) nav--;   //nav in ms
 
 					/* CLOCK
 					MAC_Clock::Time t;
 					clock.getTime(t);
 					::logging::log::emit() << "Tick: " << t.ticks << ", " << t.microTicks << ::logging::log::endl;
-					*/
+					//*/
 
 
 /*
@@ -139,7 +156,27 @@ namespace armarow{
 					::logging::log::emit() << "es ist eine weitere Sekunde vergangen... Random Number: " << randomnumber << " normalized Random Number: " << ( ((uint32_t)randomnumber*maximal_waiting_time_in_milliseconds) / (0x8000)) << " MAX RANDOM NUMBER: " << RAND_MAX << ::logging::log::endl;				
 */
 
-					led.toggle();
+					clocktick_counter++;
+
+					if(clocktick_counter>=1000) {
+
+						led.toggle();
+						clocktick_counter=0;
+
+					}
+
+					if(has_message_to_send){
+
+
+						//normal CSMA/CA protocol
+
+
+
+
+					}
+						
+
+					//led.toggle();
 
 
 
@@ -172,7 +209,7 @@ namespace armarow{
 					setDelegateMethod(platform::config::rc_t::onReceive,MAC_CSMA_CA,MAC_CSMA_CA::callback_receive_message,*this);
 
 					has_message_ready_for_delivery=false;
-
+					has_message_to_send=true;
 
 					// Set a method as timer event handler
 					//setDelegateMethod(b.timer.onTimerDelegate, Blinker, Blinker::onTimer1, b);

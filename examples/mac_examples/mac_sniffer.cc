@@ -93,7 +93,7 @@ int main() {
         << PROGMEMSTRING("Starting sniffer!")
         << ::logging::log::endl << ::logging::log::endl;
 
-    //test_asynchron_receive();    //aus bzw. einkommentieren für aynchronen/synchronen test                       
+    test_asynchron_receive();    //aus bzw. einkommentieren für aynchronen/synchronen test                       
 
    //sychron receive test
    

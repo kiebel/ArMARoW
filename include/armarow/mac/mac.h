@@ -66,7 +66,7 @@ namespace armarow{
 	struct ClockConfig
 	{
 		typedef uint16_t TickValueType;
-		typedef Frequency<1> TargetFrequency;
+		typedef Frequency<1000> TargetFrequency; //every ms one timer interrupt
 		typedef Frequency<32768> TimerFrequency; //CPUClock
 		typedef local::Timer2 Timer;
 	};
@@ -95,6 +95,10 @@ namespace armarow{
 				//platform::config::rc_t  rc;
 				uint8_t channel;                   // channel number the node is sending and receiving data
 				uint16_t nav; //network allocation vector -> Zeitdauer, die das Medium voraussichtlich belegt sein wird
+
+
+				uint16_t clocktick_counter; 
+
 				// CLOCK 
 				MAC_Clock clock;
 				//const long maximal_waiting_time_in_milliseconds;
@@ -192,8 +196,16 @@ namespace armarow{
 					::logging::log::emit() << "es ist eine weitere Sekunde vergangen... Random Number: " << randomnumber << " normalized Random Number: " << ( ((uint32_t)randomnumber*maximal_waiting_time_in_milliseconds) / (0x8000)) << " MAX RANDOM NUMBER: " << RAND_MAX << ::logging::log::endl;				
 */
 
-					led.toggle();
+					
 
+					clocktick_counter++;
+
+					if(clocktick_counter>=1000) {
+
+						led.toggle();
+						clocktick_counter=0;
+
+					}
 
 
 				}
@@ -218,8 +230,10 @@ namespace armarow{
 
 					//sets the seed value for the pseudo random numbers used for a random waiting time for medium access controll
 					srandom(mac_adress_of_node);
-
+					clocktick_counter=0;
 					
+					nav=0;
+
 					//typeof *this = MAC_Base
 					//clock.registerCallback<typeof *this, &MAC_Base::callback_periodic_timer_activation_event>(*this);
 
@@ -344,7 +358,7 @@ namespace armarow{
 					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) return 0;
 
 					mac_message = *mac_msg;
-					if(mac_message.header.controlfield.frametype!=DATA) {
+					if(mac_message.header.controlfield.frametype!=Data) {
 						mac_message.print(); //just for debug purposes
 						return 0;            //the application is only interested in application data, special packages have to be filtered out
 					}
@@ -382,7 +396,7 @@ namespace armarow{
 
 	//for(int i=0;i<counterlimit;i++){
 					//create new Message object 
-					MAC_Message mac_message1(armarow::MAC::DATA,sender,receiver,&buffer[offset],counterlimit);
+					MAC_Message mac_message1(armarow::MAC::Data,sender,receiver,&buffer[offset],counterlimit);
 
 					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
 					<< "Sending MAC_Message... " << ::logging::log::endl;
