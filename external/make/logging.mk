@@ -1,7 +1,7 @@
 ################################################################################
 ##
-## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-##               2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
+## Copyright (c) 2010 Thomas Kiebel   <kiebel@ivs.cs.uni-magdeburg.de>
+##				 2011 Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
 ## All rights reserved.
 ##
 ##    Redistribution and use in source and binary forms, with or without
@@ -37,23 +37,20 @@
 ## $Id$
 ##
 ################################################################################
--include ../platform/Makefile
-CLEANDIR = $(addprefix clean_,$(ADDITIONAL_DIR))
 
-filtered=$(filter-out %Makefile,$(shell find . -maxdepth 1 -name "*avr*"))
+ifeq ($(LOGGINGDIR),)
+	LOGGINGDIR:=${BASEEXTERNAL}/logging
+	LOGGING_ECHO="Checking out logging framework"
+	LOGGING_FETCH=svn co https://logging-cpp.svn.sourceforge.net/svnroot/logging-cpp ${LOGGINGDIR} -q
+	LOGGING_REMOVE=rm -rf ${LOGGINGDIR} &
+endif
 
-.phony: all clean distclean
+INCLUDES+=${LOGGINGDIR}/include
 
-all: $(LOGLIBDIR)
+EXTERNAL_REMOVES+=${LOGGING_REMOVE}
+EXTERNAL_TARGETS+=${LOGGINGDIR}
 
-$(LOGLIBDIR):
-	@echo Checking out logging framework
-	@svn co https://logging-cpp.svn.sourceforge.net/svnroot/logging-cpp/include $@ -q
 
-$(CLEANDIR): clean_% : %
-	@make -C $< clean
-
-clean: $(CLEANDIR)
-
-distclean:
-	@rm -rf $(LOGLIBDIR) $(ADDITIONAL_DIR)
+${LOGGINGDIR}:
+	@echo ${LOGGING_ECHO}
+	@${LOGGING_FETCH}

@@ -1,7 +1,8 @@
 ################################################################################
 ##
 ## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-##               2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
+##               2010 Thomas Kiebel   <kiebel@ivs.cs.uni-magdeburg.de>
+##               2010 Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
 ## All rights reserved.
 ##
 ##    Redistribution and use in source and binary forms, with or without
@@ -37,18 +38,19 @@
 ## $Id$
 ##
 ################################################################################
-#TODO PLATFORM = default
-################################################################################
-include ../../platform/Makefile
+ARMAROWDIR=../../
 
-CXXFLAGS+= -ggdb3 -Os -UNDEBUG
+PLATFORM = default
 
-filtered=$(filter-out %.cc %.h %.py %Makefile,$(shell find . -maxdepth 1 -type f))
+CXXFLAGS+=-Wall -Os
 
-.phony: all clean
+BIN=./bin
+SRC=.
+BUILD=./build
+INCLUDE=.
 
-all:
-	@echo usage: \"make programm-to-build\"
+.PHONY: default
 
-clean:
-	@rm -rf $(filtered)
+default: help
+
+include ${ARMAROWDIR}/make/example.mk

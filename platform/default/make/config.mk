@@ -38,42 +38,6 @@
 ## $Id$
 ##
 ################################################################################
-RULEECHO = echo "$(notdir $<) -> $@"
 
-TARGETS=$(basename $(wildcard *.cc *.c *.S))
-
-.PHONY: ${TARGETS}
-
-.PRECIOUS: %.elf %.o
-
-${TARGETS}: %: %.elf
-
-# How to compile an ELF file from a C++ file.
-%.elf: %.o
-	@$(RULEECHO) ; \
-	$(LD) $< -o $@ ${CFLAGS} $(LDFLAGS)
-
-# How to compile a C++ file.
-%.o:    %.cc
-	@$(RULEECHO) ; \
-	$(CXX) $(CXXFLAGS) -o $@ -c $<
-
-# How to compile a C file.
-%.o:    %.c
-	@$(RULEECHO) ; \
-	$(CC) $(CFLAGS) -o $@ -c $<
-
-# How to compile a C file.
-%.o:    %.C
-	@$(RULEECHO) ; \
-	$(CC) $(CFLAGS) -o $@ -c $<
-
-# How to compile an assembler file.
-%.o: %.S
-	@$(RULEECHO) ; \
-	$(CC) -c ${ASMFLAGS} $< -o $@
-
-# How to assemble a C++ file.
-%.S:    %.cc
-	@$(RULEECHO) ; \
-	$(CXX) $(CXXFLAGS) -o $@ -S $<
+ARCH=avr
+MCU=atmega128

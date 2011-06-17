@@ -1,8 +1,7 @@
 ################################################################################
 ##
-## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-##               2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
-##               2010 Christoph Steup <christoph.steup@student.ovgu.de>
+## Copyright (c) 2010 Thomas Kiebel   <kiebel@ivs.cs.uni-magdeburg.de>
+##				 2011 Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
 ## All rights reserved.
 ##
 ##    Redistribution and use in source and binary forms, with or without
@@ -38,13 +37,31 @@
 ## $Id$
 ##
 ################################################################################
-# -----------------------------------------------------------------------------
-#                             CONFIGURATION
-# -----------------------------------------------------------------------------
-MCU                ?= at90can128
-CPU_CLOCK          ?= 16000000
-AVRDUDE_PROGRAMMER ?= jtag2
-AVRDUDE_PORT       ?= usb
-# -----------------------------------------------------------------------------
-include $(ARMAROWDIR)/platform/avr.mk
-include $(ARMAROWDIR)/platform/avr-rules.mk
+
+ifeq ($(BOOSTDIR),)
+	BOOSTDIR:=${BASEEXTERNAL}/boost_1_46_1
+	BOOST_ECHO="Installing latest Boost"
+	BOOST_FILE=${BASEEXTERNAL}/boost_1_46_1.tar.bz2
+	BOOST_INSTALL=tar -C ${BASEEXTERNAL} -jxf ${BOOST_FILE}
+	BOOST_REMOVE=rm -rf ${BOOSTDIR} ${BOOST_FILE} &
+	INCLUDES+=${BOOSTDIR}
+else
+	USER_BOOSTDIR:=${BOOSTDIR}
+	BOOSTDIR:=${BASEEXTERNAL}/include/boost
+	BOOST_ECHO="Linking user specified Boost Headers"
+	BOOST_INSTALL=mkdir -p ${BASEEXTERNAL}/include && ln -s ${USER_BOOSTDIR}/boost ${BASEEXTERNAL}/include/
+	BOOST_REMOVE=rm -rf ${BASEEXTERNAL}/include &
+	INCLUDES+=${BASEEXTERNAL}/include
+	
+endif
+
+EXTERNAL_REMOVES+=${BOOST_REMOVE}
+EXTERNAL_TARGETS+=${BOOSTDIR}
+
+${BOOST_FILE}:
+	@echo "Downloading latest boost"
+	@wget http://downloads.sourceforge.net/project/boost/boost/1.46.1/boost_1_46_1.tar.bz2 -O $@
+
+${BOOSTDIR}: | ${BOOST_FILE}
+	@echo ${BOOST_ECHO}
+	@${BOOST_INSTALL}

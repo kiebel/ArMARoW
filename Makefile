@@ -41,33 +41,29 @@
 # -----------------------------------------------------------------------------
 #                              M A K E F I L E
 # -----------------------------------------------------------------------------
-include ./platform/Makefile
-# -----------------------------------------------------------------------------
-# definition of targets
-.PHONY: all clean doc external
+ARMAROWDIR=.
 
-all: $(LIBDIR) external $(ADDITIONAL_BUILDS)
+.PHONY: all doc clean distclean externals
+
+all: externals
+
+include ${ARMAROWDIR}/make/general.mk
+
+externals: | ${EXTERNAL_TARGETS}
 
 doc:
 	@doxygen $(BASEDOC)/doxygen.cfg
 
-$(LIBDIR):
-	@mkdir -p $@
-
--include ./platform/avr-external.mk
-
-external:
-	@make -C $(BASEEXTERNAL)
-
 clean:
 	@echo ========== Cleaning ==========
+	@${MAKE} PLATFORM=default -C ${EXAMPLES}/application clean
+	@${MAKE} PLATFORM=default -C ${EXAMPLES}/experimental clean
+	@${MAKE} PLATFORM=default -C ${EXAMPLES}/unittest clean
+	@${EXTERNAL_CLEANS}
 	@rm -rf $(BASEDOC)/html $(BASEDOC)/latex
-	@make -C $(BASEEXTERNAL) clean
 
-distclean:
-	@echo ========== Cleaning ==========
+distclean: clean
+	@echo ========== Proper Cleaning ==========
 	@find . -name \*~ -exec rm -f {} \;
 	@find . -name "#*#" -exec rm -f {} \;
-	@rm -rf $(BASEDOC)/html $(BASEDOC)/latex
-	@rm -rf $(BASELIB)
-	@make -C $(BASEEXTERNAL) distclean
+	@${EXTERNAL_REMOVES}

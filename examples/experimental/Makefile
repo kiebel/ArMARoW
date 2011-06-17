@@ -1,7 +1,8 @@
 ################################################################################
 ##
-## Copyright (c) 2010-2011 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-##               2010-2011 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
+## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
+##               2010 Thomas Kiebel   <kiebel@ivs.cs.uni-magdeburg.de>
+##               2010 Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
 ## All rights reserved.
 ##
 ##    Redistribution and use in source and binary forms, with or without
@@ -37,25 +38,19 @@
 ## $Id$
 ##
 ################################################################################
-include ../../platform/Makefile
+ARMAROWDIR=../../
 
-BOOST_DIR  ?= /usr/include/boost
-BOOST_LINK  = ./include/boost 
+PLATFORM = default
 
-ADDITIONAL_INCLUDE +=  -I$(ARMAROWDIR)/examples/experimental/include -I/usr/include/boost/compatibility/cpp_c_headers
-LDFLAGS= $(LIB) $(ADDITIONAL_LIBS)
-CXXFLAGS+= -ggdb3 -O0 -UNDEBUG -D__NO_STL__ -DBOOST_NO_STDLIB_CONFIG
+CXXFLAGS+=-Wall -Os
 
-filtered=$(filter-out %.cc %.h %.py %Makefile,$(shell find . -maxdepth 1 -type f))
+BIN=./bin
+SRC=.
+BUILD=./build
+INCLUDE=.
 
-.phony: all boost clean
+.PHONY: default
 
-all: boost
-	@echo usage: \"make programm-to-build\"
+default: help
 
-boost:
-	@mkdir -p $(dir ${BOOST_LINK})
-	@ln -Tfs ${BOOST_DIR} ${BOOST_LINK}
-
-clean:
-	@rm -rf $(filtered)
+include ${ARMAROWDIR}/make/example.mk

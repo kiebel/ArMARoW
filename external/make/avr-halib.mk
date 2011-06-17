@@ -39,32 +39,37 @@
 ##
 ################################################################################
 # -----------------------------------------------------------------------------
-#                             CONFIGURATION
+#                             AVR - EXTERNALS
 # -----------------------------------------------------------------------------
-HALIBDIR   = $(ARMAROWDIR)/external/avr-halib
-HAEXTDIR   = $(ARMAROWDIR)/external/avr-halib
-HALIBDIR  ?= $(HAEXTDIR)
-ifeq ($(HALIBDIR), $(HAEXTDIR))
-	ADDITIONAL_DIR += $(HALIBDIR) /usr/x86_64-pc-linux-gnu/avr/lib
+ifeq ($(AVR_HALIBDIR),)
+	AVR_HALIBDIR:=${BASEEXTERNAL}/avr_halib
+	AVR_ECHO="Checking out latest AVR-halib"
+	AVR_FETCH=svn co https://svn-eos.cs.uni-magdeburg.de/repos/Projects/AVR/halib/trunk ${AVR_HALIBDIR} --ignore-externals -q
+	AVR_CONFIGURE=sed -e s?.*BOOST_DIR=?BOOST_DIR=$(abspath ${BOOSTDIR})?g -e s?.*LOGGING_DIR=?LOGGING_DIR=$(abspath ${LOGGINGDIR})?g ${AVR_HALIBDIR}/config.mk > temp && mv temp ${AVR_HALIBDIR}/config.mk
+	AVR_CLEAN=${MAKE} -C ${AVR_HALIBDIR} clean &
+	AVR_REMOVE=rm -rf ${AVR_HALIBDIR} &
 endif
 
-# -----------------------------------------------------------------------------
-AR      = avr-ar
-ARFLAGS = ru
-AS      = avr-as
-AVRDUDE = avrdude
-CC      = avr-gcc
-CXX     = avr-g++
-LD      = avr-g++
-OBJCOPY = avr-objcopy
-OBJDUMP = avr-objdump
-PMGEN   = $(HALIBDIR)/tools/portmapgen/avr-halib-pmg
-RANLIB  = avr-ranlib
-SIZE    = avr-size
+HALIB=${AVR_HALIBDIR}
+CHIP=${MCU}
 
-AVRDUDE_FLAGS       = -v -P $(AVRDUDE_PORT) -u -c $(AVRDUDE_PROGRAMMER) -p $(MCU)
-# -----------------------------------------------------------------------------
-LIBAVR              = $(LIBDIR)/libavr-halib-$(MCU).a
+-include ${AVR_HALIBDIR}/config.mk
+-include ${AVR_HALIBDIR}/make/config.mk
 
-ADDITIONAL_CFLAGS  += -DF_CPU=${CPU_CLOCK}ULL -DAVR -mmcu=$(MCU) -fno-threadsafe-statics
-ADDITIONAL_LDFLAGS += $(addprefix -L,${ADDITIONAL_DIR})
+EXTERNAL_DEPS    += ${AVR_HALIBDIR}/lib/libavr-halib-${MCU}.a
+EXTERNAL_TARGETS += ${AVR_HALIBDIR}
+EXTERNAL_CLEANS  += ${AVR_CLEAN}
+EXTERNAL_REMOVES += ${AVR_REMOVE}
+
+${AVR_HALIBDIR}:
+	@echo ${AVR_ECHO}
+	@${AVR_FETCH}
+	@${AVR_CONFIGURE}
+
+${AVR_HALIBDIR}/config.mk: | ${AVR_HALIBDIR}
+
+${AVR_HALIBDIR}/make/config.mk: | ${AVR_HALIBDIR}
+
+${AVR_HALIBDIR}/lib/libavr-halib-${MCU}.a:
+	@echo "Building needed avr-halib for $(MCU)"
+	@make -C $(AVR_HALIBDIR) CHIP=${MCU}

@@ -38,16 +38,3 @@
 ## $Id$
 ##
 ################################################################################
-# -----------------------------------------------------------------------------
-#                             AVR - EXTERNALS
-# -----------------------------------------------------------------------------
-$(HALIBDIR):
-ifeq ($(HALIBDIR), $(HAEXTDIR))
-	@echo Checking out latest AVR-halib
-	@svn export https://svn-eos.cs.uni-magdeburg.de/repos/Projects/AVR/halib/trunk $@ --ignore-externals -q
-endif
-
-$(LIBAVR): $(HALIBDIR)
-	@echo Building needed avr-halib for $(MCU)
-	@make -C $(HALIBDIR) CHIP=${MCU}
-	@cp $(HALIBDIR)/build/libavr-halib-${MCU}.a ${LIBDIR}

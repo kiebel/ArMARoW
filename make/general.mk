@@ -44,7 +44,7 @@ ARMAROWCWD := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ARMAROWDIR := $(patsubst %/platform/,%,$(ARMAROWCWD))
 endif
 
-ifneq ($(shell test -f $(ARMAROWDIR)/platform/rules.mk && echo success), success)
+ifneq ($(shell test -f $(ARMAROWDIR)/make/rules.mk && echo success), success)
 $(info )
 $(info The ARMAROWDIR you gave to the make-system is wrong. The make-system could )
 $(info not find all needed files. In general the make-system is able to determine )
@@ -56,36 +56,30 @@ $(info )
 $(error root directory is given wrong)
 endif
 
-include $(ARMAROWDIR)/platform/config.mk
+include $(ARMAROWDIR)/config.mk
 # -----------------------------------------------------------------------------
-GCCVERSION  = gcc-$(shell $(CXX) -dumpversion)
 
-BASEDOC     = $(ARMAROWDIR)/doc
-BASEEXTERNAL= $(ARMAROWDIR)/external
-BASELIB     = $(ARMAROWDIR)/lib
-INCDIR      = $(ARMAROWDIR)/include
-LIBDIR      = $(BASELIB)/$(GCCVERSION)
-
-LIB         = -L$(LIBDIR)
-INCLUDE     = -I$(INCDIR)
+BASEDOC      = $(ARMAROWDIR)/doc
+BASEEXTERNAL = $(ARMAROWDIR)/external
+BASEINC      = $(ARMAROWDIR)/include
+EXAMPLES	 = ${ARMAROWDIR}/examples
 
 ARMAROW_DEBUG ?= -g -DNDEBUG
 
-# external header dependencies
-LOGLIBDIR   ?= $(BASEEXTERNAL)/include
-EXTERNALS    = $(LOGLIBDIR)
+INCLUDES     += $(ARMAROWDIR)/platform/$(PLATFORM) $(ARMAROWDIR)/include
+CFLAGS       += -fno-strict-aliasing
+CXXFLAGS     += -fno-strict-aliasing
 
-ADDITIONAL_BUILDS   = $(LIBAVR)
-ADDITIONAL_LIBS    += $(ADDITIONAL_BUILDS)
-ADDITIONAL_INCLUDE += -I$(HALIBDIR)/include $(patsubst %,-I%,$(EXTERNALS)) -I$(ARMAROWDIR)/platform/$(PLATFORM) -I$(HALIBDIR)/experimental/include
-ADDITIONAL_CFLAGS  += -fno-strict-aliasing $(ADDITIONAL_INCLUDE)
-
-ASMFLAGS   += -Wall
-
-CFLAGS     += -Wall $(ARMAROW_DEBUG) -I$(INCDIR) $(ADDITIONAL_CFLAGS)
-
-CXXFLAGS   += ${CFLAGS}
-
-LDFLAGS    += $(ADDITIONAL_LIBS) $(ADDITIONAL_LDFLAGS)
 # -----------------------------------------------------------------------------
-include $(ARMAROWDIR)/platform/rules.mk
+ifeq (${AVR_HALIBDIR},)
+	include ${ARMAROWDIR}/external/make/boost.mk
+	include ${ARMAROWDIR}/external/make/logging.mk	
+endif
+include ${ARMAROWDIR}/platform/${PLATFORM}/make/config.mk
+include ${ARMAROWDIR}/make/${ARCH}/config.mk
+
+
+CFLAGS   += $(addprefix -I,${INCLUDES})
+CXXFLAGS += $(addprefix -I,${INCLUDES})
+LDFLAGS  += $(addprefix -L,${LDPATHS})
+LDFLAGS  += $(addprefix -l,${LIBS})

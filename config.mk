@@ -42,7 +42,16 @@
 #                             CONFIGURATION
 # -----------------------------------------------------------------------------
 # configure location for logging library
-#LOGLIBDIR = /logging/include
+#LOGGINGDIR   ?= 
+#BOOSTDIR     ?= /usr/include/
+PLATFORM     ?= default
+#AVR_HALIBDIR ?= 
+
+LIBS      += 
+LDPATHS   +=
+INCLUDES  += 
+CFLAGS    += 
+CXXFLAGS  += 
+ASMFLAGS  += 
+
 # -----------------------------------------------------------------------------
-PLATFORM ?= default
-include $(ARMAROWDIR)/platform/$(PLATFORM)/config.mk
