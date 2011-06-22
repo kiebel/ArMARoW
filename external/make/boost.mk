@@ -39,7 +39,7 @@
 ################################################################################
 
 ifeq ($(BOOSTDIR),)
-	BOOSTDIR:=${BASEEXTERNAL}/boost_1_46_1
+	BOOSTDIR:=${BASEEXTERNAL}/boost_1_46_1/boost
 	BOOST_ECHO="Installing latest Boost"
 	BOOST_FILE=${BASEEXTERNAL}/boost_1_46_1.tar.bz2
 	BOOST_INSTALL=tar -C ${BASEEXTERNAL} -jxf ${BOOST_FILE}

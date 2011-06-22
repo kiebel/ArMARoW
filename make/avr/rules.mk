@@ -5,10 +5,6 @@ PMGEN=${PMGENBIN}
 .PRECIOUS: %.elf %_portmap.h
 
 
-${BIN}/%.elf: ${BUILD}/%.o |${BIN}
-	@echo "(LD    ) $(notdir $<) -> $(notdir $@)"
-	${CXX} ${LDFLAGS} $< -o $@ ${LDPATHS} ${LIBS}
-
 ${BIN}/%.hex: ${BIN}/%.elf |${BIN}
 	@echo "(OBJCP ) $(notdir $<) -> $(notdir $@)"
 	${OBJCP} ${OBJCPFLAGS} -O ihex $< $@
