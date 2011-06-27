@@ -47,7 +47,7 @@ namespace armarow {
     namespace common {
         namespace helpers {
             /*! \brief SPI interface implementation
-             *  \tparam RegMap Register map for spi operation on mcu
+             *  \tparam PortMap Register map for spi operation on mcu
              *  \tparam CFG SPI configuration
              *
              *  This class is the basic implementation of a SPI bus driver. It
@@ -56,7 +56,7 @@ namespace armarow {
              *  directly.
              *  \todo add interface for 2Byte register (uint16_t)
              */
-            template<typename RegMap, typename CFG>
+            template<typename PortMap, typename CFG>
             struct SpiImpl : private SpiMaster< CFG > {
                 private:
                     /*! \brief  basic SPI driver for bus operation*/
@@ -64,18 +64,18 @@ namespace armarow {
                 public:
                     /*! \brief  Constructor initializes SPI and chip select.*/
                     SpiImpl() {
-                        UseRegmap(rm, RegMap);
+                        UseRegmap(rm, PortMap);
                         rm.cs.ddr  = true;
                         rm.cs.port = true;
                         SyncRegmap(rm);
                     }
                     void enable() {
-                        UseRegmap(rm, RegMap);
+                        UseRegmap(rm, PortMap);
                         rm.cs.port = false;
                         SyncRegmap(rm);
                     }
                     void disable() {
-                        UseRegmap(rm, RegMap);
+                        UseRegmap(rm, PortMap);
                         rm.cs.port = true;
                         SyncRegmap(rm);
                     }
@@ -90,14 +90,17 @@ namespace armarow {
         } // end namespace helper
 
         /*! \brief SPI interface for radio controller access.
-         *  \tparam RegMap register map for spi operation on mcu
+         *  \tparam PortMap register map for spi operation on mcu
          *  \tparam CFG SPI configuration for operation on mcu and rc
          *
          *  This class is a singleton implementation of an SPI bus driver.
          *  It can be used to communicate with the specified radio controller.
          */
-        template<typename RegMap, typename CFG>
-        struct SPI : public avr_halib::object::Singleton< helpers::SpiImpl<RegMap, CFG> > {};
+        template<typename PortMap, typename CFG>
+        struct SPI
+		{
+				typedef avr_halib::object::Singleton< helpers::SpiImpl<PortMap, CFG> > type;
+		};
     } // end namespace common
 } // end namespace armarow
 

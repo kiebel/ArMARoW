@@ -37,44 +37,48 @@
  * $Id$
  *
  ******************************************************************************/
-#ifndef __ARMAROW_EXP_AT86RF230_SPEC_FIFO_h__
-#define __ARMAROW_EXP_AT86RF230_SPEC_FIFO_h__
+#ifndef __ARMAROW_EXP_AT86RF230_SPEC_h__
+#define __ARMAROW_EXP_AT86RF230_SPEC_h__
+
+#include <armarow/phy/rrm/at86rf230-register.h>
+#include <armarow/phy/rrm/at86rf230-sram.h>
+#include <armarow/phy/rrm/at86rf230-trxfifo.h>
+#include <armarow/common/spi.h>
 
 namespace armarow {
     namespace phy {
         namespace specification {
-            namespace rrm {
-                template <typename Interface>
-                struct TrxFiFo {
-                    //TODO CRC uint8_t readRxFifo(uint8_t pSize, uint8_t *pData, uint8_t *pLqi, bool &pCrc) {return 0;}
-                    static uint8_t read (uint8_t* pBuffer, uint8_t pSize) {
-                        uint8_t count = 0;
+            template < typename HW >
+            struct At86Rf230 {
+				typedef typename armarow::common::SPI<typename HW::portmap_t, SpiCfg>::type SPI;
+                /*! \brief  register definition for the AT86RF230
+                 *          radio controller */
+                typedef at86rf230::RegMap<SPI> RegMap;
+				typedef at86rf230::SRamRead<SPI> SRamRead;
+				typedef at86rf230::SRamWrite<SPI> SRamWrite;
+				typedef at86rf230::FifoRead<SPI> FifoRead;
+				typedef at86rf230::FifoWrite<SPI> FifoWrite;
 
-                        (Interface::getInstance()).enable();
-                        (Interface::getInstance()).write( 0x20 );
-                        (Interface::getInstance()).read( count );
-                        if ( pSize >= count) pSize = 0;
-                        while(pSize--)
-                            (Interface::getInstance()).read( *(pBuffer++) );
-                        (Interface::getInstance()).disable();
-                        //TODO 2011-01-10 read LQI value
-                        return ( (pSize >= count) ? count : 0 );
-                    }
-                    //TODO CRC void writeTxFifo(uint8_t pSize, const uint8_t *pData) {}
-                    static bool write(uint8_t* pBuffer, uint8_t pSize) {
-                        (Interface::getInstance()).enable();
-                        if (pSize > 127) return false; //TODO 2011-01-10 use information about frame size
-                        (Interface::getInstance()).write( 0x60  );
-                        (Interface::getInstance()).write( pSize );
-                        while(pSize--)
-                            (Interface::getInstance()).write( *(pBuffer++) );
-                        (Interface::getInstance()).disable();
-                        return true;
-                    }
+                /*! \brief  TRX framebuffer definition for the AT86RF230
+                 *          radio controller */
+                typedef typename rrm::TrxFiFo<SPI> trxfb;
+
+                struct timings {
+                    enum {
+                        TRX_RESET_TIME_US      = 6,
+                        /*!< duration while reset=low is asserted*/
+                        TRX_INIT_TIME_US       = 510,
+                        /*!< duration for transceiver to reach TRX_OFF for the
+                         *   first time*/
+                        TRX_CCA_TIME_US        = 140,
+                        /*!< duration of a CCA measurement*/
+                        TRX_CHIP_RESET_TIME_US = 625
+                        /*!< duration for transceiver reset*/
+                    };
                 };
-            }
-        }
-    }
-}
+            };
+        }; // end namespace specification
+    }; // end namespace phy
+}; // end namespace armarow
 
-#endif  //__ARMAROW_EXP_AT86RF230_SPEC_FIFO_h__
+#endif  //__ARMAROW_EXP_AT86RF230_SPEC_h__

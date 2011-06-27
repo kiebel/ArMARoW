@@ -64,7 +64,9 @@ namespace armarow {
             };
         };
 
-        using namespace phy::specification::at86rf230;
+        using namespace phy::specification::at86rf230::registers;
+		using namespace phy::specification::at86rf230::ram;
+		using namespace phy::specification::at86rf230::fifo;
 
         template <typename HW, typename SPEC, typename CFG = struct RrmCFG>
         class Rrm {
@@ -72,10 +74,17 @@ namespace armarow {
                 /*! \brief  definition of the class type*/
                 typedef Rrm<HW,SPEC,CFG> type;
                 typedef typename SPEC::RegMap RegMap;
+				typedef typename SPEC::SRamRead SRamRead;
+				typedef typename SPEC::SRamWrite SRamWrite;
+				typedef typename SPEC::FifoRead FifoRead;
+				typedef typename SPEC::FifoWrite FifoWrite;
+				typedef typename HW::portmap_t portmap_t;
+				typedef SPEC spec_t;
+				struct mob_t {};
             private:
             public:
                 void init() {
-                    UseRegmap(rm, HW);
+                    UseRegmap(rm, portmap_t);
                     rm.reset.ddr  = true;
                     rm.reset.port = false;
                     rm.sleep.ddr  = true;
@@ -89,59 +98,121 @@ namespace armarow {
 
                 void testRegister() {
                     UseRegMap(rm, RegMap);
-                    //SyncRegister(rm, MAN_IDRegister);
+                    SyncRegister(rm, MAN_IDRegister);
 
                     ::logging::log::emit() << "RR: "
                         << (uint16_t)rm.man_id << ::logging::log::endl;
 
-                    // TODO 2011-01-04 test register WR
-                    // test register RWR
                     rm.trx_cmd=0x08;
                     SyncRegister(rm, TRX_StateRegister);
+					delay_us(880);
+					SyncRegister(rm, TRX_StatusRegister);
 
                     ::logging::log::emit() << "RW: "
                         << (uint16_t)rm.trx_cmd << ::logging::log::endl;
+
+					::logging::log::emit() << "RWR: " << (uint16_t)rm.trx_status << ::logging::log::endl;
                 }
 
-                void testSRAM() {
-                    uint8_t buffer[128];
-                    uint8_t count = 0;
-                    uint8_t size = 128;
-                    uint8_t* bp = buffer;
+				void testSRAM() {
+					static const uint8_t size=16;
+                    uint8_t buffer[size];
 
-                    // write SRAM
-                    while (size--) *(bp++)=0x41;
-                    size=128;bp=buffer;
-                    SPEC::sram::write(SPEC::sram::sram_txfifo, buffer, size);
-                    while (size--) *(bp++)=0x00;
-                    size=128;bp=buffer;
+					for(uint8_t i=0;i<size;i++)
+						buffer[i]=0x41+i;
 
-                    // read SRAM
-                    SPEC::sram::read (SPEC::sram::sram_txfifo, buffer, size);
-                    while (size--) count += (( *(bp++) == 0x41 ) ? 1 : 0);
+					{
+						UseRegMap(rm, SRamWrite);
+						rm.startAddress=0;
+						rm.startAccess=1;
+						
+						for(uint8_t i=0;i<size;i++)
+						{
+							rm.data=buffer[i];
+							if(i==size-1)
+								rm.stopAccess=1;
+							SyncRegister(rm, RamWriteRegister);
+							
+						}
+					}
+
+					for(uint8_t i=0;i<size;i++)
+						buffer[i]=0x0;
+
+					{
+						UseRegMap(rm, SRamRead);
+						rm.startAddress=0;
+						rm.startAccess=1;
+
+						for(uint8_t i=0;i<size;i++)
+						{
+							if(i==size-1)
+								rm.stopAccess=1;
+							SyncRegister(rm, RamReadRegister);
+							buffer[i]=rm.data;
+						}
+					}
+
                     ::logging::log::emit() << "SRAM: "
-                        << '[' << (uint16_t)count << ']'
-                        << ::logging::log::endl;
+                        << '[';
+					for(uint8_t i=0;i<size;i++)
+						::logging::log::emit() << log::hex << (uint16_t)buffer[i];
+					
+					::logging::log::emit() << ']' << ::logging::log::endl;
                 }
-                void testTrxFiFo() {
-                    uint8_t buffer[127];
-                    uint8_t count = 0;
-                    uint8_t size = 127;
-                    uint8_t* bp = buffer;
 
-                    // write TRX
-                    while (size--) *(bp++)=0x01;
-                    size=127;bp=buffer;
-                    SPEC::trxfb::write(buffer, size);
+
+                void testTrxFiFo() {
+					static const uint8_t size=16;
+                    uint8_t buffer[size+1];
+
+					for(uint8_t i=0;i<size;i++)
+						buffer[i]=0x41+i;
+
+					{
+						UseRegMap(rm, FifoWrite);
+						rm.length=size;
+						SyncRegister(rm, FifoWriteRegister);
+						while(!rm.done)
+						{
+							rm.data=buffer[rm.index];
+							SyncRegister(rm, FifoWriteRegister);
+						}
+					}
+                    //SPEC::trxfb::write(buffer, size);
+					for(uint8_t i=0;i<size;i++)
+						buffer[i]=0;
+
 
                     // read TRX
-                    SPEC::trxfb::read(buffer, size);
-                    while (size--) count += (( *(bp++) == 0x42 ) ? 1 : 0);
-                    bp=buffer;
-                    ::logging::log::emit() << "TRXFIFO: "
-                        << '[' << (uint16_t)*(bp++) << ']' << (uint16_t)count
-                        << ::logging::log::endl;
-                }
+                    /*{
+						UseRegMap(rm, FifoWrite);
+						SyncRegister(rm, FifoWriteRegister);
+						while(!rm.done)
+						{
+							SyncRegister(rm, FifoWriteRegister);
+							buffer[rm.index]=rm.data;
+						}*/
+
+						UseRegMap(rm, SRamRead);
+						rm.startAddress=txFifoStart;
+						rm.startAccess=1;
+
+						for(uint8_t i=0;i<size+1;i++)
+						{
+							if(i==size-1)
+								rm.stopAccess=1;
+							SyncRegister(rm, RamReadRegister);
+							buffer[i]=rm.data;
+						}
+
+						//SPEC::trxfb::read(buffer, size);
+						
+                    	::logging::log::emit() << "TRXFIFO[" << (uint16_t)size << "]: " << '[';
+						for(uint8_t i=0;i<size;i++)
+							::logging::log::emit() << (uint16_t)buffer[i];
+						::logging::log::emit() << ']' << ::logging::log::endl;
+					}
         };
     }; // end namespace phy
 }; // end namespace armarow

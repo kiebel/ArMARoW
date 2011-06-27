@@ -41,22 +41,19 @@
  *  \brief  Proof of concept for the idea of remote regmaps.
  */
 /* === includes ============================================================= */
-#include "armarow/platform/icradio.h"   // platform dependent software config
-#include <avr-halib/share/delay.h>      // delays and timings
+#include "platform.h"   // platform dependent software config
 
 #include <armarow/armarow.h>            // ArMARoW main include
-#include <armarow/debug.h>              // ArMARoW logging and debugging
 #include <armarow/phy/rrm/at86rf230-spec.h>
 #include <armarow/phy/rrm/rrm-rc.h>
 /* === definitions ========================================================== */
 namespace platform {
-    struct config {
-        private:
-            typedef armarow::platform::icradio::PortmapRC halRc_t;
-            typedef armarow::platform::icradio::SPI baseSpi;
-            typedef armarow::phy::specification::At86Rf230<halRc_t,baseSpi> spec;
+    class config {
+            typedef AT86RF230_Hal halRc_t;              // hardware configuration
         public:
-            typedef armarow::phy::Rrm<halRc_t,spec> rc_t;
+            typedef armarow::phy::Rrm< halRc_t, armarow::phy::specification::At86Rf230<halRc_t > > rc_t;
+            typedef rc_t::spec_t spec_t;            // radio controller spec
+            typedef rc_t::mob_t  mob_t;             // message object for RC
     };
 }
 /* === globals ============================================================== */
