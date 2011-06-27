@@ -1,7 +1,11 @@
 #pragma once
 
+#include <avr-halib/share/interruptLock.h>
+
 namespace armarow {
 	namespace phy {
+		using avr_halib::locking::GlobalIntLock;
+
 		/*! \brief  Interface between the microcontroller and
 		 *          the radio controller.
 		 *  \tparam ComInterface  class the interface is based on (e.g. SPI)
@@ -48,6 +52,7 @@ namespace armarow {
 				 *  \param[out] pValue variable to write result to
 				 */
 				void readRegister(regaddr_t pAddress, regval_t &pValue) {
+					GlobalIntLock lock;
 					UseRegmap(rm, Portmap);
 					rm.cs.port = false;
 					SyncRegmap(rm);
@@ -62,6 +67,7 @@ namespace armarow {
 				 *  \param[in] pValue new value of the register
 				 */
 				void writeRegister(regaddr_t pAddress, regval_t pValue) {
+					GlobalIntLock lock;
 					UseRegmap(rm, Portmap);
 					rm.cs.port = false;
 					SyncRegmap(rm);
@@ -79,6 +85,7 @@ namespace armarow {
 				 *          the RXFIFO (including the LQI byte)
 				 */
 				uint8_t readRxFifo(uint8_t pSize, uint8_t *pData, uint8_t *pLqi) {
+					GlobalIntLock lock;
 					uint8_t count = 0;
 
 					UseRegmap(rm, Portmap);
@@ -92,8 +99,7 @@ namespace armarow {
 						SyncRegmap(rm);
 						return 0;
 					}
-					pSize = count;
-					while(count--) {
+					for(uint8_t i=0;i<count;i++){
 						this->put( 0 );
 						this->get( *pData++ );
 					}
@@ -103,7 +109,7 @@ namespace armarow {
 					}
 					rm.cs.port = true;
 					SyncRegmap(rm);
-					return pSize;
+					return count;
 				}
 				/*! \brief  Read data from RXFIFO and do a CRC16 check
 				 *          (CRC value is suppressed).
@@ -121,6 +127,7 @@ namespace armarow {
 				 *          RXFIFO (including the LQI byte)
 				 */
 				uint8_t readRxFifoCrc(uint8_t pSize, uint8_t *pData, uint8_t *pLqi, bool &pCrc) {
+					GlobalIntLock lock;
 					uint8_t  count = 0;
 					uint16_t crc16 = 0;
 
@@ -154,13 +161,16 @@ namespace armarow {
 				 *  \param[in] pSize size of the data buffer
 				 *  \param[in] pData pointer to the buffer
 				 */
-				void writeTxFifo(uint8_t pSize, const uint8_t *pData) {
+				void writeTxFifo(uint8_t pSize, const uint8_t *pData, bool autoCRC) {
+					GlobalIntLock lock;
 					if (pSize == 0) return;
 					UseRegmap(rm, Portmap);
 					rm.cs.port = false;
 					SyncRegmap(rm);
 					this->put( spec_t::SPI::FRAMEBUFFER_WRITE );
 					this->put( pSize );
+					if(autoCRC)
+						pSize-=2;
 					while(pSize--) { this->put( *pData++ ); }
 					rm.cs.port = true;
 					SyncRegmap(rm);
@@ -181,6 +191,7 @@ namespace armarow {
 				 *  \param[out] pData pointer to the buffer
 				 */
 				void readSRAM(ramaddr_t pAddress, uint8_t pSize, uint8_t *pData) {
+					GlobalIntLock lock;
 					UseRegmap(rm, Portmap);
 					rm.cs.port = false;
 					SyncRegmap(rm);
@@ -199,6 +210,7 @@ namespace armarow {
 				 *  \param[in] pData pointer to the buffer
 				 */
 				void writeSRAM(ramaddr_t pAddress, uint8_t pSize, uint8_t *pData) {
+					GlobalIntLock lock;
 					if ( pSize == 0 ) return;
 					UseRegmap(rm, Portmap);
 					rm.cs.port = false;
