@@ -46,6 +46,7 @@
 #include "armarow/armarow.h"            // main ArMARoW include
 #include "armarow/debug.h"              // ArMARoW logging and debugging
 #include "armarow/phy/phy.h"            // physical layer
+#include "idler.h"
 /* === globals ============================================================== */
 platform::config::mob_t message = {0,{0}};
 platform::config::rc_t  rc;             // radio controller
@@ -56,18 +57,20 @@ uint8_t channel = 11;                   // channel number
  */
 void callback_recv() {
     rc.receive(message);
-    ::logging::log::emit()
+    log::emit()
         << PROGMEMSTRING("[CHANNEL: ") << (int32_t)channel
         << PROGMEMSTRING(", [DATA: [LENGTH: ") << (int32_t)message.size
         << PROGMEMSTRING("], [CONTENT: \"");
 
-    for (uint8_t index = 0; index < message.size; index++) {
-        char aChar = (char)message.payload[index];
+    /*for (uint8_t index = 0; index < message.size; index++) {
+        log::emit() << message.payload[index];
+		char aChar = (char)message.payload[index];
         if ((aChar >= '!') && (aChar >= '~')) ::logging::log::emit() << aChar;
-    }
-    ::logging::log::emit()
+    }*/
+	log::emit() << ((uint32_t*)message.payload)[0];
+    log::emit()
         << PROGMEMSTRING("\"]]]")
-        << ::logging::log::endl;
+		<< log::endl;
 }
 /*! \brief  Initializes the physical layer.*/
 void init() {
@@ -79,12 +82,11 @@ void init() {
 /* === main ================================================================= */
 int main() {
     sei();                              // enable interrupts
-    ::logging::log::emit()
+    log::emit()
         << PROGMEMSTRING("Starting sniffer!")
-        << ::logging::log::endl << ::logging::log::endl;
+        << log::endl << log::endl;
 
     init();                             // initialize famouso
-    do {                                // duty cycle
-        delay_ms(1000);
-    } while (true);
+
+	Idler::idle();
 }

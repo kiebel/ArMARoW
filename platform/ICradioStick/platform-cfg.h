@@ -36,14 +36,13 @@
  *
  ******************************************************************************/
 /*! \brief  Configuration for the AT86RF230 radio controller.                 */
-#define UARTLOGDEVICE Uart1
 /* === includes ============================================================= */
 #include "platform.h"
 #include "armarow/phy/at86rf230/at86rf230-rc.h"     // radio controller
 /* === types ================================================================ */
 namespace platform {
     class config {
-            typedef AT86RF230 halRc_t;              // hardware configuration
+            typedef AT86RF230_Hal halRc_t;              // hardware configuration
         public:
             typedef armarow::phy::At86Rf230< halRc_t > rc_t;
             typedef rc_t::spec_t spec_t;            // radio controller spec

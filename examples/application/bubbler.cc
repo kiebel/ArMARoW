@@ -1,6 +1,7 @@
 /*******************************************************************************
  *
  * Copyright (c) 2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
+ *				      Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
  * All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -41,37 +42,43 @@
  */
 /* === includes ============================================================= */
 #include "platform-cfg.h"               // platform dependent software config
-#include "avr-halib/share/delay.h"      // delays and timings
 
 #include "armarow/armarow.h"            // main ArMARoW include
 #include "armarow/debug.h"              // ArMARoW logging and debugging
 #include "armarow/phy/phy.h"            // physical layer
+#include "idler.h"
 /* === globals ============================================================== */
-platform::config::mob_t message = {10,{'0','1','2','3','4','5','6','7','8','9'}};
+platform::config::mob_t message;
 platform::config::rc_t  rc;             // radio controller
 uint8_t channel = 11;                   // channel number the sniffer checks
+TimeTriggeredEventSource eventSource;
 /* === functions ============================================================ */
 /*! \brief  Initializes the physical layer.*/
+void send(){
+	rc.setStateTRX(armarow::PHY::TX_ON);
+    rc.send(message);
+	::logging::log::emit() << PROGMEMSTRING("Sending message ") 
+		<< ((uint32_t*)message.payload)[0]++ << ::logging::log::endl;
+}
+
 void init() {
+	message.size=sizeof(uint32_t);
+	((uint32_t*)message.payload)[0]=0;
     rc.init();
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
 }
 /* === main ================================================================= */
 int main() {
-    uint16_t cnt = 0;
-
+	eventSource.registerCallback<send>();
     sei();                              // enable interrupts
     ::logging::log::emit()
         << PROGMEMSTRING("Starting bubbler (repeated send of the same message)!")
         << ::logging::log::endl << ::logging::log::endl;
 
-    init();                             // initialize famouso
-    do {                                // duty cycle
-        delay_ms(1000);
-        rc.setStateTRX(armarow::PHY::TX_ON);
-        rc.send(message);
-        ::logging::log::emit()
-            << PROGMEMSTRING("Sending message ") << (int32_t)cnt++
-            << ::logging::log::endl;
-    } while (true);
+    init();                            // initialize famouso
+	
+	
+	Idler::idle();
+
+	return 0;
 }

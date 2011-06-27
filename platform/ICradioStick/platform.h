@@ -37,169 +37,31 @@
  *
  ******************************************************************************/
 #pragma once
-/* === includes ============================================================= */
-#include <stdint.h>
+/* === globale defines ====================================================== */
 
-#define CPU_FREQUENCY F_CPU
-#include "avr-halib/avr/portmap.h"
-#include "avr-halib/avr/spi.h"
-#include "avr-halib/share/freq.h"
+#include <avr-halib/share/freq.h>
 
-UseInterrupt(SIG_INPUT_CAPTURE1);
-/* === types ================================================================ */
 using avr_halib::config::Frequency;
-typedef Frequency< F_CPU > CPUClock;
 
-struct SpiCfg : public Spi<CPUClock>
+typedef Frequency<F_CPU> CPUClock;
+
+typedef Frequency<1> TTEventFrequency;
+
+/* === includes ============================================================= */
+#include "logConf.h"
+#include "clockConf.h"
+#include "interfaceConf.h"
+
+/* === types ================================================================ */
+
+typedef boost::mpl::list<LogSync> MorpheusSyncList;
+typedef avr_halib::power::Morpheus<MorpheusSyncList> Morpheus;
+
+typedef avr_halib::drivers::Clock<ClockConfig> TimeTriggeredEventSource;
+
+struct AT86RF230_Hal
 {
-    typedef CPUClock Controller_Configuration;
-    enum {
-        useInterupt=false,
-        dataDirection=msb,
-        leadingEdge=rising,
-        sampleEdge=leading,
-        clockPrescaler=ps2,
-        busywaitput=true
-    };
-};
-
-class InterruptRC {
-    public:
-        InterruptRC() {}
-        template< typename T, void(T::*Fxn)() > static void init(T* obj) {
-            TCCR1B |= (_BV(ICNC1) | _BV(ICES1));
-            TIFR1  |= _BV(ICF1);
-            DDRC |= (0x01 << 2);
-            //-----------------------------------------------------------------
-            redirectISRM(SIG_INPUT_CAPTURE1, Fxn, *obj);
-            enable();
-        }
-        static void enable()  { TIMSK1 |= _BV(ICIE1); PORTC |=  (0x01 << 2); }
-        static void disable() { TIMSK1 &= ~_BV(ICIE1);PORTC &= ~(0x01 << 2); }
-};
-
-struct SPI		// portmap for atmega1281
-{
-    union
-    {
-        struct		// pin ss: b 0;
-        {
-            uint8_t __pad0 [0x23];
-            bool pin  : 1;		// PINB (0x23), bit 0
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 0
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 0
-        } ss;
-        struct		// pin sck: b 1;
-        {
-            uint8_t __pad0 [0x23];
-            uint8_t   : 1;
-            bool pin  : 1;		// PINB (0x23), bit 1
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 1
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 1
-        } sck;
-        struct		// pin mosi: b 2;
-        {
-            uint8_t __pad0 [0x23];
-            uint8_t   : 2;
-            bool pin  : 1;		// PINB (0x23), bit 2
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 2
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 2
-        } mosi;
-        struct		// pin miso: b 3;
-        {
-            uint8_t __pad0 [0x23];
-            uint8_t   : 3;
-            bool pin  : 1;		// PINB (0x23), bit 3
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 3
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 3
-        } miso;
-    };
-};
-
-// atmega1281 ist mit 16MHz getaktet
-// USB befindet sich an UART 1
-struct AT86RF230		// portmap for atmega1281
-{
+	typedef Portmap portmap_t;
     typedef InterruptRC irq_t;
     typedef SpiMaster<SpiCfg> spi_t;
-    union
-    {
-        struct		// pin interrupt: d 4;
-        {
-            uint8_t __pad0 [0x29];
-            uint8_t   : 4;
-            bool pin  : 1;		// PIND (0x29), bit 4
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRD (0x2a), bit 4
-            uint8_t   : 7;
-            bool port : 1;		// PORTD (0x2b), bit 4
-        } interrupt;
-        struct		// pin sleep: b 4;
-        {
-            uint8_t __pad0 [0x23];
-            uint8_t   : 4;
-            bool pin  : 1;		// PINB (0x23), bit 4
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 4
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 4
-        } sleep;
-        struct		// pin reset: b 5;
-        {
-            uint8_t __pad0 [0x23];
-            uint8_t   : 5;
-            bool pin  : 1;		// PINB (0x23), bit 5
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 5
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 5
-        } reset;
-        struct		// pin cs: b 0;
-        {
-            uint8_t __pad0 [0x23];
-            bool pin  : 1;		// PINB (0x23), bit 0
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 0
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 0
-        } cs;
-        struct		// pin sck: b 1;
-        {
-            uint8_t __pad0 [0x23];
-            uint8_t   : 1;
-            bool pin  : 1;		// PINB (0x23), bit 1
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 1
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 1
-        } sck;
-        struct		// pin mosi: b 2;
-        {
-            uint8_t __pad0 [0x23];
-            uint8_t   : 2;
-            bool pin  : 1;		// PINB (0x23), bit 2
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 2
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 2
-        } mosi;
-        struct		// pin miso: b 3;
-        {
-            uint8_t __pad0 [0x23];
-            uint8_t   : 3;
-            bool pin  : 1;		// PINB (0x23), bit 3
-            uint8_t   : 7;
-            bool ddr  : 1;		// DDRB (0x24), bit 3
-            uint8_t   : 7;
-            bool port : 1;		// PORTB (0x25), bit 3
-        } miso;
-    };
 };

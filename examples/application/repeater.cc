@@ -48,23 +48,38 @@
 #include "armarow/armarow.h"            // main ArMARoW include
 #include "armarow/debug.h"              // ArMARoW logging and debugging
 #include "armarow/phy/phy.h"            // physical layer
+#include "idler.h"
 /* === globals ============================================================== */
 platform::config::mob_t message = {0,{0}};
 platform::config::rc_t  rc;             // radio controller
 uint8_t channel = 11;                   // channel number the sniffer checks
 uint8_t counter = 0;
+TimeTriggeredEventSource eventSource;
 /* === functions ============================================================ */
 /*! \brief  Callback triggered by an interrupt of the radio controller.*/
 void callback_recv() {
     uint8_t size = ( !counter) ? rc.receive(message) : 0;
     counter = (size != 0) ? 5 : 0;       // set number of repetitions
 }
+
+void send(){
+	if ( counter ) {
+		rc.setStateTRX(armarow::PHY::TX_ON);
+        rc.send(message);
+        ::logging::log::emit()
+			<< PROGMEMSTRING("Send message ") << (int32_t)counter
+            << ::logging::log::endl;
+        counter--;
+	}
+}
+
 /*! \brief  Initializes the physical layer.*/
 void init() {
     rc.init();
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
     rc.setStateTRX(armarow::PHY::RX_ON);
     rc.onReceive.bind<callback_recv>();
+	eventSource.registerCallback<send>();
 }
 /* === main ================================================================= */
 int main() {
@@ -74,15 +89,6 @@ int main() {
         << ::logging::log::endl << ::logging::log::endl;
 
     init();                             // initialize radio controller
-    do {                                // duty cycle
-        delay_ms(1000);
-        if ( counter ) {
-            rc.setStateTRX(armarow::PHY::TX_ON);
-            rc.send(message);
-            ::logging::log::emit()
-                << PROGMEMSTRING("Send message ") << (int32_t)counter
-                << ::logging::log::endl;
-            counter--;
-        }
-    } while (true);
+
+	Idler::idle();
 }
