@@ -203,6 +203,9 @@ void case_send() {
     assert(rc.send_blocking(src) == armarow::PHY::SUCCESS);
     rc.setStateTRX(armarow::PHY::TX_ON);
     assert(rc.send(src) == armarow::PHY::SUCCESS);
+    // necessary to avoid abording transmission, by the reset of the next
+    // testsuit
+    delay_ms(1000);
 }
 /*! \brief  Unit case testing the getter/setter of the radio states. */
 void case_state() {

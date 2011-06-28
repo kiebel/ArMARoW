@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
- * Copyright (c) 2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
- *				      Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
+ * Copyright (c) 2010 Thomas    Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
+ * 				 2011 Christoph Steup  <steup@ivs.cs.uni-magdeburg.de>
  * All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -37,48 +37,78 @@
  * $Id$
  *
  ******************************************************************************/
-/*! \file   examples/application/bubbler.cc
- *  \brief  Example implementation sending the same message over and over again.
+/*! \file   examples/applixation/sniffer.cc
+ *  \brief  Example implementation of a sniffer on the physical layer.
  */
 /* === includes ============================================================= */
 #include "platform-cfg.h"               // platform dependent software config
+#include "avr-halib/share/delay.h"      // delays and timings
 
 #include "armarow/armarow.h"            // main ArMARoW include
 #include "armarow/debug.h"              // ArMARoW logging and debugging
 #include "armarow/phy/phy.h"            // physical layer
 #include "idler.h"
+#include <avr-halib/regmaps/local.h>
+#include <avr-halib/avr/clock.h>
 /* === globals ============================================================== */
-platform::config::mob_t message;
+platform::config::mob_t message = {0,{0}};
 platform::config::rc_t  rc;             // radio controller
-uint8_t channel = 11;                   // channel number the sniffer checks
-TimeTriggeredEventSource eventSource;
-/* === functions ============================================================ */
-/*! \brief  Initializes the physical layer.*/
-void send(){
-	rc.setStateTRX(armarow::PHY::TX_ON);
-    rc.send(message);
-	::logging::log::emit() << PROGMEMSTRING("Sending message ") 
-		<< ((uint32_t*)message.payload)[0]++ << ::logging::log::endl;
-}
+uint8_t channel = 11;                   // channel number
 
+UseInterrupt(SIG_OUTPUT_COMPARE1A);
+
+struct MyClockConfig
+{
+	typedef uint16_t TickValueType;
+	typedef Frequency<1> TargetFrequency;
+	typedef CPUClock TimerFrequency;
+	typedef avr_halib::regmaps::local::Timer1 Timer;
+};
+
+typedef avr_halib::drivers::Clock<MyClockConfig> Clock;
+
+Clock clock;
+
+/* === functions ============================================================ */
+/*! \brief  Callback triggered by an interrupt of the radio controller.
+ *  \todo   Add Information for LQI and RSSI values.
+ */
+void callback_recv() {
+    /*rc.receive(message);
+    log::emit()
+        << PROGMEMSTRING("[CHANNEL: ") << (int32_t)channel
+        << PROGMEMSTRING(", [DATA: [LENGTH: ") << (int32_t)message.size
+        << PROGMEMSTRING("], [CONTENT: \"");
+
+	log::emit() << ((uint32_t*)message.payload)[0];
+    log::emit()
+        << PROGMEMSTRING("\"]]]")
+		<< log::endl;*/
+}
+/*! \brief  Initializes the physical layer.*/
 void init() {
-	message.size=sizeof(uint32_t);
-	((uint32_t*)message.payload)[0]=0;
     rc.init();
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
+    rc.setStateTRX(armarow::PHY::RX_ON);
+    rc.onReceive.bind<callback_recv>();
 }
 /* === main ================================================================= */
 int main() {
-	eventSource.registerCallback<send>();
     sei();                              // enable interrupts
-    ::logging::log::emit()
-        << PROGMEMSTRING("Starting bubbler (repeated send of the same message)!")
-        << ::logging::log::endl << ::logging::log::endl;
+    log::emit()
+        << PROGMEMSTRING("Starting EnergyDetector!")
+        << log::endl << log::endl;
 
-    init();                            // initialize famouso
-	
-	
-	Idler::idle();
+    init();                             // initialize famouso
+
+	uint8_t energyLevel=0;
+	while(true){
+		rc.doED(energyLevel);
+		Clock::Time t;
+		clock.getTime(t);
+		if(energyLevel)
+			log::emit() << t.ticks << " " << t.microTicks << " " << (uint16_t)energyLevel << log::endl;
+	}
 
 	return 0;
 }

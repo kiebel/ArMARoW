@@ -1,8 +1,8 @@
 ################################################################################
 ##
 ## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-##               2010 Thomas Kiebel   <kiebel@ivs.cs.uni-magdeburg.de>
-##               2010 Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
+##               2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
+##               2010 Christoph Steup <christoph.steup@student.ovgu.de>
 ## All rights reserved.
 ##
 ##    Redistribution and use in source and binary forms, with or without
@@ -38,19 +38,12 @@
 ## $Id$
 ##
 ################################################################################
-ARMAROWDIR=../../
-
-PLATFORM = ICradioStick
-
-CXXFLAGS+=-Wall -Os
-
-BIN=./bin
-SRC=.
-BUILD=./build
-INCLUDE=.
-
-.PHONY: default
-
-default: help
-
-include ${ARMAROWDIR}/make/example.mk
+# -----------------------------------------------------------------------------
+#                             CONFIGURATION
+# -----------------------------------------------------------------------------
+ARCH				= avr
+MCU                 = atmega1281
+CPU_CLOCK           = 8000000
+AVRDUDE_PROGRAMMER ?= jtag2
+AVRDUDE_PORT	   ?= usb
+# -----------------------------------------------------------------------------

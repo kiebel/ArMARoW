@@ -114,8 +114,10 @@ namespace armarow {
             /*!< duration of the synchronization header (SHR) in symbols
              *   (<em>for the current layer</em>)
              */
-            phySymbolsPerOctet      = 0x07
+            phySymbolsPerOctet      = 0x07,
             /*!< number of symbols per octet for the current layer*/
+			phyCCAThres				= 0x08,
+			/*!< clear channel assessment energy detection treshold*/
         };
         /*! \brief  Constants specific to the physical layer as defined in
          *          IEEE 802.15.4.
@@ -153,8 +155,10 @@ namespace armarow {
             /*!< radio controller is waiting to transmit data*/
             UNSUPPORTED_ATTRIBUTE   = 0x0A,
             /*!< specified attribute is not supported or defined*/
-            READ_ONLY               = 0x0B
+            READ_ONLY               = 0x0B,
             /*!< specified attribute is read-only*/
+			ERROR					= 0x0C
+			/*!< error during last operation */
         };
         /*! \brief Modes for Clear Channel Assesment (%CCA) */
         enum ModeCCA {

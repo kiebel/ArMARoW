@@ -1,7 +1,6 @@
 /*******************************************************************************
- *
  * Copyright (c) 2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
- *				      Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
+ *
  * All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -33,52 +32,21 @@
  *    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *
- * $Id$
+ *    $Id$
  *
  ******************************************************************************/
-/*! \file   examples/application/bubbler.cc
- *  \brief  Example implementation sending the same message over and over again.
- */
+/*! \brief  Configuration for the AT86RF230 radio controller.                 */
 /* === includes ============================================================= */
-#include "platform-cfg.h"               // platform dependent software config
-
-#include "armarow/armarow.h"            // main ArMARoW include
-#include "armarow/debug.h"              // ArMARoW logging and debugging
-#include "armarow/phy/phy.h"            // physical layer
-#include "idler.h"
-/* === globals ============================================================== */
-platform::config::mob_t message;
-platform::config::rc_t  rc;             // radio controller
-uint8_t channel = 11;                   // channel number the sniffer checks
-TimeTriggeredEventSource eventSource;
-/* === functions ============================================================ */
-/*! \brief  Initializes the physical layer.*/
-void send(){
-	rc.setStateTRX(armarow::PHY::TX_ON);
-    rc.send(message);
-	::logging::log::emit() << PROGMEMSTRING("Sending message ") 
-		<< ((uint32_t*)message.payload)[0]++ << ::logging::log::endl;
+#include "platform.h"
+#include "armarow/phy/at86rf230/at86rf230-rc.h"     // radio controller
+/* === types ================================================================ */
+namespace platform {
+    class config {
+            typedef AT86RF230_Hal halRc_t;              // hardware configuration
+        public:
+            typedef armarow::phy::At86Rf230< halRc_t > rc_t;
+            typedef rc_t::spec_t spec_t;            // radio controller spec
+            typedef rc_t::mob_t  mob_t;             // message object for RC
+    };
 }
-
-void init() {
-	message.size=sizeof(uint32_t);
-	((uint32_t*)message.payload)[0]=0;
-    rc.init();
-    rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-}
-/* === main ================================================================= */
-int main() {
-	eventSource.registerCallback<send>();
-    sei();                              // enable interrupts
-    ::logging::log::emit()
-        << PROGMEMSTRING("Starting bubbler (repeated send of the same message)!")
-        << ::logging::log::endl << ::logging::log::endl;
-
-    init();                            // initialize famouso
-	
-	
-	Idler::idle();
-
-	return 0;
-}
+/* ========================================================================== */

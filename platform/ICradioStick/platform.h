@@ -1,7 +1,6 @@
 /*******************************************************************************
  *
  * Copyright (c) 2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
- *				      Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
  * All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -37,48 +36,32 @@
  * $Id$
  *
  ******************************************************************************/
-/*! \file   examples/application/bubbler.cc
- *  \brief  Example implementation sending the same message over and over again.
- */
+#pragma once
+/* === globale defines ====================================================== */
+
+#include <avr-halib/share/freq.h>
+
+using avr_halib::config::Frequency;
+
+typedef Frequency<F_CPU> CPUClock;
+
+typedef Frequency<1> TTEventFrequency;
+
 /* === includes ============================================================= */
-#include "platform-cfg.h"               // platform dependent software config
+#include "logConf.h"
+#include "clockConf.h"
+#include "interfaceConf.h"
 
-#include "armarow/armarow.h"            // main ArMARoW include
-#include "armarow/debug.h"              // ArMARoW logging and debugging
-#include "armarow/phy/phy.h"            // physical layer
-#include "idler.h"
-/* === globals ============================================================== */
-platform::config::mob_t message;
-platform::config::rc_t  rc;             // radio controller
-uint8_t channel = 11;                   // channel number the sniffer checks
-TimeTriggeredEventSource eventSource;
-/* === functions ============================================================ */
-/*! \brief  Initializes the physical layer.*/
-void send(){
-	rc.setStateTRX(armarow::PHY::TX_ON);
-    rc.send(message);
-	::logging::log::emit() << PROGMEMSTRING("Sending message ") 
-		<< ((uint32_t*)message.payload)[0]++ << ::logging::log::endl;
-}
+/* === types ================================================================ */
 
-void init() {
-	message.size=sizeof(uint32_t);
-	((uint32_t*)message.payload)[0]=0;
-    rc.init();
-    rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-}
-/* === main ================================================================= */
-int main() {
-	eventSource.registerCallback<send>();
-    sei();                              // enable interrupts
-    ::logging::log::emit()
-        << PROGMEMSTRING("Starting bubbler (repeated send of the same message)!")
-        << ::logging::log::endl << ::logging::log::endl;
+typedef boost::mpl::list<LogSync> MorpheusSyncList;
+typedef avr_halib::power::Morpheus<MorpheusSyncList> Morpheus;
 
-    init();                            // initialize famouso
-	
-	
-	Idler::idle();
+typedef avr_halib::drivers::Clock<ClockConfig> TimeTriggeredEventSource;
 
-	return 0;
-}
+struct AT86RF230_Hal
+{
+	typedef Portmap portmap_t;
+    typedef InterruptRC irq_t;
+    typedef SpiMaster<SpiCfg> spi_t;
+};
