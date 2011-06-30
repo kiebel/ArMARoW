@@ -5,6 +5,13 @@
 #include <stdint.h>
 
 
+
+
+namespace armarow{
+
+	namespace MAC{
+
+
 /**
  *	\brief		Register map for Timer3 of atmega1281
  *	\ingroup	atmega1281
@@ -186,3 +193,9 @@ public:
 }__attribute__((packed));
 
 
+
+
+
+		} //end namespace mac
+
+	} //end namespace armarow

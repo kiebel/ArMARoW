@@ -328,7 +328,8 @@ namespace armarow{
 
 					::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
 
-					armarow::PHY::State status=Radiocontroller::doCCA();
+					uint8_t ccaValue;
+					armarow::PHY::State status=Radiocontroller::doCCA(ccaValue);
 
 					if(status==armarow::PHY::IDLE){
 
@@ -401,7 +402,8 @@ namespace armarow{
 					//for a Clear Channel assessment we need to change into Receive State
 					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
 
-					armarow::PHY::State status=Radiocontroller::doCCA();
+					uint8_t ccaValue;
+					armarow::PHY::State status=Radiocontroller::doCCA(ccaValue);
 
 					if(status==armarow::PHY::IDLE){
 
