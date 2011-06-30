@@ -400,7 +400,8 @@ struct MAC_Message{
 			return false;
 		}
 
-		::logging::log::emit() << "Success..." << ::logging::log::endl;
+		if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "Success..." << ::logging::log::endl;
+
 		return true;
 	}
 

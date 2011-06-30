@@ -64,8 +64,12 @@ armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Ena
 
 void success_transmission_callback(){
 
+//::logging::log::emit()
+//            << PROGMEMSTRING("Successful send a message...")
+//            << ::logging::log::endl;
+
 ::logging::log::emit()
-            << PROGMEMSTRING("Successful send a message...")
+            << PROGMEMSTRING("msg...")
             << ::logging::log::endl;
 
 }
@@ -82,9 +86,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
 	//mac.send_async(msg);
 	//while(1);
 
-::logging::log::emit()
-            << PROGMEMSTRING("Try sending a message...")
-            << ::logging::log::endl;
+	   //::logging::log::emit()  << PROGMEMSTRING("Try sending a message...") << ::logging::log::endl;
 
      int ret=mac.send_async(msg);
 
@@ -92,7 +94,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
             << PROGMEMSTRING("ret is: ") << ret
             << ::logging::log::endl;
 
-     delay_ms(1000);
+     //delay_ms(1000);
 
   }
 
@@ -109,7 +111,10 @@ int main() {
     armarow::MAC::mob_t messageobject;
 
 
-   const char messagecontent[] = "MAC LAYER TEST";    
+   //const char messagecontent[] = "MAC LAYER TEST";  //15 bytes
+   //const char messagecontent[] = "MAC LAYER TEST with much larger messages, increasing efficency"; //63 bytes
+   const char messagecontent[] = "MAC LAYER TEST with larger messages, increasing efficency, using the maximum message size, to test for collisions"; //114 bytes
+
 
 	    ::logging::log::emit()
             << PROGMEMSTRING("Sending the following message ") << (int32_t)cnt++
