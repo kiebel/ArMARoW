@@ -405,6 +405,28 @@ namespace armarow{
 					uint8_t ccaValue;
 					armarow::PHY::State status=Radiocontroller::doCCA(ccaValue);
 
+
+					if(status==armarow::PHY::SUCCESS)
+					{
+						if(!ccaValue){
+							
+						::logging::log::emit()
+						<< PROGMEMSTRING("Medium BUSY!!!")		
+						<< ::logging::log::endl << ::logging::log::endl;
+
+							return -1;
+						}
+
+					}else return -1;
+
+					::logging::log::emit()
+					<< PROGMEMSTRING("Medium frei!!!")		
+					<< ::logging::log::endl << ::logging::log::endl;
+
+
+
+					/*
+
 					if(status==armarow::PHY::IDLE){
 
 						::logging::log::emit()
@@ -437,7 +459,7 @@ namespace armarow{
 					}
 
 
-				
+					*/
 
 
 
