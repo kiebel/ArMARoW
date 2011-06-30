@@ -46,7 +46,60 @@
 /* === globals ============================================================== */
 platform::config::mob_t message = {10,{'0','1','2','3','4','5','6','7','8','9'}};
 
-armarow::MAC::MAC_CSMA_CA mac;
+struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
+
+enum {
+channel=1,
+mac_adress_of_node=38
+};
+
+};
+
+#undef LOGGING_DISABLE
+
+//armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t> mac;
+armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Enable> mac;
+
+
+
+void success_transmission_callback(){
+
+::logging::log::emit()
+            << PROGMEMSTRING("Successful send a message...")
+            << ::logging::log::endl;
+
+}
+
+
+void async_sending_test(armarow::MAC::mob_t msg){
+
+  mac.onMessage_Successfull_Transmitted_Delegate.bind<success_transmission_callback>();
+
+
+  while(1){
+
+	//test for one shot timer
+	//mac.send_async(msg);
+	//while(1);
+
+::logging::log::emit()
+            << PROGMEMSTRING("Try sending a message...")
+            << ::logging::log::endl;
+
+     int ret=mac.send_async(msg);
+
+	::logging::log::emit()
+            << PROGMEMSTRING("ret is: ") << ret
+            << ::logging::log::endl;
+
+     delay_ms(1000);
+
+  }
+
+}
+
+
+//armarow::MAC::MAC_CSMA_CA mac;
 
 
 /* === main ================================================================= */
@@ -73,9 +126,20 @@ int main() {
         << PROGMEMSTRING("Starting bubbler (repeated send of the same message)!")
         << ::logging::log::endl << ::logging::log::endl;
 
+
+    async_sending_test(messageobject);
+
     //main loop
     do {
 
+		::logging::log::emit()
+        	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
+		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
+		<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
+        	<< ::logging::log::endl << ::logging::log::endl;
+
+
+	
 
 	if(mac.send(messageobject)<0){
 
@@ -85,6 +149,7 @@ int main() {
 
 	}
 
+	//delay_ms(1000);
 
     } while (true);
 }

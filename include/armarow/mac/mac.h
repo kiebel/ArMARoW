@@ -17,6 +17,9 @@
 
 #include "avr-halib/share/delay.h"      // delays and timings
 #include "avr-halib/share/delegate.h"   //Delegator for user defined interrupt service routines
+//TODO: include the global interruptlock when the new version of avr halib is available
+#include "avr-halib/share/interruptLock.h"  //Global Lock
+
 
 #include "armarow/armarow.h"            // main ArMARoW include
 #include "armarow/debug.h"              // ArMARoW logging and debugging
@@ -30,15 +33,21 @@
 #include <avr-halib/ext/led.h>
 #include <avr-halib/ext/button.h>
 
+//#include <avr-halib/avr/newTimer.h>
+#include <avr-halib/avr/timer.h>
+#include <avr-halib/avr/regmaps.h> //ale regmaps aus non experimental Zweig
+
 //AVR includes
 #include <stdlib.h>
 
+#include "../common.h"
+#include "mac_evaluation.h"
 
 //typedef avr_halib::power::Morpheus<MorpheusSyncList> Morpheus;
 
 //activates clock interrupt
-//UseInterrupt(SIG_OUTPUT_COMPARE1A);
-UseInterrupt(SIG_OUTPUT_COMPARE2A);
+UseInterrupt(SIG_OUTPUT_COMPARE1A);
+//UseInterrupt(SIG_OUTPUT_COMPARE2A);
 
 using avr_halib::drivers::Clock;
 
@@ -51,6 +60,9 @@ void* operator new (size_t , void* buffer){
 return buffer;
 
 } 
+
+
+#define LOGGING_DISABLE
 
 
 #include "mac_message.h"
@@ -67,8 +79,8 @@ namespace armarow{
 	{
 		typedef uint16_t TickValueType;
 		typedef Frequency<1000> TargetFrequency; //every ms one timer interrupt
-		typedef Frequency<32768> TimerFrequency; //CPUClock
-		typedef local::Timer2 Timer;
+		typedef CPUClock TimerFrequency; //CPUClock
+		typedef local::Timer1 Timer;
 	};
 
 		typedef Clock<ClockConfig> MAC_Clock;
@@ -79,20 +91,26 @@ namespace armarow{
 		typedef uint16_t DeviceAddress; 
 		
 
+		//template<class Radiocontroller>
+		//class MAC_Base : public Radiocontroller {
+		//TODO: implement template based inheritence mechanism
 
 
 		//template <uint8_t channel>
-		class MAC_Base : public platform::config::rc_t {
+		//class MAC_Base : public Radiocontroller {
+
+		template<class Radiocontroller,MAC_EVALUATION_ACTIVATION_STATE state>
+		struct MAC_Base : public Radiocontroller,Mac_Evaluation<state>{
 
 			//T mac_protocoll;
 
-			protected:
+			//protected:
 
 
 				enum maxwaitingtime{maximal_waiting_time_in_milliseconds=100};
 
-				platform::config::mob_t message; //= {0,{0}};
-				//platform::config::rc_t  rc;
+				typename Radiocontroller::mob_t message; //= {0,{0}};				
+				//Radiocontroller  rc;
 				uint8_t channel;                   // channel number the node is sending and receiving data
 				uint16_t nav; //network allocation vector -> Zeitdauer, die das Medium voraussichtlich belegt sein wird
 
@@ -116,10 +134,10 @@ namespace armarow{
 
 				enum mac_attributes{TA,C,S};
 
-				
 
 
-			public:
+
+			//public:
 
 
 
@@ -213,20 +231,12 @@ namespace armarow{
 
 				int init(){
 					//message={0,{0}};
-					platform::config::rc_t::init();
-					platform::config::rc_t::setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
-					//platform::config::rc_t::onReceive.bind<callback_receive_message>();
-					//platform::config::rc_t::onReceive<MAC_Base,&MAC_Base::callback_receive_message>(*this);
+					Radiocontroller::init();
+					Radiocontroller::setAttribute(armarow::PHY::phyCurrentChannel, &channel);
+					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					
 
-					//setDelegateMethod(platform::config::rc_t::onReceive,MAC_Base,MAC_Base::callback_receive_message,*this);
-
-//typeof *this
-//clock.registerCallback<typeof *this, &MAC_CSMA_CA::callback_periodic_timer_activation_event>(*this);
-
-					//registerCallback<T, &T::onConversionComplete>(t);
-
-					//srandom(5);  //TODO: make seed value dependent on Node id!!!
+	
 
 					//sets the seed value for the pseudo random numbers used for a random waiting time for medium access controll
 					srandom(mac_adress_of_node);
@@ -234,22 +244,13 @@ namespace armarow{
 					
 					nav=0;
 
-					//typeof *this = MAC_Base
-					//clock.registerCallback<typeof *this, &MAC_Base::callback_periodic_timer_activation_event>(*this);
-
-
-					// Set a method as timer event handler
-					//setDelegateMethod(b.timer.onTimerDelegate, Blinker, Blinker::onTimer1, b);
-
-					//setDelegateMethod(clock.timer.onTimerDelegate, MAC_Base, MAC_Base::callback_periodic_timer_activation_event, *this);
-
 
 					return 0;
 				}
 
 				int reset(){
 
-					platform::config::rc_t::reset();
+					Radiocontroller::reset();
 					init();
 
 					return 0;
@@ -286,9 +287,9 @@ namespace armarow{
 
 
 					//for a Clear Channel assesment we need to change into Receive State
-					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
 
-					armarow::PHY::State status=platform::config::rc_t::doCCA();
+					armarow::PHY::State status=Radiocontroller::doCCA();
 
 					if(status==armarow::PHY::IDLE){
 
@@ -328,14 +329,14 @@ namespace armarow{
 
 
 					//we want to send (tranceiver on)
-					platform::config::rc_t::setStateTRX(armarow::PHY::TX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
-					platform::config::rc_t::send(*mac_message.getPhysical_Layer_Message());
+					Radiocontroller::send(*mac_message.getPhysical_Layer_Message());
 
 
 				
 
-					//platform::config::rc_t::setStateTRX(armarow::PHY::TX_OFF);
+					//Radiocontroller::setStateTRX(armarow::PHY::TX_OFF);
 					//::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
 					//<< "End of SEND Methode reached" <<::logging::log::endl;
 					return 0;
@@ -348,10 +349,10 @@ namespace armarow{
 					mac_message.setPayloadNULL();
 
 
-					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
-					//platform::config::rc_t::receive_blocking(message);
+					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					//Radiocontroller::receive_blocking(message);
 
-					platform::config::rc_t::receive(message);
+					Radiocontroller::receive(message);
 
 					armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
 
@@ -408,9 +409,9 @@ namespace armarow{
 
 
 					//for a Clear Channel assesment we need to change into Receive State
-					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
 
-					armarow::PHY::State status=platform::config::rc_t::doCCA();
+					armarow::PHY::State status=Radiocontroller::doCCA();
 
 					if(status==armarow::PHY::IDLE){
 
@@ -441,14 +442,14 @@ namespace armarow{
 
 
 					//we want to send (tranceiver on)
-					platform::config::rc_t::setStateTRX(armarow::PHY::TX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
-					platform::config::rc_t::send(*mac_message1.getPhysical_Layer_Message());
+					Radiocontroller::send(*mac_message1.getPhysical_Layer_Message());
 
 
 /*
 					for(int i=0;i<3;i++){
-						if((status=platform::config::rc_t::send(*mac_message1.getPhysical_Layer_Message()))==armarow::PHY::SUCCESS) break;
+						if((status=Radiocontroller::send(*mac_message1.getPhysical_Layer_Message()))==armarow::PHY::SUCCESS) break;
 
 					}
 
@@ -468,7 +469,7 @@ namespace armarow{
 
 				}
 
-					//platform::config::rc_t::setStateTRX(armarow::PHY::TX_OFF);
+					//Radiocontroller::setStateTRX(armarow::PHY::TX_OFF);
 					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
 					<< "End of SEND Methode reached" <<::logging::log::endl;
 					return offset;
@@ -505,8 +506,8 @@ namespace armarow{
 					}
 
 
-					platform::config::rc_t::setStateTRX(armarow::PHY::RX_ON);
-					platform::config::rc_t::receive_blocking(message);
+					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::receive_blocking(message);
 
 					armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
 

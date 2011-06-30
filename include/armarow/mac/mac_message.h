@@ -4,7 +4,7 @@
 #ifndef __MAC_MESSAGE__
 #define __MAC_MESSAGE__
 
-
+#define LOGGING_DISABLE
 
 //TODO: REPLACE 101 with the a value directly coming from the physical layer
 //#define MAX_NUMBER_OF_DATABYTES (101-sizeof(uint8_t)-sizeof(MAC_Header))
@@ -56,13 +56,13 @@ struct IEEE_Frame_Control_Field{
 
 	frametype = Data;
         securityenabled = 0; //Bit 3
-        framepending = 0; //Bit 4
-        ackrequest = 0; //Bit 5
+        framepending = 0; //Bit 4   //ist das eine fragmentierte Nachricht
+        ackrequest = 0; //Bit 5     //wollen wir Aknolegment haben?
         intraPAN = 0; //Bit 6
         reserved = 0; //Bits 7-9
-        destaddressingmode = 0; //Bits 10-11 
+        destaddressingmode = 2; //Bits 10-11 
         reserved2 = 0; //Bits 12-13
-        sourceaddressingmode = 0; //Bits 14-15
+        sourceaddressingmode = 2; //Bits 14-15
 
 
    }
@@ -128,6 +128,7 @@ struct MAC_Header{
 	void printFrameFormat(){
 
 	::logging::log::emit() << "SIZE OF MAC_HEADER:" << sizeof(MAC_Header) << ::logging::log::endl;
+	::logging::log::emit() << "SIZE OF IEEE_Frame_Control_Field: " <<  sizeof(IEEE_Frame_Control_Field) << ::logging::log::endl;
 	//::logging::log::emit() << "SIZE OF message_type: " << sizeof(messagetype) << ::logging::log::endl << ::logging::log::endl;
 	::logging::log::emit() << "SIZE OF sequencenumber: " << sizeof(sequencenumber) << ::logging::log::endl << ::logging::log::endl;
 	::logging::log::emit() << "SIZE OF dest_pan: " << sizeof(dest_pan) << ::logging::log::endl;
@@ -135,9 +136,9 @@ struct MAC_Header{
 	::logging::log::emit() << "SIZE OF source_pan: " << sizeof(source_pan) << ::logging::log::endl;
 	::logging::log::emit() << "SIZE OF source_adress: " <<  sizeof(source_adress) << ::logging::log::endl;
 
-	::logging::log::emit() << "===== DEBUG: size of message components =====" << ::logging::log::endl;
+	//::logging::log::emit() << "===== DEBUG: size of message components =====" << ::logging::log::endl;
 		
-	::logging::log::emit() << "SIZE OF IEEE_Frame_Control_Field: " <<  sizeof(IEEE_Frame_Control_Field) << ::logging::log::endl;
+	//::logging::log::emit() << "SIZE OF IEEE_Frame_Control_Field: " <<  sizeof(IEEE_Frame_Control_Field) << ::logging::log::endl;
 
 
 	}
@@ -366,7 +367,7 @@ struct MAC_Message{
 
 
 
-
+	//validating mechanism
 	bool isValid(){
 
 		::logging::log::emit() << "Validate MAC Frame..." << ::logging::log::endl;

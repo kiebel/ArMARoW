@@ -42,12 +42,46 @@
 /* === includes ============================================================= */
 
 #include "armarow/mac/mac_csma_ca.h"
-
+//#include "armarow/mac/mac.h"
 
 /* === globals ============================================================== */
 platform::config::mob_t message = {0,{0}};
 
-armarow::MAC::MAC_CSMA_CA mac;
+		/*
+		struct MAC_Configuration{
+
+			enum {
+
+				channel=11,
+				mac_adress_of_node=28 //Node ID	
+
+			};
+
+		};*/
+
+
+struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
+
+enum {
+channel=1,
+mac_adress_of_node=20
+};
+
+};
+
+struct lol{};
+
+//armarow::MAC::MAC_CSMA_CA<lol> mac;
+armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Enable> mac;
+
+//armarow::MAC::MAC_CSMA_CA<lol,platform::config::rc_t,armarow::MAC::Enable> mac;
+
+//armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,lol> mac;
+//armarow::MAC::MAC_CSMA_CA<lol,platform::config::rc_t> mac;
+
+//armarow::MAC::MAC_CSMA_CA<MAC_Configuration> mac;
+//armarow::MAC::MAC_CSMA_CA<platform::config::rc_t> mac;
+//armarow::MAC::MAC_Base<platform::config::rc_t> mac;
 armarow::MAC::mob_t messageobject;
 
 uint8_t channel = 11;                   // channel number
@@ -56,6 +90,7 @@ uint8_t channel = 11;                   // channel number
  *  \todo   Add Information for LQI and RSSI values.
  */
 
+#undef LOGGING_DISABLE
 
 //erst notifizieren, und dann receive aufrufen, wo man receive puffer übergibt
 void callback_recv() {
@@ -64,7 +99,8 @@ void callback_recv() {
 		
 
 		::logging::log::emit()
-        	<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
+        	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
+		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
 		<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
         	<< ::logging::log::endl << ::logging::log::endl;
 
@@ -93,7 +129,7 @@ int main() {
         << PROGMEMSTRING("Starting sniffer!")
         << ::logging::log::endl << ::logging::log::endl;
 
-    test_asynchron_receive();    //aus bzw. einkommentieren für aynchronen/synchronen test                       
+    //test_asynchron_receive();    //aus bzw. einkommentieren für aynchronen/synchronen test                       
 
    //sychron receive test
    
@@ -104,14 +140,24 @@ int main() {
 
     do {                                // duty cycle
 
-	messageobject.header.printFrameFormat();
+	//messageobject.header.printFrameFormat();
 
 	if(mac.receive(messageobject)!=0){
 
-		
+		/*
 		::logging::log::emit()
-        	<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
-		<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
+        	<< PROGMEMSTRING("[Content:] ") ;
+
+		for(int i=0;i<messageobject.size;i++){
+			::logging::log::emit() << messageobject.payload[i];
+
+		}*/
+
+
+		//::logging::log::emit() << ::logging::log::endl << messageobject.payload << ::logging::log::endl
+		::logging::log::emit()
+		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
+		<< PROGMEMSTRING(" Message Sequence Number: ") << (int) messageobject.header.sequencenumber
         	<< ::logging::log::endl << ::logging::log::endl;
 
 	}else{
