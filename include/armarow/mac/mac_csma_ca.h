@@ -4,6 +4,9 @@
 #define __MAC_CSMA_CA__
 
 
+#define MAC_LAYER_VERBOSE_OUTPUT false
+
+
 #include "mac.h"
 #include "atmega1281_timer3_regmap.h"
 #include <boost/static_assert.hpp>
@@ -18,6 +21,9 @@ UseInterrupt(SIG_OUTPUT_COMPARE3A);
 
 //ArMARoW/external/avr-halib/experimental/include/avr-halib/share$
 //TODO: GlobalIntlock globaler interrupt lock, zum schützen der Interruptservice routinen voreinander -> einbauen
+
+
+
 
 namespace armarow{
 
@@ -176,7 +182,7 @@ namespace armarow{
 					if(send_receive_buffer.header.controlfield.frametype!=Data) {
 						send_receive_buffer.print(); //just for debug purposes
 						has_message_ready_for_delivery=false;  //the application is only interested in application data, special packages have to be filtered out
-						::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
 						return;
 					}
 
@@ -318,7 +324,10 @@ namespace armarow{
 
 				void send_async_intern(){
 					
-					//{ //critial section start
+					uint8_t ccaValue;
+					armarow::PHY::State status;
+
+					{ //critial section start
 
 					//it can be called per interrupt, so we secure it
 					avr_halib::locking::GlobalIntLock lock;
@@ -326,13 +335,21 @@ namespace armarow{
 					//uncomment this  
 					one_shot_timer.stop();
 
-					::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
+					//::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
 
-					uint8_t ccaValue;
-					armarow::PHY::State status=Radiocontroller::doCCA(ccaValue);
+					status=Radiocontroller::doCCA(ccaValue);
 
-					if(status==armarow::PHY::IDLE){
+					//if(status==armarow::PHY::IDLE){
 
+					if(status==armarow::PHY::SUCCESS && ccaValue)
+					{
+						//if(!ccaValue){
+							
+						//::logging::log::emit()
+						//<< PROGMEMSTRING("Medium BUSY!!!")		
+						//<< ::logging::log::endl << ::logging::log::endl;
+
+							
 					
 					//we want to send (tranceiver on)
 					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
@@ -343,21 +360,20 @@ namespace armarow{
 					//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
 					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
 
-					::logging::log::emit() << "sending..." << ::logging::log::endl;					
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending..." << ::logging::log::endl;					
 
 					has_message_to_send=false;
 
-					//call callback, that transmission was succesfull
-					if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+					
 
 
 					}else{
 						//for one shot timer test
 						one_shot_timer.stop();
 
-						::logging::log::emit()
-           				 	<< PROGMEMSTRING("Medium busy, starting one shot timer...")
-            					<< ::logging::log::endl;
+						if(MAC_LAYER_VERBOSE_OUTPUT)  ::logging::log::emit()
+           				 					<< PROGMEMSTRING("Medium busy, starting one shot timer...")
+            									<< ::logging::log::endl;
 
 
 						//random waiting time (from 0 to 100 ms) -> should be adjusted for real usage
@@ -377,7 +393,13 @@ namespace armarow{
 					}
 					
 					
-				//} //critial section end
+				} //critial section end
+
+					
+
+					//call callback, that transmission was succesfull (little workaround, so that the callback funtion is not executed in the context of the critical section)
+					if(status==armarow::PHY::SUCCESS && ccaValue && !onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+
 
 
 				}
@@ -394,8 +416,8 @@ namespace armarow{
 					delay_ms(waitingtime);	
 			
 
-					::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
-					<< "Sending MAC_Message... " << ::logging::log::endl;
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
+									<< "Sending MAC_Message... " << ::logging::log::endl;
 					//mac_message.print();
 
 
@@ -410,56 +432,18 @@ namespace armarow{
 					{
 						if(!ccaValue){
 							
-						::logging::log::emit()
-						<< PROGMEMSTRING("Medium BUSY!!!")		
-						<< ::logging::log::endl << ::logging::log::endl;
+							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit()
+										<< PROGMEMSTRING("Medium BUSY!!!")		
+										<< ::logging::log::endl << ::logging::log::endl;
 
 							return -1;
 						}
 
 					}else return -1;
 
-					::logging::log::emit()
-					<< PROGMEMSTRING("Medium frei!!!")		
-					<< ::logging::log::endl << ::logging::log::endl;
-
-
-
-					/*
-
-					if(status==armarow::PHY::IDLE){
-
-						::logging::log::emit()
-							<< PROGMEMSTRING("Medium frei!!!")
-							<< ::logging::log::endl << ::logging::log::endl;						
-						
-
-					}else if (status==armarow::PHY::BUSY){
-
-						::logging::log::emit()
-							<< PROGMEMSTRING("Medium belegt!!!")
-							<< ::logging::log::endl << ::logging::log::endl;
-					
-							return -1;
-
-					}else if (status==armarow::PHY::TRX_OFF){
-						
-						
-						::logging::log::emit()
-							<< PROGMEMSTRING("Controller nicht im Receive State!!!")
-							<< ::logging::log::endl << ::logging::log::endl;	
-							return -1;
-					}else{
-
-						::logging::log::emit()
-							<< PROGMEMSTRING("armarow::PHY::State return Value of Clear channel Assessment not in {BUSY,IDLE,TRX_OFF}!!!")
-							<< ::logging::log::endl << ::logging::log::endl;
-
-					return -1;	
-					}
-
-
-					*/
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit()
+										<< PROGMEMSTRING("Medium frei!!!")		
+										<< ::logging::log::endl << ::logging::log::endl;
 
 
 

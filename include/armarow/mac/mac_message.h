@@ -14,6 +14,7 @@
 #define MAX_NUMBER_OF_DATABYTES (platform::config::rc_t::info::payload - sizeof(MAC_Header))
 
 
+
 /*from armarow start*/ 
 
 /*
@@ -164,7 +165,7 @@ struct MAC_Message{
 
 	//MAC_Payload payload;
 
-  //this constructor have to be used with the palcement new operator, hence it may not called directly
+  //this constructor have to be used with the placement new operator, hence it may not called directly
   private:
 
 	explicit MAC_Message(platform::config::mob_t& physical_layer_message, bool& decoding_was_successful){
@@ -190,7 +191,7 @@ struct MAC_Message{
 		size = physical_layer_message.size - sizeof(MAC_Header);
 
 
-
+		//if we already know, that the decoding has failed, we have no further need for confirmation
 		if(decoding_was_successful) decoding_was_successful = isValid();
 
 
@@ -357,8 +358,6 @@ struct MAC_Message{
 		}
 
 
-		
-		
 		::logging::log::emit() << ::logging::log::endl << "=== END HEX DUMP ===" << ::logging::log::endl << ::logging::log::endl;
 
 
@@ -370,11 +369,11 @@ struct MAC_Message{
 	//validating mechanism
 	bool isValid(){
 
-		::logging::log::emit() << "Validate MAC Frame..." << ::logging::log::endl;
+		if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "Validate MAC Frame..." << ::logging::log::endl;
 
 		if(size>MAX_NUMBER_OF_DATABYTES){
 
-			::logging::log::emit() << "Size of Payload to large! MAX Value: " << MAX_NUMBER_OF_DATABYTES << " Value of Frame: " << (int) size << ::logging::log::endl;
+			::logging::log::emit() << "FATAL ERROR: Size of Payload to large! MAX Value: " << MAX_NUMBER_OF_DATABYTES << " Value of Frame: " << (int) size << ::logging::log::endl;
 			return false;
 
 		}
@@ -382,19 +381,19 @@ struct MAC_Message{
 
 		if(header.controlfield.frametype==Beacon){
 
-			::logging::log::emit() << "Beacon Message" << ::logging::log::endl;
+			if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "Beacon Message" << ::logging::log::endl;
 
 		}else if(header.controlfield.frametype==MAC_command){
 
-			::logging::log::emit() << "MAC_command Message" << ::logging::log::endl;
+			if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "MAC_command Message" << ::logging::log::endl;
 
 		}else if(header.controlfield.frametype==Data){
 
-			::logging::log::emit() << "Data Message" << ::logging::log::endl;
+			if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "Data Message" << ::logging::log::endl;
 
 		}else if(header.controlfield.frametype==Acknowledgment){
 
-			::logging::log::emit() << "Acknowledgment Message" << ::logging::log::endl;
+			if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "Acknowledgment Message" << ::logging::log::endl;
 
 		}else{
 			::logging::log::emit() << "FATAL ERROR: failed decoding MAC Message" << ::logging::log::endl;
