@@ -152,13 +152,15 @@ namespace armarow{
 				/*receiver Thread, if the mac protocol needs an asyncron receive routine*/
 				void callback_receive_message(){
 
+				//FIXME: test for finding race condition
+				avr_halib::locking::GlobalIntLock lock;
 
 				{ //critial section start
 
-                                 avr_halib::locking::GlobalIntLock lock;
+                                 //avr_halib::locking::GlobalIntLock lock;
 
 
-				//::logging::log::emit() << "entered receive message interupt" << ::logging::log::endl;
+				if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "entered receive message interupt" << ::logging::log::endl;
 
 					
 
@@ -196,6 +198,7 @@ namespace armarow{
 
 					has_message_ready_for_delivery=true;
 
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving receive message interupt, calling delegate" << ::logging::log::endl;
 
 					} //critial section end
 
@@ -212,6 +215,10 @@ namespace armarow{
 
 					avr_halib::locking::GlobalIntLock lock;
 
+					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "entered periodic timer interupt" << ::logging::log::endl;
+
+					
+
 					this->clocktick_counter++;
 
 					
@@ -222,21 +229,23 @@ namespace armarow{
 						
 						//::logging::log::emit() << "received bytes in last second: "  << evaluation.received_bytes_in_last_second << ::logging::log::endl;
 
-						//::logging::log::emit() << "has_message_ready_for_delivery=" << (int) has_message_ready_for_delivery << ::logging::log::endl;
+						//::logging::log::emit() << "has_message_ready_for_delivery=" << (int) has_message_ready_for_delivery << ::logging::log::endl;	
 
 						//evaluation.received_bytes_in_last_second=0;
 
 						this->print_and_reset_number_of_received_bytes();
 
 					}
+
+					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving periodic timer interupt" << ::logging::log::endl;
+
 				}
 
 
 				int init(){
 					//message={0,{0}};
 
-		
-//FIXME: this Delegate is not initialized properly. it compiles, but at runtime, it is empty, hence the MAC Layer Interrupt service routine for receiving messages isn't called at all, leading to an infinite blocking in the receive method causing no output of the main program at all
+					//mac specific callback for received messages 
 					this->onReceive.template bind<MAC_CSMA_CA, &MAC_CSMA_CA::callback_receive_message>(this);
 
 					//function for one shot timer
@@ -301,6 +310,8 @@ namespace armarow{
 
 				int send_async(MAC_Message& mac_message){
 
+				   avr_halib::locking::GlobalIntLock lock;
+
 				   if(!has_message_to_send){
 
 					has_message_to_send=true;
@@ -332,10 +343,10 @@ namespace armarow{
 					//it can be called per interrupt, so we secure it
 					avr_halib::locking::GlobalIntLock lock;
 
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
+
 					//uncomment this  
 					one_shot_timer.stop();
-
-					//::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
 
 					status=Radiocontroller::doCCA(ccaValue);
 
@@ -391,6 +402,8 @@ namespace armarow{
 						//one_shot_timer.start((uint16_t) 1000); //one shot timer test
 
 					}
+
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving async send interrupt handler, calling delegate" << ::logging::log::endl;
 					
 					
 				} //critial section end

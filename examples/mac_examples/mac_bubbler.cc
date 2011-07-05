@@ -68,6 +68,9 @@ void success_transmission_callback(){
 //            << PROGMEMSTRING("Successful send a message...")
 //            << ::logging::log::endl;
 
+//secure callback, so it can't be interrupted
+avr_halib::locking::GlobalIntLock lock;
+
 ::logging::log::emit()
             << PROGMEMSTRING("msg...")
             << ::logging::log::endl;
@@ -79,22 +82,29 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
   mac.onMessage_Successfull_Transmitted_Delegate.bind<success_transmission_callback>();
 
+  int ret;
 
   while(1){
 
 	//test for one shot timer
 	//mac.send_async(msg);
 	//while(1);
-
+     
 	   //::logging::log::emit()  << PROGMEMSTRING("Try sending a message...") << ::logging::log::endl;
+     {
 
-     int ret=mac.send_async(msg);
+        
+   
+        ret=mac.send_async(msg);
+     
+	avr_halib::locking::GlobalIntLock lock;
 
 	::logging::log::emit()
             << PROGMEMSTRING("ret is: ") << ret
             << ::logging::log::endl;
+	}
 
-     //delay_ms(1000);
+     //delay_ms(1);
 
   }
 
