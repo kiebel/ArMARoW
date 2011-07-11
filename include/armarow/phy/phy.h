@@ -37,8 +37,7 @@
  * $Id$
  *
  ******************************************************************************/
-#ifndef __ARMAROW_LAYER_PHY_h__
-#define __ARMAROW_LAYER_PHY_h__
+#pragma once
 
 /*! \defgroup PhyL Physical Layer
  *
@@ -133,32 +132,32 @@ namespace armarow {
          *          IEEE 802.15.4.
          */
         enum State {
-            BUSY                    = 0x00,
+            busy                    = 0x00,
             /*!< radio controller is busy*/
-            BUSY_RX                 = 0x01,
+            busy_rx                 = 0x01,
             /*!< radio controller is currently busy receiving data*/
-            BUSY_TX                 = 0x02,
+            busy_tx                 = 0x02,
             /*!< radio controller is currently busy transmitting data*/
-            FORCE_TRX_OFF           = 0x03,
+            force_trx_off           = 0x03,
             /*!< state change to TRX_OFF is forced*/
-            IDLE                    = 0x04,
+            idle                    = 0x04,
             /*!< channel is currently idle*/
-            INVALID_PARAMETER       = 0x05,
+            invalid_parameter       = 0x05,
             /*!< provided parameter is invalid or not supported*/
-            RX_ON                   = 0x06,
+            rx_on                   = 0x06,
             /*!< radio controller is waiting to receive data*/
-            SUCCESS                 = 0x07,
+            success                 = 0x07,
             /*!< operation was successfully performed*/
-            TRX_OFF                 = 0x08,
+            trx_off                 = 0x08,
             /*!< radio controller clock state oscillator is enable*/
-            TX_ON                   = 0x09,
+            tx_on                   = 0x09,
             /*!< radio controller is waiting to transmit data*/
-            UNSUPPORTED_ATTRIBUTE   = 0x0A,
+            unsupported_attribute   = 0x0A,
             /*!< specified attribute is not supported or defined*/
-            READ_ONLY               = 0x0B,
+            read_only               = 0x0B,
             /*!< specified attribute is read-only*/
-			ERROR					= 0x0C
-			/*!< error during last operation */
+            error					= 0x0C
+            /*!< error during last operation */
         };
         /*! \brief Modes for Clear Channel Assesment (%CCA) */
         enum ModeCCA {
@@ -171,5 +170,3 @@ namespace armarow {
         };
     };
 }; // namespace armarow
-
-#endif  //__ARMAROW_LAYER_PHY_h__

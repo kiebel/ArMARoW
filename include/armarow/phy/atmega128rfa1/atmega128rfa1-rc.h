@@ -139,7 +139,7 @@ namespace armarow {
                         Hal::irq_t::disable();
                         sei();
                     }
-                    rc.readRegister( spec_t::registerDefault::IRQSTATUS, registerValue);
+                    rc.readRegister( spec_t::registerDefault::irqStatus, registerValue);
                     handlerIRQ( registerValue );
                     if ( CFG::enableConcurrence ) {
                         cli();
@@ -159,21 +159,21 @@ namespace armarow {
                  *  \param[in] pCause interrupt status
                  */
                 void handlerIRQ( typename ControllerInterface_t::regval_t pCause) {
-                    if ( pCause.IRQ.BAT_LOW  ) {} //TODO power supply low
-                    if ( pCause.IRQ.TRX_UR   ) {} //TODO buffer underrun
-                    if ( pCause.IRQ.RX_START ) {
-                        //rc.readRegister(  spec_t::registerDefault::PHYRSSI, registerValue );
-                        //FIXME minfo.rxRssi = registerValue.PHYRSSI.RSSI;
+                    if ( pCause.irq.bat_low  ) {} //TODO power supply low
+                    if ( pCause.irq.trx_ur   ) {} //TODO buffer underrun
+                    if ( pCause.irq.rx_start ) {
+                        //rc.readRegister(  spec_t::registerDefault::phyRssi, registerValue );
+                        //FIXME minfo.rxRssi = registerValue.phyRssi.RSSI;
                     }
-                    if ( pCause.IRQ.TRX_END ) {
+                    if ( pCause.irq.trx_end ) {
                         armarow::PHY::State cState = (armarow::PHY::State)this->getStateTRX();
                         switch(cState)
 						{
-							case(armarow::PHY::RX_ON ): this->onReceive();
+							case(armarow::PHY::rx_on ): this->onReceive();
 														break;
 
-                            case(armarow::PHY::TX_ON ): if(CFG::rxOnIdle)
-															this->setStateTRX( armarow::PHY::RX_ON );
+                            case(armarow::PHY::tx_on ): if(CFG::rxOnIdle)
+															this->setStateTRX( armarow::PHY::rx_on );
 														break;
 							default:					break;
                         }
@@ -187,14 +187,14 @@ namespace armarow {
                  */
                 bool ready() {
                     switch ( getStateTRX() ) {
-                        case armarow::PHY::BUSY_RX:
-                        case armarow::PHY::BUSY_TX:
+                        case armarow::PHY::busy_rx:
+                        case armarow::PHY::busy_tx:
                             return false;
-                        case armarow::PHY::TX_ON:
-                            if ( CFG::rxOnIdle ) setStateTRX( armarow::PHY::RX_ON );
-                        case armarow::PHY::RX_ON:
+                        case armarow::PHY::tx_on:
+                            if ( CFG::rxOnIdle ) setStateTRX( armarow::PHY::rx_on );
+                        case armarow::PHY::rx_on:
                             //FIXME do something here ....!!! what happens after succesfull recv?
-                        case armarow::PHY::TRX_OFF:
+                        case armarow::PHY::trx_off:
                             return true;
                         default:
                             return false;
@@ -223,7 +223,7 @@ namespace armarow {
                     rm.sleep.ddr  = true;   // sleep pin is output
                     rm.sleep.port = false;  // pin set to LOW
                     SyncRegmap(rm);
-                    delay_us( spec_t::Duration::TRX_CHIP_RESET_TIME_US );
+                    delay_us( spec_t::Duration::trx_chip_reset_time_us );
                     // map interrupt to method onIRQ()
                     Hal::irq_t::template init<type,&type::onIRQ>(this);
                 }
@@ -237,9 +237,9 @@ namespace armarow {
 
                     // transceiver initialization
                     UseRegmap(rm, Portmap);
-                    rc.readRegister(spec_t::registerDefault::TRXSTATUS, registerValue);
-                    if ( registerValue.TRXSTATUS.TRX_STATUS != spec_t::defaultValue::TRX_OFF ) {
-                        if ( registerValue.TRXSTATUS.TRX_STATUS !=  spec_t::defaultValue::P_ON ) {
+                    rc.readRegister(spec_t::registerDefault::trxStatus, registerValue);
+                    if ( registerValue.trxStatus.trx_status != spec_t::defaultValue::trx_off ) {
+                        if ( registerValue.trxStatus.trx_status !=  spec_t::defaultValue::p_on ) {
                             reset();                    // reset chip and set TRX_OFF
                         }
                         rm.sleep.port = false;          // sleep pin to LOW
@@ -249,26 +249,26 @@ namespace armarow {
 
                     // disable IRQ and clear any pending IRQs
                     registerValue.value = 0x00;
-                    rc.writeRegister( spec_t::registerDefault::IRQMASK,   registerValue );
-                    rc.readRegister(  spec_t::registerDefault::IRQSTATUS, registerValue );
-                    rc.readRegister(  spec_t::registerDefault::TRXSTATE,  registerValue );
-                    registerValue.TRXSTATE.TRX_CMD = spec_t::defaultValue::TRX_OFF;
-                    rc.writeRegister( spec_t::registerDefault::TRXSTATE,  registerValue );
-                    delay_us( spec_t::Duration::TRX_INIT_TIME_US );
+                    rc.writeRegister( spec_t::registerDefault::irqMask,   registerValue );
+                    rc.readRegister(  spec_t::registerDefault::irqStatus, registerValue );
+                    rc.readRegister(  spec_t::registerDefault::trxState,  registerValue );
+                    registerValue.trxState.trx_cmd = spec_t::defaultValue::trx_off;
+                    rc.writeRegister( spec_t::registerDefault::trxState,  registerValue );
+                    delay_us( spec_t::Duration::trx_init_time_us );
 
-                    // check current state and stop if state is not TRX_OFF
+                    // check current state and stop if state is not trx_off
                     // since something must be wrong!!!
-                    rc.readRegister( spec_t::registerDefault::TRXSTATUS, registerValue);
-                    while ( registerValue.TRXSTATUS.TRX_STATUS != spec_t::defaultValue::TRX_OFF );
+                    rc.readRegister( spec_t::registerDefault::trxStatus, registerValue);
+                    while ( registerValue.trxStatus.trx_status != spec_t::defaultValue::trx_off );
 
-                    rc.readRegister(  spec_t::registerDefault::PHYTXPWR,  registerValue );
-                    registerValue.PHYTXPWR.TX_AUTO_CRC_ON = CFG::autoCRC;
-                    rc.writeRegister( spec_t::registerDefault::PHYTXPWR,  registerValue );
-					rc.readRegister( spec_t::registerDefault::PHYTXPWR, registerValue);
+                    rc.readRegister(  spec_t::registerDefault::phyTxPwr,  registerValue );
+                    registerValue.phyTxPwr.tx_auto_crc_on = CFG::autoCRC;
+                    rc.writeRegister( spec_t::registerDefault::phyTxPwr,  registerValue );
+					rc.readRegister( spec_t::registerDefault::phyTxPwr, registerValue);
                     registerValue.value = 0x00;
-                    registerValue.IRQ.TRX_END  = true;
-                    registerValue.IRQ.RX_START = true;
-                    rc.writeRegister( spec_t::registerDefault::IRQMASK,  registerValue );
+                    registerValue.irq.trx_end  = true;
+                    registerValue.irq.rx_start = true;
+                    rc.writeRegister( spec_t::registerDefault::irqMask,  registerValue );
                 }
 
                 /*! \brief  Resets the ATmega128RFA1 radio controller.
@@ -279,10 +279,10 @@ namespace armarow {
                     UseRegmap(rm, Portmap);
                     rm.reset.port = false;  // reset pin LOW
                     SyncRegmap(rm);
-                    delay_us( spec_t::Duration::TRX_RESET_TIME_US );
+                    delay_us( spec_t::Duration::trx_reset_time_us );
                     rm.reset.port = true;   // reset pin HIGH
                     SyncRegmap(rm);
-                    delay_us( spec_t::Duration::TRX_CHIP_RESET_TIME_US );
+                    delay_us( spec_t::Duration::trx_chip_reset_time_us );
                 }
 
                 /*! \brief  Transmits provided data via the radio connection.
@@ -301,11 +301,11 @@ namespace armarow {
                     TRACE_FUNCTION;
                     // check if TX is enabled and no transmission is taking place
                     armarow::PHY::State cState = getStateTRX();
-                    if ( cState != armarow::PHY::TX_ON ) return cState;
+                    if ( cState != armarow::PHY::tx_on ) return cState;
                     // do nothing if size equals zero
                     if ( pData.size == 0) {
-                        if ( CFG::rxOnIdle ) setStateTRX( armarow::PHY::RX_ON );
-                        return armarow::PHY::SUCCESS;
+                        if ( CFG::rxOnIdle ) setStateTRX( armarow::PHY::rx_on );
+                        return armarow::PHY::success;
                     }
 
                     // alter size if CRC is enabled
@@ -313,7 +313,7 @@ namespace armarow {
                     uint8_t size = pData.size+info::overhead;
 					
 					if ( size > armarow::PHY::aMaxPHYPacketSize )
-                        return armarow::PHY::INVALID_PARAMETER;
+                        return armarow::PHY::invalid_parameter;
 
 					if(CFG::enabledCRC && !CFG::autoCRC)
 						*((uint16_t*)(pData.payload+pData.size))=common::CRC::calculateCRC<typename CFG::CRCPolynomial>(pData.payload, size);
@@ -323,11 +323,11 @@ namespace armarow {
                     typename ControllerInterface_t::regval_t registerValue;
 
                     // start sending
-                    rc.readRegister(spec_t::registerDefault::TRXSTATE, registerValue);
-                    registerValue.TRXSTATE.TRX_CMD = spec_t::defaultValue::TX_START;
-                    rc.writeRegister(spec_t::registerDefault::TRXSTATE,registerValue);
+                    rc.readRegister(spec_t::registerDefault::trxState, registerValue);
+                    registerValue.trxState.trx_cmd = spec_t::defaultValue::tx_start;
+                    rc.writeRegister(spec_t::registerDefault::trxState,registerValue);
 
-                    return armarow::PHY::SUCCESS;
+                    return armarow::PHY::success;
                 }
 
                 /*! \brief  Transmits provided data via the radio connection and
@@ -347,7 +347,7 @@ namespace armarow {
                 armarow::PHY::State send_blocking(mob_t& pData) {
                     TRACE_FUNCTION;
                     armarow::PHY::State result = send(pData);
-                    while( ( result == armarow::PHY::SUCCESS ) && !ready() );
+                    while( ( result == armarow::PHY::success ) && !ready() );
                     return result;
                 }
 
@@ -362,13 +362,13 @@ namespace armarow {
                     // read data from RXFIXO and set lqi value
                     pData.size  = rc.readRxFifo(info::frame, pData.payload, &(pData.minfo.lqi)) - info::overhead;
 					typename ControllerInterface_t::regval_t registerValue;
-					rc.readRegister(spec_t::registerDefault::PHYED, registerValue);
+					rc.readRegister(spec_t::registerDefault::phyEd, registerValue);
 					pData.minfo.ed=registerValue.value;
 					registerValue.value=0;
 					if(CFG::autoCRC)
 					{
-						rc.readRegister(spec_t::registerDefault::PHYRSSI, registerValue);
-						pData.minfo.crc=registerValue.PHYRSSI.RX_CRC_VALID;
+						rc.readRegister(spec_t::registerDefault::phyRssi, registerValue);
+						pData.minfo.crc=registerValue.phyRssi.rx_crc_valid;
 					}
 					else
 					{
@@ -414,25 +414,25 @@ namespace armarow {
                     typename ControllerInterface_t::regval_t registerValue;
 
                     armarow::PHY::State cState = (armarow::PHY::State)getStateTRX();
-                    if ( cState == armarow::PHY::TRX_OFF ) return cState;
-                    if ( cState != armarow::PHY::RX_ON ) return armarow::PHY::BUSY;
+                    if ( cState == armarow::PHY::trx_off ) return cState;
+                    if ( cState != armarow::PHY::rx_on ) return armarow::PHY::busy;
 
                     // do the actual check of the medium
-                    rc.readRegister(spec_t::registerDefault::PHYCCCCA, registerValue);
-                    registerValue.PHYCCCCA.CCA_REQUEST = true;
-                    rc.writeRegister(spec_t::registerDefault::PHYCCCCA,registerValue);
-                    //delay_us( spec_t::Duration::TRX_CCA_TIME_US );
+                    rc.readRegister(spec_t::registerDefault::phyCccca, registerValue);
+                    registerValue.phyCccca.cca_request = true;
+                    rc.writeRegister(spec_t::registerDefault::phyCccca,registerValue);
+                    //delay_us( spec_t::Duration::trx_cca_time_us );
 					
                     // CCA_DONE and CCA_STATUS are valid only for one read
                     while(true){
-						rc.readRegister(spec_t::registerDefault::TRXSTATUS, registerValue);
-                    	if(registerValue.TRXSTATUS.CCA_DONE)
+						rc.readRegister(spec_t::registerDefault::trxStatus, registerValue);
+                    	if(registerValue.trxStatus.cca_done)
 							break;
 					}
 
-					value=registerValue.TRXSTATUS.CCA_STATUS;
+					value=registerValue.trxStatus.cca_status;
 
-					return armarow::PHY::SUCCESS;
+					return armarow::PHY::success;
                 }
 
                 /*! \brief  Performs an energy detection on the medium without
@@ -454,14 +454,14 @@ namespace armarow {
                     typename ControllerInterface_t::regval_t registerValue;
 
                     armarow::PHY::State cState = (armarow::PHY::State)getStateTRX();
-                    if ( ( cState == armarow::PHY::RX_ON) ||
-                            ( cState == armarow::PHY::BUSY_RX) ) {
+                    if ( ( cState == armarow::PHY::rx_on) ||
+                            ( cState == armarow::PHY::busy_rx) ) {
                         registerValue.value = 0x00;
-                        rc.writeRegister(spec_t::registerDefault::PHYED, registerValue);
-                        delay_us( spec_t::Duration::TRX_CCA_TIME_US );
-                        rc.readRegister(spec_t::registerDefault::PHYED, registerValue);
+                        rc.writeRegister(spec_t::registerDefault::phyEd, registerValue);
+                        delay_us( spec_t::Duration::trx_cca_time_us );
+                        rc.readRegister(spec_t::registerDefault::phyEd, registerValue);
                         pEnergyLevel = spec_t::dBmToPaLevel(registerValue.value);//FIXME check conversion
-                        return armarow::PHY::SUCCESS;
+                        return armarow::PHY::success;
                     }
                     return cState;
                 }
@@ -492,19 +492,19 @@ namespace armarow {
 
                     switch (pAttribute) {
                         case armarow::PHY::phyCurrentChannel:
-                            rc.readRegister(spec_t::registerDefault::PHYCCCCA, registerValue);
-                            *((uint8_t*)pAttrValue) = registerValue.PHYCCCCA.CHANNEL;
+                            rc.readRegister(spec_t::registerDefault::phyCccca, registerValue);
+                            *((uint8_t*)pAttrValue) = registerValue.phyCccca.channel;
                             break;
                         case armarow::PHY::phyChannelsSupported:
                             *((uint32_t*)pAttrValue) = spec_t::Channel::supportedChannel();
                             break;
                         case armarow::PHY::phyTransmitPower:
-                            rc.readRegister(spec_t::registerDefault::PHYTXPWR, registerValue);
-                            *((uint8_t*)pAttrValue) = registerValue.PHYTXPWR.TX_PWR;
+                            rc.readRegister(spec_t::registerDefault::phyTxPwr, registerValue);
+                            *((uint8_t*)pAttrValue) = registerValue.phyTxPwr.tx_pwr;
                             break;
                         case armarow::PHY::phyCCAMode:
-                            rc.readRegister(spec_t::registerDefault::PHYCCCCA, registerValue);
-                            *((uint8_t*)pAttrValue) = registerValue.PHYCCCCA.CCA_MODE;
+                            rc.readRegister(spec_t::registerDefault::phyCccca, registerValue);
+                            *((uint8_t*)pAttrValue) = registerValue.phyCccca.cca_mode;
                             break;
                         case armarow::PHY::phyCurrentPage:
                             // note that only page 0x00 is curently supported
@@ -515,9 +515,9 @@ namespace armarow {
                         case armarow::PHY::phySymbolsPerOctet:              //FIXME
                             break;
                         default:
-                            return armarow::PHY::UNSUPPORTED_ATTRIBUTE;
+                            return armarow::PHY::unsupported_attribute;
                     }
-                    return armarow::PHY::SUCCESS;
+                    return armarow::PHY::success;
                 }
 
                 /*! \brief  Sets the value of a PAN Information Attribute.
@@ -548,56 +548,56 @@ namespace armarow {
                             if ( ( *((uint8_t*)pAttrValue) >= spec_t::Channel::minChannel) &&
                                     ( *((uint8_t*)pAttrValue) <= spec_t::Channel::maxChannel) )
                             {
-                                rc.readRegister(spec_t::registerDefault::PHYCCCCA, registerValue);
-                                registerValue.PHYCCCCA.CHANNEL = *((uint8_t*)pAttrValue);
-                                rc.writeRegister(spec_t::registerDefault::PHYCCCCA,registerValue);
+                                rc.readRegister(spec_t::registerDefault::phyCccca, registerValue);
+                                registerValue.phyCccca.channel = *((uint8_t*)pAttrValue);
+                                rc.writeRegister(spec_t::registerDefault::phyCccca,registerValue);
                             } else {
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             }
                             break;
                         case armarow::PHY::phyTransmitPower:
                             if ( *((uint8_t*)pAttrValue) <= 15 )
                             {
-                                rc.readRegister(spec_t::registerDefault::PHYTXPWR, registerValue);
-                                registerValue.PHYTXPWR.TX_PWR = *((uint8_t*)pAttrValue);
-                                rc.writeRegister(spec_t::registerDefault::PHYTXPWR,registerValue);
+                                rc.readRegister(spec_t::registerDefault::phyTxPwr, registerValue);
+                                registerValue.phyTxPwr.tx_pwr = *((uint8_t*)pAttrValue);
+                                rc.writeRegister(spec_t::registerDefault::phyTxPwr,registerValue);
                             } else {
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             }
                             break;
                         case armarow::PHY::phyCCAMode:
                             if ( *((uint8_t*)pAttrValue) <= 3 )
                             {
-                                rc.readRegister(spec_t::registerDefault::PHYCCCCA, registerValue);
-                                registerValue.PHYCCCCA.CCA_MODE = *((uint8_t*)pAttrValue);
-                                rc.writeRegister(spec_t::registerDefault::PHYCCCCA,registerValue);
+                                rc.readRegister(spec_t::registerDefault::phyCccca, registerValue);
+                                registerValue.phyCccca.cca_mode = *((uint8_t*)pAttrValue);
+                                rc.writeRegister(spec_t::registerDefault::phyCccca,registerValue);
                             } else {
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             }
                             break;
 						case armarow::PHY::phyCCAThres:
                             if ( *((uint8_t*)pAttrValue) <= 15 )
                             {
-                                registerValue.CCATHRES.CCA_ED_THRES = *((uint8_t*)pAttrValue);
-                                rc.writeRegister(spec_t::registerDefault::CCATHRES,registerValue);
+                                registerValue.ccaThres.cca_ed_thres = *((uint8_t*)pAttrValue);
+                                rc.writeRegister(spec_t::registerDefault::ccaThres,registerValue);
                             } else {
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             }
                             break;
 
                         case armarow::PHY::phyCurrentPage:
                             if ( *((uint8_t*)pAttrValue) != 0x00)
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             break;
                         case armarow::PHY::phyChannelsSupported:
                         case armarow::PHY::phyMaxFrameDuration:
                         case armarow::PHY::phySHRDuration:
                         case armarow::PHY::phySymbolsPerOctet:
-                            return armarow::PHY::READ_ONLY;
+                            return armarow::PHY::read_only;
                         default:
-                            return armarow::PHY::UNSUPPORTED_ATTRIBUTE;
+                            return armarow::PHY::unsupported_attribute;
                     }
-                    return  armarow::PHY::SUCCESS;
+                    return  armarow::PHY::success;
                 }
 
                 /*! \brief  Gets the state (<em>working mode</em>) of the
@@ -614,8 +614,8 @@ namespace armarow {
                  */
                 armarow::PHY::State getStateTRX() {
                     typename ControllerInterface_t::regval_t registerValue;
-                    rc.readRegister( spec_t::registerDefault::TRXSTATUS, registerValue);
-                    return (armarow::PHY::State)registerValue.TRXSTATUS.TRX_STATUS;
+                    rc.readRegister( spec_t::registerDefault::trxStatus, registerValue);
+                    return (armarow::PHY::State)registerValue.trxStatus.trx_status;
                 }
 
                 /*! \brief  Sets the state (<em>working mode</em>) of the
@@ -633,39 +633,39 @@ namespace armarow {
                 void setStateTRX(const armarow::PHY::State pState) {
                     typename ControllerInterface_t::regval_t registerValue;
 
-                    rc.readRegister(spec_t::registerDefault::TRXSTATUS, registerValue);
+                    rc.readRegister(spec_t::registerDefault::trxStatus, registerValue);
                     switch(pState) {
-                        case armarow::PHY::RX_ON:
-                            if ( (registerValue.TRXSTATUS.TRX_STATUS == spec_t::defaultValue::TRX_OFF) ||
-                                    (registerValue.TRXSTATUS.TRX_STATUS == spec_t::defaultValue::PLL_ON) ) {
-                                rc.readRegister(spec_t::registerDefault::TRXSTATE, registerValue);
-                                registerValue.TRXSTATE.TRX_CMD = spec_t::defaultValue::RX_ON;
-                                rc.writeRegister(spec_t::registerDefault::TRXSTATE, registerValue);
+                        case armarow::PHY::rx_on:
+                            if ( (registerValue.trxStatus.trx_status == spec_t::defaultValue::trx_off) ||
+                                    (registerValue.trxStatus.trx_status == spec_t::defaultValue::pll_on) ) {
+                                rc.readRegister(spec_t::registerDefault::trxState, registerValue);
+                                registerValue.trxState.trx_cmd = spec_t::defaultValue::rx_on;
+                                rc.writeRegister(spec_t::registerDefault::trxState, registerValue);
                                 do {
-                                    rc.readRegister( spec_t::registerDefault::TRXSTATUS, registerValue);
-                                } while ( registerValue.TRXSTATUS.TRX_STATUS != spec_t::defaultValue::RX_ON );
+                                    rc.readRegister( spec_t::registerDefault::trxStatus, registerValue);
+                                } while ( registerValue.trxStatus.trx_status != spec_t::defaultValue::rx_on );
                             }
                            break;
-                        case armarow::PHY::TRX_OFF:
-                            if ( (registerValue.TRXSTATUS.TRX_STATUS == spec_t::defaultValue::RX_ON) ||
-                                    (registerValue.TRXSTATUS.TRX_STATUS == spec_t::defaultValue::PLL_ON) ) {
-                                rc.readRegister(spec_t::registerDefault::TRXSTATE, registerValue);
-                                registerValue.TRXSTATE.TRX_CMD = spec_t::defaultValue::TRX_OFF;
-                                rc.writeRegister(spec_t::registerDefault::TRXSTATE, registerValue);
+                        case armarow::PHY::trx_off:
+                            if ( (registerValue.trxStatus.trx_status == spec_t::defaultValue::rx_on) ||
+                                    (registerValue.trxStatus.trx_status == spec_t::defaultValue::pll_on) ) {
+                                rc.readRegister(spec_t::registerDefault::trxState, registerValue);
+                                registerValue.trxState.trx_cmd = spec_t::defaultValue::trx_off;
+                                rc.writeRegister(spec_t::registerDefault::trxState, registerValue);
                             }
                             break;
-                        case armarow::PHY::TX_ON:
-                            if ( (registerValue.TRXSTATUS.TRX_STATUS == spec_t::defaultValue::TRX_OFF) ||
-                                    (registerValue.TRXSTATUS.TRX_STATUS == spec_t::defaultValue::RX_ON) ) {
-                                rc.readRegister(spec_t::registerDefault::TRXSTATE, registerValue);
-                                registerValue.TRXSTATE.TRX_CMD = spec_t::defaultValue::PLL_ON;
-                                rc.writeRegister(spec_t::registerDefault::TRXSTATE, registerValue);
+                        case armarow::PHY::tx_on:
+                            if ( (registerValue.trxStatus.trx_status == spec_t::defaultValue::trx_off) ||
+                                    (registerValue.trxStatus.trx_status == spec_t::defaultValue::rx_on) ) {
+                                rc.readRegister(spec_t::registerDefault::trxState, registerValue);
+                                registerValue.trxState.trx_cmd = spec_t::defaultValue::pll_on;
+                                rc.writeRegister(spec_t::registerDefault::trxState, registerValue);
                                 do {
-                                    rc.readRegister( spec_t::registerDefault::TRXSTATUS, registerValue);
-                                } while ( registerValue.TRXSTATUS.TRX_STATUS != spec_t::defaultValue::PLL_ON );
+                                    rc.readRegister( spec_t::registerDefault::trxStatus, registerValue);
+                                } while ( registerValue.trxStatus.trx_status != spec_t::defaultValue::pll_on );
                             }
                             break;
-                        case armarow::PHY::FORCE_TRX_OFF:
+                        case armarow::PHY::force_trx_off:
                             reset();
                             break;
                         default:
@@ -674,7 +674,7 @@ namespace armarow {
                 }
 
 				void sleep() {
-					setStateTRX(PHY::TRX_OFF);
+					setStateTRX(PHY::trx_off);
 					UseRegmap(rm, Portmap);
 					rm.sleep.port=true;
 					SyncRegmap(rm);
