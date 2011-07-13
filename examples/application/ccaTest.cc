@@ -79,7 +79,7 @@ void callback_recv() {
 void init() {
     rc.init();
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-    rc.setStateTRX(armarow::PHY::RX_ON);
+    rc.setStateTRX(armarow::PHY::rx_on);
     rc.onReceive.bind<callback_recv>();
 	uint8_t value=3;
 	rc.setAttribute(armarow::PHY::phyCCAMode, &value);
@@ -118,7 +118,7 @@ int main() {
 		uint8_t ccaValue;
 		armarow::PHY::State state=rc.doCCA(ccaValue);
 		clock.getTime(t2);
-		if(state==armarow::PHY::SUCCESS)
+		if(state==armarow::PHY::success)
 		{
 			if(!ccaValue)
 			{

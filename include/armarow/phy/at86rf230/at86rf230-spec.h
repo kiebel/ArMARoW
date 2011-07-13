@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright (c) 2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
+ * Copyright (c) 2010-2011 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
  * All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,7 @@
  * $Id$
  *
  ******************************************************************************/
-#ifndef __ARMAROW_AT86RF230_SPEC_h__
-#define __ARMAROW_AT86RF230_SPEC_h__
+#pragma once
 
 #include "armarow/phy/phy.h"
 
@@ -108,90 +107,90 @@ namespace armarow {
                 struct registerDefault {
                     // --- default register addresses -------------------------
                     enum address {
-                        SNOP        = 0x00,
+                        snop        = 0x00,
                         /*!< FIXME*/
-                        TRXSTATUS   = 0x01,
+                        trxStatus   = 0x01,
                         /*!< signals the current state of the radio
                          *   transceiver/CCA measurement (a read access to
                          *   this register clears bits CCA_DONE and CCA_STATUS)*/
-                        TRXSTATE    = 0x02,
+                        trxState    = 0x02,
                         /*!< controls the radio transceiver states*/
-                        TRXCTRL0    = 0x03,
+                        trxCtrl0    = 0x03,
                         /*!< controls the drive current of the digital output
                          *   pads and the CLKM clock rate*/
-                        PHYTXPWR    = 0x05,
+                        phyTxPwr    = 0x05,
                         /*!< sets the transmit power and controls the FCS
                          *   algorithm for TX aperations*/
-                        PHYRSSI     = 0x06,
+                        phyRssi     = 0x06,
                         /*!< indicates the current received signal strength
                          *   (RSSI) and the FCS validity of a received frame*/
-                        PHYED       = 0x07,
+                        phyEd       = 0x07,
                         /*!< contains the result after an ED measurement*/
-                        PHYCCCCA    = 0x08,
+                        phyCccca    = 0x08,
                         /*!< contains bits to initiate and control the CCA
                          *   measurement as well as to set the channel center 
                          *   frequency */
-                        CCATHRES    = 0x09,
+                        ccaThres    = 0x09,
                         /*!< contains the threshold level for CCA-ED
                          * measurements*/
-                        IRQMASK     = 0x0E,
+                        irqMask     = 0x0E,
                         /*!< used to enable/disable interrupt events*/
-                        IRQSTATUS   = 0x0F,
+                        irqStatus   = 0x0F,
                         /*!< contains the status of the individual interrupts
                          *   (a read access to this register resets all
                          *   interrupt bits)*/
-                        VREGCTRL    = 0x10,
+                        vregCtrl    = 0x10,
                         /*!< controls the use of the voltage regulators and
                          *   indicates their status*/
-                        BATMON      = 0x11,
+                        batMon      = 0x11,
                         /*!< configures the battery monitor*/
-                        XOSCCTRL    = 0x12,
+                        xoscCtrl    = 0x12,
                         /*!< controls the operation of the crystal oscillator*/
-                        PLLCF       = 0x1A,
+                        pllCf       = 0x1A,
                         /*!< controls the operation of the center frequency
                          *   calibration loop */
-                        PLLDCU      = 0x1B,
+                        pllDcu      = 0x1B,
                         /*!< controls the operation of the delay cell
                          *   calibration loop */
-                        PARTNUM     = 0x1C,
+                        partNum     = 0x1C,
                         /*!< contains the radio transceiver part number*/
-                        VERSIONNUM  = 0x1D,
+                        versionNum  = 0x1D,
                         /*!< contains the radio transceiver version number*/
-                        MANID0      = 0x1E,
+                        manId0      = 0x1E,
                         /*!< contains 1st part of stored JEDEC manufacturer ID*/
-                        MANID1      = 0x1F,
+                        manId1      = 0x1F,
                         /*!< contains 2nd part of stored JEDEC manufacturer ID*/
-                        SHORTADDR0  = 0x20,
+                        shortAddr0  = 0x20,
                         /*!< contains 1st part of 16 bit short address*/
-                        SHORTADDR1  = 0x21,
+                        shortAddr1  = 0x21,
                         /*!< contains 2nd part of 16 bit short address*/
-                        PANID0      = 0x22,
+                        panId0      = 0x22,
                         /*!< contains 1st part of 16 bit PAN ID*/
-                        PANID1      = 0x23,
+                        panId1      = 0x23,
                         /*!< contains 2nd part of 16 bit PAN ID*/
-                        IEEEADDR0   = 0x24,
+                        ieeeAddr0   = 0x24,
                         /*!< contains 1st part of 64 bit IEEE address*/
-                        IEEEADDR1   = 0x25,
+                        ieeeAddr1   = 0x25,
                         /*!< contains 2nd part of 64 bit IEEE address*/
-                        IEEEADDR2   = 0x26,
+                        ieeeAddr2   = 0x26,
                         /*!< contains 3rd part of 64 bit IEEE address*/
-                        IEEEADDR3   = 0x27,
+                        ieeeAddr3   = 0x27,
                         /*!< contains 4th part of 64 bit IEEE address*/
-                        IEEEADDR4   = 0x28,
+                        ieeeAddr4   = 0x28,
                         /*!< contains 5th part of 64 bit IEEE address*/
-                        IEEEADDR5   = 0x29,
+                        ieeeAddr5   = 0x29,
                         /*!< contains 6th part of 64 bit IEEE address*/
-                        IEEEADDR6   = 0x2A,
+                        ieeeAddr6   = 0x2A,
                         /*!< contains 7th part of 64 bit IEEE address*/
-                        IEEEADDR7   = 0x2B,
+                        ieeeAddr7   = 0x2B,
                         /*!< contains 8th part of 64 bit IEEE address*/
-                        XAHCTRL     = 0x2C,
+                        xahCtrl     = 0x2C,
                         /*!< controls the TX_ARET transaction in the Extended
                          *   Operating Mode*/
-                        CSMASEED0   = 0x2D,
+                        csmaSeed0   = 0x2D,
                         /*!< contains a fraction of the CSMA_SEED value for the
                          *   CSMA-CA algorithm*/
-                        CSMASEED1   = 0x2E,
+                        csmaSeed1   = 0x2E,
                         /*!< contains a fraction of the CSMA_SEED value for the
                          *   CSMA-CA algorithm*/
                     };
@@ -232,150 +231,150 @@ namespace armarow {
                  */
                 union registerMap {
                     struct {
-                        uint8_t TRX_STATUS          : 5;
+                        uint8_t trx_status          : 5;
                         /*!< current radio transceiver status*/
-                        uint8_t Reserved            : 1;
-                        bool    CCA_STATUS          : 1;
+                        uint8_t reserved            : 1;
+                        bool    cca_status          : 1;
                         /*!< indicates the result of a CCA request*/
-                        bool    CCA_DONE            : 1;
+                        bool    cca_done            : 1;
                         /*!< indicates if a CCA request is completed*/
-                    } TRXSTATUS;
+                    } trxStatus;
                     struct {
-                        uint8_t TRX_CMD             : 5;
+                        uint8_t trx_cmd             : 5;
                         /*!< write access initiates a radio transceiver state
                          *   transistion */
-                        uint8_t TRAC_STATUS         : 3;
+                        uint8_t trac_status         : 3;
                         /*!< FIXME*/
-                    } TRXSTATE;
+                    } trxState;
                     struct {
-                        uint8_t CLKM_CTRL           : 3;
+                        uint8_t clkm_ctrl           : 3;
                         /*!< sets clock rate of pin CLKM*/
-                        bool    CLKM_SHA_SEL        : 1;
+                        bool    clkm_sha_sel        : 1;
                         /*!< defines the commencement of the CLKM clock rate
                          *   modifications*/
-                        uint8_t PAD_IO_CLKM         : 2;
+                        uint8_t pad_io_clkm         : 2;
                         /*!< set the output driver current of pin CLKM*/
-                        uint8_t PAD_IO              : 2;
+                        uint8_t pad_io              : 2;
                         /*!< set the output driver current of digital ouput
                          *   pads MISO and IRQ*/
-                    } TRXCTRL0;
+                    } trxCtrl0;
                     struct {
-                        uint8_t TX_PWR              : 4;
+                        uint8_t tx_pwr              : 4;
                         /*!< FIXME*/
-                        uint8_t Reserved            : 3;
-                        bool    TX_AUTO_CRC_ON      : 1;
+                        uint8_t reserved            : 3;
+                        bool    tx_auto_crc_on      : 1;
                         /*!< controls the automatic FCS generation for TX
                          *   operations*/
-                    } PHYTXPWR;
+                    } phyTxPwr;
                     struct {
-                        uint8_t RSSI                : 5;
+                        uint8_t rssi                : 5;
                         /*!< contains the result of the automated RSSI
                          * measurement*/
-                        uint8_t Reserved            : 2;
-                        bool    RX_CRC_VALID        : 1;
+                        uint8_t reserved            : 2;
+                        bool    rx_crc_valid        : 1;
                         /*!< indicates whether a received frame has a valid FCS*/
-                    } PHYRSSI;
+                    } phyRssi;
                     struct {
-                        uint8_t CHANNEL             : 5;
+                        uint8_t channel             : 5;
                         /*!< defines the RX/TX channel according to
                          *   IEEE 802.15.4*/
-                        uint8_t CCA_MODE            : 2;
+                        uint8_t cca_mode            : 2;
                         /*!< selected CCA_MODE*/
-                        bool    CCA_REQUEST         : 1;
+                        bool    cca_request         : 1;
                         /*!< initiates a manual CCA measurement*/
-                    } PHYCCCCA;
+                    } phyCccca;
                     struct {
-                        uint8_t CCA_ED_THRES        : 4;
+                        uint8_t cca_ed_thres        : 4;
                         /*!< defines the threshold value of the CCA-ED
                          *   measurements*/
-                        uint8_t Reserved            : 4;
-                    } CCATHRES;
+                        uint8_t reserved            : 4;
+                    } ccaThres;
                     struct {
-                        bool    PLL_LOCK            : 1;
+                        bool    pll_lock            : 1;
                         /*!< indicates PLL lock*/
-                        bool    PLL_UNLOCK          : 1;
+                        bool    pll_unlock          : 1;
                         /*!< indicates PLL unlock*/
-                        bool    RX_START            : 1;
+                        bool    rx_start            : 1;
                         /*!< indicates a SFD detection (the TRX_STATE changes
                          *   to BUSY_RX)*/
-                        bool    TRX_END             : 1;
+                        bool    trx_end             : 1;
                         /*!< indicates the completion of a frame
                          *   reception/transmission*/
-                        uint8_t Reserverd           : 2;
-                        bool    TRX_UR              : 1;
+                        uint8_t reserverd           : 2;
+                        bool    trx_ur              : 1;
                         /*!< indicates a frame buffer access violation
                          *   (underrun)*/
-                        bool    BAT_LOW             : 1;
+                        bool    bat_low             : 1;
                         /*!< indicates a supply voltage below the programmed
                          *   threshold*/
-                    } IRQ;
+                    } irq;
                     struct {
-                        uint8_t Reserved1           : 2;
-                        bool    DVDD_OK             : 1;
+                        uint8_t reserved1           : 2;
+                        bool    dvdd_ok             : 1;
                         /*!< indicates if the internal 1.8V regulated supply
                          *   voltage DVDD has settled*/
-                        bool    DVREG_EXT           : 1;
+                        bool    dvreg_ext           : 1;
                         /*!< defines whether the internal digital voltage
                          *   regulator or an external regualator is used*/
-                        uint8_t Reserved2           : 2;
-                        bool    AVDD_OK             : 1;
+                        uint8_t reserved2           : 2;
+                        bool    avdd_ok             : 1;
                         /*!< indicates if the internal 1.8 regulated supply
                          *   voltage AVDD has settled*/
-                        bool    AVREG_EXT           : 1;
+                        bool    avreg_ext           : 1;
                         /*!< defines whether the internal analog voltage
                          * regulator or an external regulator is used*/
-                    } VREGCTRL;
+                    } vregCtrl;
                     struct {
-                        uint8_t BATMON_VTH          : 4;
+                        uint8_t batmon_vth          : 4;
                         /*!< defines the threshold value for the battery
                          * monitor*/
-                        bool    BATMON_HR           : 1;
+                        bool    batmon_hr           : 1;
                         /*!< selects the range and resolution of the battery
                          *   monitor*/
-                        bool    BATMON_OK           : 1;
+                        bool    batmon_ok           : 1;
                         /*!< indicates the level of the external supply woltage
                          *   with respect to the programmed threshold*/
-                        uint8_t Reserved            : 2;
-                    } BATMON;
+                        uint8_t reserved            : 2;
+                    } batMon;
                     struct {
-                        uint8_t XTAL_TRIM           : 4;
+                        uint8_t xtal_trim           : 4;
                         /*!< page 70 at86rf230 manual*/
-                        uint8_t XTAL_MODE           : 4;
+                        uint8_t xtal_mode           : 4;
                         /*!< sets the operating mode of the crystal oscillator*/
-                    } XOSCCTRL;
+                    } xoscCtrl;
                     struct {
-                        uint8_t Reserved            : 7;
-                        bool    PLL_CF_START        : 1;
+                        uint8_t reserved            : 7;
+                        bool    pll_cf_start        : 1;
                         /*!< initiates the center frequency calibration*/
-                    } PLLCF;
+                    } pllCf;
                     struct {
-                        uint8_t Reserved            : 7;
-                        bool    PLL_DCU_START       : 1;
+                        uint8_t reserved            : 7;
+                        bool    pll_dcu_start       : 1;
                         /*!< initiates the delay cell calibration*/
-                    } PLLDCU;
+                    } pllDcu;
                     struct {
-                        uint8_t Reserved            : 1;
-                        uint8_t MAX_CSMA_RETRIES    : 3;
+                        uint8_t reserved            : 1;
+                        uint8_t max_csma_retries    : 3;
                         /*!< specifies the maximum number of retries to repeat
                          *   the random back-off/CCA procedure before a TX_ARET
                          *   transaction is cancelled*/
-                        uint8_t MAX_FRAME_RETRIES   : 3;
+                        uint8_t max_frame_retries   : 3;
                         /*!< specifies the maximum number of frame
                          *   retransmission in a TX_ARET transaction*/
-                    } XAHCTRL;
+                    } xahCtrl;
                     struct {
-                        uint8_t CSMA_SEED_1         : 3;
+                        uint8_t csma_seed_1         : 3;
                         /*!< contains the upper 3 bit of the CSMA_SEED*/
-                        bool    I_AM_COORD          : 1;
+                        bool    i_am_coord          : 1;
                         /*!< set if node is PAN coordinator*/
-                        uint8_t Reserved            : 1;
-                        bool    AACK_SET_PD         : 1;
+                        uint8_t reserved            : 1;
+                        bool    aack_set_pd         : 1;
                         /*!< defines the content of the frame pending subfield
                          *   for acknowledgement frames*/
-                        uint8_t MIN_BE              : 2;
+                        uint8_t min_be              : 2;
                         /*!< defines the minimal back-off exponent used in the
                          *   CSMA-CA algorithm */
-                    } CSMASEED1;
+                    } csmaSeed1;
                     uint8_t value;
                 } __attribute__ ((packed));
                 // --- default values -----------------------------------------
@@ -384,29 +383,29 @@ namespace armarow {
                  */
                 struct defaultValue {
                     enum {
-                        NOP                          = 0x00,
-                        P_ON                         = 0x00,
-                        BUSY_RX                      = 0x01,
-                        BUSY_TX                      = 0x02,
-                        TX_START                     = 0x02,
-                        FORCE_TRX_OFF                = 0x03,
-                        RX_ON                        = 0x06,
-                        TRX_OFF                      = 0x08,
-                        PLL_ON                       = 0x09,
-                        SLEEP                        = 0x0F,
-                        BUSY_RX_AACK                 = 0x11,
-                        BUSY_TX_ARET                 = 0x12,
-                        RX_AACK_ON                   = 0x16,
-                        TX_ARET_ON                   = 0x19,
-                        RX_ON_NOCLK                  = 0x1c,
-                        RX_AACK_ON_NOCLK             = 0x1d,
-                        BUSY_RX_AACK_NOCLK           = 0x1e,
-                        STATE_TRANSITION_IN_PROGRESS = 0x1f,
-                        SUCCESS                      = 0x00,
-                        SUCCESS_DATA_PENDING         = 0x01,
-                        CHANNEL_ACCESS_FAILURE       = 0x03,
-                        NO_ACK                       = 0x05,
-                        INVALID                      = 0x07,
+                        nop                          = 0x00,
+                        p_on                         = 0x00,
+                        busy_rx                      = 0x01,
+                        busy_tx                      = 0x02,
+                        tx_start                     = 0x02,
+                        force_trx_off                = 0x03,
+                        rx_on                        = 0x06,
+                        trx_off                      = 0x08,
+                        pll_on                       = 0x09,
+                        sleep                        = 0x0F,
+                        busy_rx_aack                 = 0x11,
+                        busy_tx_aret                 = 0x12,
+                        rx_aack_on                   = 0x16,
+                        tx_aret_on                   = 0x19,
+                        rx_on_noclk                  = 0x1c,
+                        rx_aack_on_noclk             = 0x1d,
+                        busy_rx_aack_noclk           = 0x1e,
+                        state_transition_in_progress = 0x1f,
+                        success                      = 0x00,
+                        success_data_pending         = 0x01,
+                        channel_access_failure       = 0x03,
+                        no_ack                       = 0x05,
+                        invalid                      = 0x07,
                     };
                 };
                 // --- timings ------------------------------------------------
@@ -417,14 +416,14 @@ namespace armarow {
                  */
                 struct Duration {
                     enum {
-                        TRX_RESET_TIME_US      = 6,
+                        trx_reset_time_us      = 6,
                         /*!< duration while reset=low is asserted*/
-                        TRX_INIT_TIME_US       = 510,
+                        trx_init_time_us       = 510,
                         /*!< duration for transceiver to reach TRX_OFF for the
                          *   first time*/
-                        TRX_CCA_TIME_US        = 140,
+                        trx_cca_time_us        = 140,
                         /*!< duration of a CCA measurement*/
-                        TRX_CHIP_RESET_TIME_US = 625
+                        trx_chip_reset_time_us = 625
                         /*!< duration for transceiver reset*/
                     };
                 };
@@ -435,8 +434,8 @@ namespace armarow {
                  *  Defines sizes and numbers of available memory and queues.
                  */
                 enum chipSize {
-                    SIZE_FIFO    = 128,
-                    SIZE_RAM     = 512
+                    size_fifo    = 128,
+                    size_ram     = 512
                 };
                 // --- supported PIB Attributes for Medium Access Control -----
                 //TODO struct PIBAttributeMAC {enum {};};
@@ -494,5 +493,3 @@ namespace armarow {
         } // namespace specification
     } // namespace phy
 } // namespace armarow
-
-#endif  //__ARMAROW_AT86RF230_SPEC_h__

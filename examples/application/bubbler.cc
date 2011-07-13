@@ -55,7 +55,7 @@ TimeTriggeredEventSource eventSource;
 /* === functions ============================================================ */
 /*! \brief  Initializes the physical layer.*/
 void send(){
-	rc.setStateTRX(armarow::PHY::TX_ON);
+	rc.setStateTRX(armarow::PHY::tx_on);
     rc.send(message);
 	::logging::log::emit() << PROGMEMSTRING("Sending message ") 
 		<< ((uint32_t*)message.payload)[0]++ << ::logging::log::endl;
