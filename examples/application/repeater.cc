@@ -64,7 +64,7 @@ void callback_recv() {
 
 void send(){
 	if ( counter ) {
-		rc.setStateTRX(armarow::PHY::TX_ON);
+		rc.setStateTRX(armarow::PHY::tx_on);
         rc.send(message);
         ::logging::log::emit()
 			<< PROGMEMSTRING("Send message ") << (int32_t)counter
@@ -77,7 +77,7 @@ void send(){
 void init() {
     rc.init();
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-    rc.setStateTRX(armarow::PHY::RX_ON);
+    rc.setStateTRX(armarow::PHY::rx_on);
     rc.onReceive.bind<callback_recv>();
 	eventSource.registerCallback<send>();
 }

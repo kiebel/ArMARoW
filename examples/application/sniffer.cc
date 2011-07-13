@@ -76,7 +76,7 @@ void callback_recv() {
 void init() {
     rc.init();
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-    rc.setStateTRX(armarow::PHY::RX_ON);
+    rc.setStateTRX(armarow::PHY::rx_on);
     rc.onReceive.bind<callback_recv>();
 }
 /* === main ================================================================= */
