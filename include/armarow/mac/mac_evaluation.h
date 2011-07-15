@@ -19,6 +19,8 @@ struct Mac_Evaluation_Interface{
 
 	void add_number_of_received_bytes(uint8_t number_of_received_bytes);
 
+	void print_and_reset_number_of_received_bytes();
+
 
 };
 
