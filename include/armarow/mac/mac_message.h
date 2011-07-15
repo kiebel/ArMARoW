@@ -68,7 +68,7 @@ struct IEEE_Frame_Control_Field{
 
    }
 
-
+	IEEE_Frame_Control_Field(){init();}
 
    //Bits: 0–2 3 4 5 6 7–9 10–11 12–13 14–15
 
@@ -109,6 +109,8 @@ struct MAC_Header{
 	}
 
 	MAC_Header(IEEE_Frametype a_messagetype, DeviceAddress a_source_adress, DeviceAddress a_dest_adress){
+
+		controlfield.init();
 
 		source_adress=a_source_adress;
 		dest_adress=a_dest_adress;

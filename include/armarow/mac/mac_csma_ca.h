@@ -55,6 +55,9 @@ namespace armarow{
 				pan_id=0,
 				ack_request=0
 
+				minimal_backoff_exponend=0  //means, we wait 2^0=1 ms until we send a message 
+
+
 			};
 
 
@@ -86,11 +89,200 @@ namespace armarow{
 				//we don't want to deliver the same message twice, so we need a flag for that
 				volatile bool has_message_ready_for_delivery; //and we declare it as volatile, so that the compiler doesn't do anything fishy to it (optimization)
 				
-
 				//bit we need for timer interrupt routine, to decide if there is a message to send (asynchron message delivery)
 				volatile bool has_message_to_send;
 				
 				MAC_Message& send_buffer;
+
+				//an experiment
+				//structuring feature related variables and constands in a sub class for better readability and maintainability
+				//(idea: reduce code scattering)
+				struct Backoff_Timing{
+
+				uint8_t current_backoff_exponend;
+
+				//ieee maximal backoff exponend
+				static const uint8_t maximal_backoff_exponend = 7; //TODO: add IEEE number here -> its a pain finding it in the standard, so we just take this value, since 2^7= 128 ms, that is quite a long backoff time
+
+				static const uint8_t minimal_backoff_exponend = MAC_Config::minimal_backoff_exponend;
+
+				uint8_t number_of_backoffs;  //TODO: not really used until now, remove is unneccessary
+
+				static const uint8_t maximum_number_of_backoffs = 10; //TODO: add IEEE number here
+
+					Backoff_Timing(){
+
+						//init variables
+						this->reset();
+
+					}
+
+					//idea: if(is_in_boundaries()) oneshottimer.start(get_random_backoff_time_in_ms()); else drop_message();
+
+					//has the exponend grown above the allowed limit?
+					bool is_in_boundaries(){
+						if(this->current_backoff_exponend<=maximal_backoff_exponend){
+						return true;
+						}else{
+						return false;
+						}
+					}
+
+					//this method is intended for the one shot timer, to get the waiting time easier 
+					uint16_t get_random_backoff_time_in_ms(){
+						
+						//compute ieee compatible maximal backoff waiting time, that will grow exponentionally with number of backoffs
+						uint8_t current_maximal_backofftime = 2^(this->current_backoff_exponend);
+						this->current_backoff_exponend++;
+
+						//get random number
+						uint32_t randomnumber = rand();
+
+						//0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
+				     		uint32_t random_waitingtime = ( ((uint32_t)randomnumber * current_maximal_backofftime) / (0x8000)); 
+
+						//return random waiting time as uint16_t, so that the one shot timer can just use it
+						return (uint16_t)random_waitingtime;
+
+					}
+
+					//for easily resetting the counters, intended to use in the send function, when you just accepted a new message for transmission
+					void reset(){
+
+						current_backoff_exponend=0;
+						number_of_backoffs=0;
+						
+					}
+
+					
+
+
+				} backoff_timing;
+
+
+				struct Acknolagement_Handler{
+
+					enum ACK_ERROR_CODE {SUCCESS,TIMEOUT};
+
+				//if a maximal waiting time is exceeded, then waits for ack will be set to false and an error is reported
+				//received_ack_for_last_transmitted_message is set only if an ack was received, if the timeout occur beforhand, it will still be false and indicates an error -> retransmission, or if number of retransmission exceeds a limit, than report an error
+
+					volatile bool waits_for_ack; //if false, drop ack immediatly
+
+					volatile bool received_ack_for_last_transmitted_message;
+
+					uint8_t sequence_number_of_last_transmitted_message;
+
+					uint8_t destination_id_of_last_transmitted_message;
+
+					uint8_t destination_panid_of_last_transmitted_message;
+
+					uint8_t maximal_number_of_retransmissions;
+
+					uint8_t current_number_of_retransmissions;
+
+					uint8_t timeout_counter_in_ms;
+
+					uint8_t timeout_duration_in_ms;
+
+					Acknolagement_Handler(){
+
+						received_ack_for_last_transmitted_message=false;
+						waits_for_ack=false;
+						current_number_of_retransmissions=0;
+						timeout_counter_in_ms=0;
+
+
+						timeout_duration_in_ms=20;
+						maximal_number_of_retransmissions=3;
+
+					}
+
+					//called by the periodic timer ISR every ms
+					void decrement_timeout_counter_every_ms(){
+
+						if(waits_for_ack){
+							if(timeout_counter_in_ms < timeout_duration_in_ms){
+								timeout_counter_in_ms++;
+							}else{
+								current_number_of_retransmissions++;
+								waits_for_ack=false;  //timeout event, delete bit, so the busy wait in the sender function will end and 
+							}
+						}
+
+					}
+
+					//may not be called in a critical section!!!
+					ACK_ERROR_CODE wait_for_ACK_for_MAC_Message(MAC_Message& msg){
+
+						if(msg.header.controlfield.ackrequest==0) return SUCCESS; //message header indicates, that the sender doesn't want an ACK
+
+						sequence_number_of_last_transmitted_message = msg.header.sequencenumber;
+						destination_id_of_last_transmitted_message = msg.header.dest_adress;
+						destination_panid_of_last_transmitted_message = msg.header.dest_pan;
+
+
+						timeout_counter_in_ms=0;
+
+						waits_for_ack=true;
+
+
+						while(waits_for_ack && !received_ack_for_last_transmitted_message){}
+
+						if(!received_ack_for_last_transmitted_message) return TIMEOUT;
+
+						return SUCCESS;
+
+					}
+
+
+					//automatically evaluates all relevant information from the mac message, to aviod errors
+					ACK_ERROR_CODE send_ACK_for_MAC_Message(MAC_Message& msg){
+						/*
+						MAC_Message ack_message = msg;
+
+						ack_message.setPayloadNULL();
+						ack_message.size=0;						
+						*/				
+
+	//MAC_Message(IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer)
+						//sende es wieder dorthin, wo es her kam
+						MAC_Message ack_message(Acknowledgment,  //frametype is ACK
+							MAC_Configuration::mac_adress_of_node, //source adress of ACK, take it from Config
+							msg.header.source_adress, //dest adress, is source adress of data message
+							(char*) 0,0);   //ACK doesn't contain data, all relevant information are stored in the header
+
+						ack_message.header.sequencenumber=msg.header.sequencenumber; //the ACK is for this data message, so we need the same seuqnce numbers
+						//ack_message.header.controlfield.ackrequest=0;
+
+						//we want to send (tranceiver on)
+						Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
+
+						//send
+						Radiocontroller::send(*ack_message.getPhysical_Layer_Message());
+
+						//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
+						Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+
+
+
+						return SUCCESS;
+					}
+
+
+				/*idea: sender: 
+						//busy wait
+						while(received_ack_for_last_transmitted_message && waits_for_Ack){}
+						
+
+
+					receiver: sends ack with its node id only, if received message has the destination id of the receiver or 255 (braodcast message)
+				*/
+
+
+				} acknolagement_handler;
+
+
 
 				//enum mac_attributes{TA,C,S};
 
@@ -187,6 +379,17 @@ namespace armarow{
 						send_receive_buffer.print(); //just for debug purposes
 						has_message_ready_for_delivery=false;  //the application is only interested in application data, special packages have to be filtered out
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
+
+
+						//TODO: set bit that sended message was acknolaged
+						if(send_receive_buffer.header.dest_adress==this->mac_adress_of_node &&
+						send_receive_buffer.header.controlfield.frametype==Acknowledgment){
+
+							//set bit to 1
+
+						}
+
+
 						return;
 					}
 
@@ -219,7 +422,7 @@ namespace armarow{
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "entered periodic timer interupt" << ::logging::log::endl;
 
-					
+					acknolagement_handler.decrement_timeout_counter_every_ms();
 
 					this->clocktick_counter++;
 
@@ -335,6 +538,7 @@ namespace armarow{
 
 	
 					//copy message into send message buffer
+
 					send_buffer=mac_message;
 
 					//sends the message that we copied in the send_buffer
@@ -388,6 +592,8 @@ namespace armarow{
 					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
 
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending..." << ::logging::log::endl;					
+
+					//TODO: wait for the Acknolagement here, if it fails, start one shot timer for retransmission
 
 					has_message_to_send=false;
 
