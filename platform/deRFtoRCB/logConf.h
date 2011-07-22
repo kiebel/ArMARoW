@@ -6,7 +6,7 @@
 #include <boost/mpl/list.hpp>
 #include <avr-halib/avr/sleep.h>
 
-typedef Uart1<CPUClock,115200> logConf;
+typedef Uart0<CPUClock,19200> logConf;
 
 setLoggingConfig(logConf);
 

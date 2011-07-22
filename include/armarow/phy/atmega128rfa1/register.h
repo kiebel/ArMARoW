@@ -35,8 +35,8 @@ public:
 			union
 			{
 				struct{ 
-					bool trxrst :1;
-					bool slptr :1;
+					bool trx_reset :1;
+					bool sleep_tr :1;
 				};
 				uint8_t trxpr;
 			};

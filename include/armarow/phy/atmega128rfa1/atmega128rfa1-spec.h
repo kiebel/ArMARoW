@@ -72,31 +72,6 @@ namespace armarow {
                         return (((1UL << maxChannel) - 1) & ~((1UL << minChannel) - 1));
                     }
                 };
-                // --- SPI ----------------------------------------------------
-                /*! \brief  %SPI %specification of the ATmega128RFA1 radio controller.
-                 *
-                 *  Defines commands and default values for the SPI connection.
-                 */
-                struct SPI {
-                    enum command   {
-                        FRAMEBUFFER_READ = 0x20,
-                        /*!< command to read the framebuffer of the transceiver*/
-                        FRAMEBUFFER_WRITE = 0x60,
-                        /*!< command to write the framebuffer of the transceiver*/
-                        REGISTER_READ     = 0x80,
-                        /*!< command to read a register*/
-                        REGISTER_WRITE    = 0xC0,
-                        /*!< command to write a register*/
-                        SRAM_READ         = 0x00,
-                        /*!< command to read the SRAM of the transceiver*/
-                        SRAM_WRITE        = 0x40
-                        /*!< command to write the SRAM of the transceiver*/
-                    };
-                    enum value     {};
-                    union status_t {
-                        uint8_t value;
-                    } __attribute((packed));
-                };
                 // --- register defaults --------------------------------------
                 /*! \brief  Register %specification of the ATmega128RFA1
                  *          radio controller.
@@ -428,7 +403,7 @@ namespace armarow {
                     };
                 };
                 // --- sizes chip specific ------------------------------------
-                /*! \brief  %Specification of available memory of the ATmega128RFA1
+                 /*! \brief  %Specification of available memory of the ATmega128RFA1
                  *          radio controller.
                  *
                  *  Defines sizes and numbers of available memory and queues.

@@ -41,7 +41,7 @@
 /* === globale defines ====================================================== */
 
 #include <avr-halib/share/freq.h>
-
+#include "avr-halib/regmaps/local.h"
 using avr_halib::config::Frequency;
 
 typedef Frequency<F_CPU> CPUClock;
@@ -60,9 +60,17 @@ typedef avr_halib::power::Morpheus<MorpheusSyncList> Morpheus;
 
 typedef avr_halib::drivers::Clock<ClockConfig> TimeTriggeredEventSource;
 
+
+class cpuinit
+{
+  public:
+  cpuinit()
+  {
+    UseRegMap(rm,avr_halib::regmaps::local::atmega128rfa1::Systemclock);
+    rm.setps(rm.ps1);
+  }
+} in;
+
 struct ATmega128RfA1_Hal
 {
-    typedef Portmap portmap_t;
-    typedef InterruptRC irq_t;
-    typedef SpiMaster<SpiCfg> spi_t;
 };
