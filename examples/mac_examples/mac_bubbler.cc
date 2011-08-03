@@ -49,8 +49,8 @@ platform::config::mob_t message = {10,{'0','1','2','3','4','5','6','7','8','9'}}
 struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
 enum {
-channel=1,
-mac_adress_of_node=38
+channel=3,
+mac_adress_of_node=45
 };
 
 };

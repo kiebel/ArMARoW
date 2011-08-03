@@ -63,7 +63,7 @@ platform::config::mob_t message = {0,{0}};
 struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
 enum {
-channel=1,
+channel=3,
 mac_adress_of_node=20
 };
 

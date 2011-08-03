@@ -39,7 +39,7 @@ namespace armarow{
 		//}
 
 
-
+		
 
 		typedef void* AttributType;
 		typedef uint16_t DeviceAddress; 
@@ -51,7 +51,9 @@ namespace armarow{
 			enum {
 
 				channel=11,
-				mac_adress_of_node=28 //Node ID	
+				mac_adress_of_node=28, //Node ID	
+				pan_id=0,
+				ack_request=0
 
 			};
 
@@ -67,7 +69,7 @@ namespace armarow{
 
 			protected:
 
-
+				enum MAC_Special_Adresses{MAC_BROADCAST_ADRESS=255};
 
 
 				// CLOCK 
@@ -307,8 +309,14 @@ namespace armarow{
 
 				}
 
+				int send_async(MAC_Message mac_message){
 
-				int send_async(MAC_Message& mac_message){
+					return this->send_async(mac_message,MAC_BROADCAST_ADRESS);
+
+
+				}
+
+				int send_async(MAC_Message& mac_message,DeviceAddress destination_adress){
 
 				   avr_halib::locking::GlobalIntLock lock;
 
@@ -316,9 +324,17 @@ namespace armarow{
 
 					has_message_to_send=true;
 
-					//copy message into send message buffer
+					//init message header
 					mac_message.header.sequencenumber=this->get_global_sequence_number();
+					mac_message.header.source_adress=MAC_Config::mac_adress_of_node; 
+					mac_message.header.source_pan=MAC_Config::pan_id;
+					mac_message.header.dest_adress=destination_adress;
+					mac_message.header.dest_pan=0;
+					mac_message.header.controlfield.frametype=Data;
+					mac_message.header.controlfield.ackrequest=MAC_Config::ack_request;
 
+	
+					//copy message into send message buffer
 					send_buffer=mac_message;
 
 					//sends the message that we copied in the send_buffer
@@ -420,7 +436,24 @@ namespace armarow{
 
 				int send(MAC_Message mac_message){
 
-				        mac_message.header.sequencenumber=this->get_global_sequence_number();
+					return this->send(mac_message,MAC_BROADCAST_ADRESS);
+
+
+				}
+
+				int send(MAC_Message mac_message,DeviceAddress destination_adress){
+
+
+					//init message header
+					mac_message.header.sequencenumber=this->get_global_sequence_number();
+					mac_message.header.source_adress=MAC_Config::mac_adress_of_node; 
+					mac_message.header.source_pan=MAC_Config::pan_id;
+					mac_message.header.dest_adress=destination_adress; //MAC_BROADCAST_ADRESS;
+					mac_message.header.dest_pan=0;
+					mac_message.header.controlfield.frametype=Data;
+					mac_message.header.controlfield.ackrequest=MAC_Config::ack_request;
+
+
 
 					//random waiting time (from 0 to 100 ms) -> should be adjusted for real usage
 					int randomnumber = rand();
