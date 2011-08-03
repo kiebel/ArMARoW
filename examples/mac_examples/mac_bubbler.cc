@@ -104,7 +104,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
             << ::logging::log::endl;
 	}
 
-     //delay_ms(1);
+     delay_ms(1000);
 
   }
 

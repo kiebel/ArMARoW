@@ -4,7 +4,7 @@
 #define __MAC_CSMA_CA__
 
 
-#define MAC_LAYER_VERBOSE_OUTPUT false
+#define MAC_LAYER_VERBOSE_OUTPUT true
 
 
 #include "mac.h"
@@ -53,8 +53,7 @@ namespace armarow{
 				channel=11,
 				mac_adress_of_node=28, //Node ID	
 				pan_id=0,
-				ack_request=0
-
+				ack_request=0,
 				minimal_backoff_exponend=0  //means, we wait 2^0=1 ms until we send a message 
 
 
@@ -122,9 +121,9 @@ namespace armarow{
 					//has the exponend grown above the allowed limit?
 					bool is_in_boundaries(){
 						if(this->current_backoff_exponend<=maximal_backoff_exponend){
-						return true;
+							return true;
 						}else{
-						return false;
+							return false;
 						}
 					}
 
@@ -187,19 +186,57 @@ namespace armarow{
 
 					Acknolagement_Handler(){
 
-						received_ack_for_last_transmitted_message=false;
-						waits_for_ack=false;
-						current_number_of_retransmissions=0;
-						timeout_counter_in_ms=0;
-
+						reset();
 
 						timeout_duration_in_ms=20;
 						maximal_number_of_retransmissions=3;
 
 					}
 
+					//resets variables to default value
+					void reset(){
+
+
+						received_ack_for_last_transmitted_message=false;
+						waits_for_ack=false;
+						current_number_of_retransmissions=0;
+						timeout_counter_in_ms=0;
+
+					}
+
+					void print(){
+						::logging::log::emit() << "received_ack_for_last_transmitted_message: " << (int)received_ack_for_last_transmitted_message << ::logging::log::endl;
+						::logging::log::emit() << "waits_for_ack: " << (int)waits_for_ack << ::logging::log::endl;
+						::logging::log::emit() << "current_number_of_retransmissions: " << (int)current_number_of_retransmissions << ::logging::log::endl;
+						::logging::log::emit() << "timeout_counter_in_ms: " << (int)timeout_counter_in_ms << ::logging::log::endl;
+					}
+
+					//if an ACK message is received, this method decides, whether its the ACK frame we are waiting for or not
+					//if yes, we set the corrosponding bits, if not we just ignore the ACK
+					void received_ACK(MAC_Message& ack){
+
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ack was received, validating..." << ::logging::log::endl;
+
+						if (sequence_number_of_last_transmitted_message == ack.header.sequencenumber
+						&&  destination_id_of_last_transmitted_message == ack.header.dest_adress
+						&& destination_panid_of_last_transmitted_message == ack.header.dest_pan)
+						{
+
+							//this is the ACK for the last transmitted message
+							received_ack_for_last_transmitted_message=true;
+
+							//waits_for_ack=false;
+
+						}
+
+
+					}
+
+
 					//called by the periodic timer ISR every ms
 					void decrement_timeout_counter_every_ms(){
+					
+
 
 						if(waits_for_ack){
 							if(timeout_counter_in_ms < timeout_duration_in_ms){
@@ -213,21 +250,28 @@ namespace armarow{
 					}
 
 					//may not be called in a critical section!!!
-					ACK_ERROR_CODE wait_for_ACK_for_MAC_Message(MAC_Message& msg){
+					ACK_ERROR_CODE init_waiting_mechanism_for_ACK_for_MAC_Message(MAC_Message& msg){
 
-						if(msg.header.controlfield.ackrequest==0) return SUCCESS; //message header indicates, that the sender doesn't want an ACK
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "wait for ACK..." << ::logging::log::endl;
+
+						//if(msg.header.controlfield.ackrequest==0) return SUCCESS; //message header indicates, that the sender doesn't want an ACK
 
 						sequence_number_of_last_transmitted_message = msg.header.sequencenumber;
 						destination_id_of_last_transmitted_message = msg.header.dest_adress;
 						destination_panid_of_last_transmitted_message = msg.header.dest_pan;
+						
+						reset();
 
-
-						timeout_counter_in_ms=0;
-
+						//timeout_counter_in_ms=0;
+						
+						//we wait for an ack, so we set the bit
 						waits_for_ack=true;
+						
+						//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "enter busy wait..." << ::logging::log::endl;
 
+						//while(waits_for_ack && !received_ack_for_last_transmitted_message){}
 
-						while(waits_for_ack && !received_ack_for_last_transmitted_message){}
+						//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving busy wait..." << ::logging::log::endl;
 
 						if(!received_ack_for_last_transmitted_message) return TIMEOUT;
 
@@ -235,39 +279,7 @@ namespace armarow{
 
 					}
 
-
-					//automatically evaluates all relevant information from the mac message, to aviod errors
-					ACK_ERROR_CODE send_ACK_for_MAC_Message(MAC_Message& msg){
-						/*
-						MAC_Message ack_message = msg;
-
-						ack_message.setPayloadNULL();
-						ack_message.size=0;						
-						*/				
-
-	//MAC_Message(IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer)
-						//sende es wieder dorthin, wo es her kam
-						MAC_Message ack_message(Acknowledgment,  //frametype is ACK
-							MAC_Configuration::mac_adress_of_node, //source adress of ACK, take it from Config
-							msg.header.source_adress, //dest adress, is source adress of data message
-							(char*) 0,0);   //ACK doesn't contain data, all relevant information are stored in the header
-
-						ack_message.header.sequencenumber=msg.header.sequencenumber; //the ACK is for this data message, so we need the same seuqnce numbers
-						//ack_message.header.controlfield.ackrequest=0;
-
-						//we want to send (tranceiver on)
-						Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
-
-						//send
-						Radiocontroller::send(*ack_message.getPhysical_Layer_Message());
-
-						//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
-						Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
-
-
-
-						return SUCCESS;
-					}
+					//TODO: verschiebe Methode aus dieser Kalsse direkt in CSMA CA dass sollte klappen, bei ACK_ERROR_CODE muss dann ein Type davor (Acknolagement_Handler::)
 
 
 				/*idea: sender: 
@@ -306,6 +318,53 @@ namespace armarow{
 				} evaluation;
 
 				*/
+				//automatically evaluates all relevant information from the mac message, to avoid errors, and then creates aquivalent ACK Message
+					int send_ACK_for_MAC_Message(MAC_Message& msg){
+						/* Acknolagement_Handler::ACK_ERROR_CODE
+						MAC_Message ack_message = msg;
+
+						ack_message.setPayloadNULL();
+						ack_message.size=0;						
+						*/				
+
+						//TODO:FIXME:TEST for delayed ACK, if that gets to its destination, remove LATER!!!!
+						//delay_ms(1);
+
+
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending ACK..." << ::logging::log::endl;
+
+	//MAC_Message(IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer)
+						//sende es wieder dorthin, wo es her kam
+						MAC_Message ack_message(Acknowledgment,  //frametype is ACK
+							MAC_Configuration::mac_adress_of_node, //source adress of ACK, take it from Config
+							msg.header.source_adress, //dest adress, is source adress of data message
+							(char*) 0,0);   //ACK doesn't contain data, all relevant information are stored in the header
+
+						ack_message.header.sequencenumber=msg.header.sequencenumber; //the ACK is for this data message, so we need the same seuqnce numbers
+						ack_message.header.dest_pan = msg.header.dest_pan; //destination_panid_of_last_transmitted_message;
+						//ack_message.header.source_pan = 0; 
+
+						//sequence_number_of_last_transmitted_message = msg.header.sequencenumber;
+						//destination_id_of_last_transmitted_message = msg.header.dest_adress;
+						
+
+						//ack_message.header.controlfield.ackrequest=0;
+
+						if(MAC_LAYER_VERBOSE_OUTPUT) ack_message.print();
+				
+						//we want to send (tranceiver on)
+						Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
+
+						//send
+						Radiocontroller::send(*ack_message.getPhysical_Layer_Message());
+
+						//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
+						Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+
+
+
+						return Acknolagement_Handler::SUCCESS;
+					}
 
 
 
@@ -339,6 +398,16 @@ namespace armarow{
 
 		
 				}
+
+
+
+
+
+				//=============================================================================================================================
+				//============== Start Interrupt Service Routines =============================================================================
+				//=============================================================================================================================
+
+
 
 
 
@@ -382,16 +451,22 @@ namespace armarow{
 
 
 						//TODO: set bit that sended message was acknolaged
-						if(send_receive_buffer.header.dest_adress==this->mac_adress_of_node &&
-						send_receive_buffer.header.controlfield.frametype==Acknowledgment){
+						if(send_receive_buffer.header.controlfield.frametype==Acknowledgment){
 
 							//set bit to 1
+							acknolagement_handler.received_ACK(send_receive_buffer);
+
 
 						}
 
 
 						return;
 					}
+
+					//at this point, we know that we have received a data frame, so we have to send an ack
+					//TODO: send ACK
+					//acknolagement_handler.
+					send_ACK_for_MAC_Message(send_receive_buffer);
 
 					//evaluation.received_bytes_in_last_second+=send_receive_buffer.size;
 
@@ -440,11 +515,176 @@ namespace armarow{
 
 						this->print_and_reset_number_of_received_bytes();
 
+						if(MAC_LAYER_VERBOSE_OUTPUT){
+						 ::logging::log::emit() << "decrement_timeout_counter..." << ::logging::log::endl;
+						  acknolagement_handler.print();
+						}
+
 					}
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving periodic timer interupt" << ::logging::log::endl;
 
 				}
+
+
+
+				void send_async_intern(){
+					
+					//attempt_retransmission_mark:; //if we couldn't get an ack, we have to retransmit
+					//FIXME: think about a better solution than that
+
+					uint8_t ccaValue;
+					armarow::PHY::State status;
+
+
+					{ //critial section start
+
+					//it can be called per interrupt, so we secure it
+					avr_halib::locking::GlobalIntLock lock;
+
+					//validation: if we have a message to send, then we want an ack, if we are no longer waiting for an ack and we didn't receive one, it means the timeout for receiving an ACK was reached and the "periodic timer interrupt" reset the acknolagement_handler.waits_for_ack bit (it is set, as long as we wait for a Bit)
+					if(has_message_to_send==true && acknolagement_handler.waits_for_ack==false && acknolagement_handler.received_ack_for_last_transmitted_message == false){
+
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ERROR: didn't become an ACK!!! " << send_buffer.header.sequencenumber << ::logging::log::endl;
+
+					}
+
+
+					//polling, bei dem die ISR verlassen wird, es wird pro ms einmal gepollt
+					if(acknolagement_handler.waits_for_ack && !acknolagement_handler.received_ack_for_last_transmitted_message){
+						one_shot_timer.stop();
+						one_shot_timer.start(1);
+						return;
+					}
+
+					//wenn wir eine Nachricht gesendet haben, warten wir auf ein ACK, wenn wir das ACK empfangen haben, war das senden erfolgreich
+					if(acknolagement_handler.waits_for_ack && acknolagement_handler.received_ack_for_last_transmitted_message){
+
+							//typename Acknolagement_Handler::ACK_ERROR_CODE errorcode = 								acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(send_buffer);
+					
+						//if(errorcode==Acknolagement_Handler::SUCCESS){
+						has_message_to_send=false;
+						acknolagement_handler.waits_for_ack=false;
+
+						if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK" << ::logging::log::endl;
+
+						return;
+						//}
+
+						
+
+					}
+
+
+
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
+
+					//uncomment this  
+					one_shot_timer.stop();
+
+					status=Radiocontroller::doCCA(ccaValue);
+
+					//if(status==armarow::PHY::IDLE){
+
+					if(status==armarow::PHY::SUCCESS && ccaValue)
+					{
+						//if(!ccaValue){
+							
+						//::logging::log::emit()
+						//<< PROGMEMSTRING("Medium BUSY!!!")		
+						//<< ::logging::log::endl << ::logging::log::endl;
+
+							
+					
+					//we want to send (tranceiver on)
+					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
+
+					//send
+					Radiocontroller::send(*send_buffer.getPhysical_Layer_Message());
+
+					//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
+					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending..." << ::logging::log::endl;					
+
+					//init variables of acknolagement_handler, so that it waits for the ACK message for the transmitted message (ONLY that one)
+					acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(send_buffer);
+
+					one_shot_timer.start(1); //minimal waiting time, we can make the one shot timer wait, the ACK needs some time anyway
+
+					//has_message_to_send=false;
+
+					
+
+
+					}else{
+						//for one shot timer test
+						one_shot_timer.stop();
+
+						if(MAC_LAYER_VERBOSE_OUTPUT)  ::logging::log::emit()
+           				 					<< PROGMEMSTRING("Medium busy, starting one shot timer...")
+            									<< ::logging::log::endl;
+
+
+						//random waiting time (from 0 to 100 ms) -> should be adjusted for real usage
+						
+						
+						//FIXME: if something doesn't work, look if this type cast cracks everything
+					
+						
+						int randomnumber = rand();
+				     		uint32_t waitingtime = ( ((uint32_t)randomnumber * this->maximal_waiting_time_in_milliseconds) / (0x8000)); //0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
+
+//one shot timer neu stellen, dieser ruft diese Funktion nach einer zufälligen Zeit erneut auf, solange bis Nachricht erfolgreich versendet wurde
+						one_shot_timer.start((uint16_t)waitingtime);
+
+						//one_shot_timer.start((uint16_t) 1000); //one shot timer test
+
+					}
+
+					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving async send interrupt handler, calling delegate" << ::logging::log::endl;
+					
+					
+				} //critial section end
+
+					
+
+					/*
+					if(status==armarow::PHY::SUCCESS && ccaValue && acknolagement_handler.received_ack_for_last_transmitted_message){ 
+						
+						//if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+
+						
+						//has be be called outside of the critical section
+						typename Acknolagement_Handler::ACK_ERROR_CODE errorcode = acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(send_buffer);
+					
+						if(errorcode==Acknolagement_Handler::SUCCESS){
+						 has_message_to_send=false;
+				//call callback, that transmission was succesfull (little workaround, so that the callback funtion is not executed in the context of the critical section)
+						 if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+
+						}else{
+						 goto attempt_retransmission_mark;
+						} 
+
+						
+					}
+
+					//*/
+
+
+				}
+
+
+
+
+				//=============================================================================================================================
+				//============== END Interrupt Service Routines ===============================================================================
+				//=============================================================================================================================
+
+
 
 
 				int init(){
@@ -552,92 +792,6 @@ namespace armarow{
 					
 				}
 
-
-				void send_async_intern(){
-					
-					uint8_t ccaValue;
-					armarow::PHY::State status;
-
-					{ //critial section start
-
-					//it can be called per interrupt, so we secure it
-					avr_halib::locking::GlobalIntLock lock;
-
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
-
-					//uncomment this  
-					one_shot_timer.stop();
-
-					status=Radiocontroller::doCCA(ccaValue);
-
-					//if(status==armarow::PHY::IDLE){
-
-					if(status==armarow::PHY::SUCCESS && ccaValue)
-					{
-						//if(!ccaValue){
-							
-						//::logging::log::emit()
-						//<< PROGMEMSTRING("Medium BUSY!!!")		
-						//<< ::logging::log::endl << ::logging::log::endl;
-
-							
-					
-					//we want to send (tranceiver on)
-					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
-
-					//send
-					Radiocontroller::send(*send_buffer.getPhysical_Layer_Message());
-
-					//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
-
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending..." << ::logging::log::endl;					
-
-					//TODO: wait for the Acknolagement here, if it fails, start one shot timer for retransmission
-
-					has_message_to_send=false;
-
-					
-
-
-					}else{
-						//for one shot timer test
-						one_shot_timer.stop();
-
-						if(MAC_LAYER_VERBOSE_OUTPUT)  ::logging::log::emit()
-           				 					<< PROGMEMSTRING("Medium busy, starting one shot timer...")
-            									<< ::logging::log::endl;
-
-
-						//random waiting time (from 0 to 100 ms) -> should be adjusted for real usage
-						
-						
-						//FIXME: if something doesn't work, look if this type cast cracks everything
-					
-						
-						int randomnumber = rand();
-				     		uint32_t waitingtime = ( ((uint32_t)randomnumber * this->maximal_waiting_time_in_milliseconds) / (0x8000)); //0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
-
-//one shot timer neu stellen, dieser ruft diese Funktion nach einer zufälligen Zeit erneut auf, solange bis Nachricht erfolgreich versendet wurde
-						one_shot_timer.start((uint16_t)waitingtime);
-
-						//one_shot_timer.start((uint16_t) 1000); //one shot timer test
-
-					}
-
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving async send interrupt handler, calling delegate" << ::logging::log::endl;
-					
-					
-				} //critial section end
-
-					
-
-					//call callback, that transmission was succesfull (little workaround, so that the callback funtion is not executed in the context of the critical section)
-					if(status==armarow::PHY::SUCCESS && ccaValue && !onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
-
-
-
-				}
 
 
 				int send(MAC_Message mac_message){
