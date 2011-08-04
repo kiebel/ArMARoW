@@ -109,8 +109,6 @@ namespace armarow{
 
 				enum maxwaitingtime{maximal_waiting_time_in_milliseconds=100};
 
-				
-
 
 				typename Radiocontroller::mob_t message; //= {0,{0}};				
 				//Radiocontroller  rc;

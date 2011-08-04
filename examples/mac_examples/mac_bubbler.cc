@@ -44,7 +44,7 @@
 #include "armarow/mac/mac_csma_ca.h"
 
 /* === globals ============================================================== */
-platform::config::mob_t message = {10,{'0','1','2','3','4','5','6','7','8','9'}};
+//platform::config::mob_t message = {10,{'0','1','2','3','4','5','6','7','8','9'}};
 
 struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
@@ -58,7 +58,7 @@ mac_adress_of_node=45
 #undef LOGGING_DISABLE
 
 //armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t> mac;
-armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Enable> mac;
+armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Disable> mac;
 
 
 
@@ -130,10 +130,16 @@ int main() {
             << PROGMEMSTRING("Sending the following message ") << (int32_t)cnt++
             << ::logging::log::endl << ::logging::log::endl;
 
- for(unsigned int i=0;i<sizeof(message);i++)
-	    messageobject.payload[i]=messagecontent[i];   //copy data in message payload
+	//init message with your data and set destination 
+ for(unsigned int i=0;i<sizeof(messagecontent);i++)
+	messageobject.payload[i]=messagecontent[i];   //copy data in message payload
 
 	messageobject.size=sizeof(messagecontent);
+
+	//set destination
+	messageobject.header.dest_adress = armarow::MAC::MAC_BROADCAST_ADRESS;
+	messageobject.header.dest_pan = 0;
+
 
 
     sei();                              // enable interrupts

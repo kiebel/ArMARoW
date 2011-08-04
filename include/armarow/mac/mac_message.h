@@ -106,6 +106,22 @@ struct MAC_Header{
 
 	MAC_Header(){
 
+		controlfield.init();
+
+		//TODO: aus MAC Configuration holen
+		source_adress=0;
+		dest_adress=0;
+		//messagetype=a_messagetype;
+
+		controlfield.frametype=Data;
+
+		sequencenumber=0; //get_global_sequence_number();
+
+		//we doesn't support this yet, so we just set this part of the header null
+		dest_pan=0; 
+		source_pan=0;
+
+
 	}
 
 	MAC_Header(IEEE_Frametype a_messagetype, DeviceAddress a_source_adress, DeviceAddress a_dest_adress){
