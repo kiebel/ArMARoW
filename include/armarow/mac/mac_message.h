@@ -46,7 +46,7 @@ typedef uint16_t PANAddress;
 /*see IEEE 802.15.4 page 112 for more details*/
 
 
-enum IEEE_Frametype{Beacon,Data,Acknowledgment,MAC_command};
+enum IEEE_Frametype{Beacon=0,Data=1,Acknowledgment=2,MAC_command=3};
 
 struct IEEE_Frame_Control_Field{
 

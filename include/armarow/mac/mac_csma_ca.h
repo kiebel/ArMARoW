@@ -213,7 +213,7 @@ namespace armarow{
 
 					//if an ACK message is received, this method decides, whether its the ACK frame we are waiting for or not
 					//if yes, we set the corrosponding bits, if not we just ignore the ACK
-					void received_ACK(MAC_Message& ack){
+					void handle_received_ACK(MAC_Message& ack){
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ack was received, validating..." << ::logging::log::endl;
 
@@ -273,7 +273,7 @@ namespace armarow{
 
 						//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving busy wait..." << ::logging::log::endl;
 
-						if(!received_ack_for_last_transmitted_message) return TIMEOUT;
+						//if(!received_ack_for_last_transmitted_message) return TIMEOUT;
 
 						return SUCCESS;
 
@@ -296,28 +296,6 @@ namespace armarow{
 
 
 
-				//enum mac_attributes{TA,C,S};
-
-				/*
-				//all variables needed for measurement and evaluation purposes are encapsulated here
-				struct Evaluation{
-
-
-					Evaluation(){
-					
-						received_bytes_in_last_second=0;
-
-					}
-
-					uint16_t received_bytes_in_last_second;
-
-
-
-
-
-				} evaluation;
-
-				*/
 				//automatically evaluates all relevant information from the mac message, to avoid errors, and then creates aquivalent ACK Message
 					int send_ACK_for_MAC_Message(MAC_Message& msg){
 						/* Acknolagement_Handler::ACK_ERROR_CODE
@@ -336,12 +314,17 @@ namespace armarow{
 	//MAC_Message(IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer)
 						//sende es wieder dorthin, wo es her kam
 						MAC_Message ack_message(Acknowledgment,  //frametype is ACK
-							MAC_Configuration::mac_adress_of_node, //source adress of ACK, take it from Config
+							MAC_Config::mac_adress_of_node, //source adress of ACK, take it from Config
 							msg.header.source_adress, //dest adress, is source adress of data message
-							(char*) 0,0);   //ACK doesn't contain data, all relevant information are stored in the header
+							(char*)"ACK",4);//(char*) 0,0);   //ACK doesn't contain data, all relevant information are stored in the header
 
 						ack_message.header.sequencenumber=msg.header.sequencenumber; //the ACK is for this data message, so we need the same seuqnce numbers
-						ack_message.header.dest_pan = msg.header.dest_pan; //destination_panid_of_last_transmitted_message;
+						ack_message.header.dest_pan = msg.header.source_pan; //destination_panid_of_last_transmitted_message;
+						ack_message.header.dest_adress = msg.header.source_adress;
+						ack_message.header.source_adress = MAC_Config::mac_adress_of_node;
+
+						ack_message.header.controlfield.frametype = Acknowledgment;
+
 						//ack_message.header.source_pan = 0; 
 
 						//sequence_number_of_last_transmitted_message = msg.header.sequencenumber;
@@ -350,8 +333,10 @@ namespace armarow{
 
 						//ack_message.header.controlfield.ackrequest=0;
 
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=====> start ACK msg..." << ::logging::log::endl << ::logging::log::endl;
 						if(MAC_LAYER_VERBOSE_OUTPUT) ack_message.print();
-				
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=====> end ACK msg..." << ::logging::log::endl << ::logging::log::endl;
+
 						//we want to send (tranceiver on)
 						Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
@@ -445,16 +430,22 @@ namespace armarow{
 
 					send_receive_buffer = *mac_msg;
 					if(send_receive_buffer.header.controlfield.frametype!=Data) {
+
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "===> got meta msg..." << ::logging::log::endl << ::logging::log::endl;
+
 						send_receive_buffer.print(); //just for debug purposes
+
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "===> end meta msg..." << ::logging::log::endl << ::logging::log::endl;
+
 						has_message_ready_for_delivery=false;  //the application is only interested in application data, special packages have to be filtered out
-						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
+						//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
 
 
 						//TODO: set bit that sended message was acknolaged
 						if(send_receive_buffer.header.controlfield.frametype==Acknowledgment){
 
 							//set bit to 1
-							acknolagement_handler.received_ACK(send_receive_buffer);
+							acknolagement_handler.handle_received_ACK(send_receive_buffer);
 
 
 						}
@@ -463,10 +454,16 @@ namespace armarow{
 						return;
 					}
 
+
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> start data message:" << ::logging::log::endl;
+					send_receive_buffer.print();
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> end data message:" << ::logging::log::endl;
+
 					//at this point, we know that we have received a data frame, so we have to send an ack
 					//TODO: send ACK
 					//acknolagement_handler.
 					send_ACK_for_MAC_Message(send_receive_buffer);
+
 
 					//evaluation.received_bytes_in_last_second+=send_receive_buffer.size;
 
@@ -545,7 +542,8 @@ namespace armarow{
 					//validation: if we have a message to send, then we want an ack, if we are no longer waiting for an ack and we didn't receive one, it means the timeout for receiving an ACK was reached and the "periodic timer interrupt" reset the acknolagement_handler.waits_for_ack bit (it is set, as long as we wait for a Bit)
 					if(has_message_to_send==true && acknolagement_handler.waits_for_ack==false && acknolagement_handler.received_ack_for_last_transmitted_message == false){
 
-						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ERROR: didn't become an ACK!!! " << send_buffer.header.sequencenumber << ::logging::log::endl;
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ERROR: didn't become an ACK!!! " << (int) acknolagement_handler.sequence_number_of_last_transmitted_message << "," << (int) send_buffer.header.sequencenumber <<  ::logging::log::endl;
+						//(int) send_buffer.header.sequencenumber << ::logging::log::endl;
 
 					}
 
@@ -553,7 +551,9 @@ namespace armarow{
 					//polling, bei dem die ISR verlassen wird, es wird pro ms einmal gepollt
 					if(acknolagement_handler.waits_for_ack && !acknolagement_handler.received_ack_for_last_transmitted_message){
 						one_shot_timer.stop();
-						one_shot_timer.start(1);
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "async send: start one shot timer for waiting of ack" << ::logging::log::endl;
+						//FIXME: increased default waiting period (waiting time, until we call ourself again to check if the ack is there)
+						one_shot_timer.start(10); //one_shot_timer.start(1);
 						return;
 					}
 
@@ -617,8 +617,6 @@ namespace armarow{
 					//has_message_to_send=false;
 
 					
-
-
 					}else{
 						//for one shot timer test
 						one_shot_timer.stop();
