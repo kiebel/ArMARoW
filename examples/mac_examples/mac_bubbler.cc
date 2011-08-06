@@ -43,21 +43,22 @@
 
 #include "armarow/mac/mac_csma_ca.h"
 
+#undef LOGGING_DISABLE
+
 /* === globals ============================================================== */
-//platform::config::mob_t message = {10,{'0','1','2','3','4','5','6','7','8','9'}};
 
 struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
-enum {
-channel=3,
-mac_adress_of_node=45
-};
+	enum {
+		channel=3,
+		mac_adress_of_node=45
+	};
 
 };
 
-#undef LOGGING_DISABLE
 
-//armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t> mac;
+
+
 armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Disable> mac;
 
 
@@ -137,8 +138,9 @@ int main() {
 	messageobject.size=sizeof(messagecontent);
 
 	//set destination
-	messageobject.header.dest_adress = armarow::MAC::MAC_BROADCAST_ADRESS;
+	messageobject.header.dest_adress = 20; //armarow::MAC::MAC_BROADCAST_ADRESS;
 	messageobject.header.dest_pan = 0;
+	messageobject.header.controlfield.ackrequest = 0;
 
 
 

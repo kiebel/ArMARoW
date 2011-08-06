@@ -106,20 +106,6 @@ struct MAC_Header{
 
 	MAC_Header(){
 
-		controlfield.init();
-
-		//TODO: aus MAC Configuration holen
-		source_adress=0;
-		dest_adress=0;
-		//messagetype=a_messagetype;
-
-		controlfield.frametype=Data;
-
-		sequencenumber=0; //get_global_sequence_number();
-
-		//we doesn't support this yet, so we just set this part of the header null
-		dest_pan=0; 
-		source_pan=0;
 
 
 	}
@@ -213,29 +199,7 @@ struct MAC_Message{
 		if(decoding_was_successful) decoding_was_successful = isValid();
 
 
-		/*
-		if(header.messagetype==RTS){
 
-			::logging::log::emit() << "RTS Message" << ::logging::log::endl;
-
-		}else if(header.messagetype==CTS){
-
-			::logging::log::emit() << "CTS Message" << ::logging::log::endl;
-
-		}else if(header.messagetype==DATA){
-
-			::logging::log::emit() << "DATA Message" << ::logging::log::endl;
-
-		}else if(header.messagetype==ACK){
-
-			::logging::log::emit() << "ACK Message" << ::logging::log::endl;
-
-		}else{
-			::logging::log::emit() << "FATAL ERROR: failed decoding MAC Message" << ::logging::log::endl;
-			decoding_was_successful=false;
-		}
-
-		*/
 
 	}
 
@@ -246,12 +210,21 @@ struct MAC_Message{
 
 	explicit MAC_Message(){
 
+		//set default values
 		DeviceAddress source_adress=25;
 		DeviceAddress dest_adress=38;
 
-		//MAC_Message(DATA, source_adress, dest_adress, (char*) 0, 0);
-
+	
 		new (&header) MAC_Header( Data, source_adress, dest_adress);
+
+		header.sequencenumber=0; //get_global_sequence_number();
+
+		//we doesn't support this yet, so we just set this part of the header null
+		header.dest_pan=0; 
+		header.source_pan=0;
+
+		header.controlfield.init();
+
 		setPayloadNULL();
 		size=0;
 
@@ -311,6 +284,7 @@ struct MAC_Message{
 
 	::logging::log::emit() << "MAC_HEADER:" << ::logging::log::endl;
 	::logging::log::emit() << "message_type: " << (int) header.controlfield.frametype << ::logging::log::endl << ::logging::log::endl;
+	::logging::log::emit() << "ackrequest: " << (int) header.controlfield.ackrequest << ::logging::log::endl << ::logging::log::endl;
 	::logging::log::emit() << "sequencenumber: " << (int) header.sequencenumber << ::logging::log::endl << ::logging::log::endl;
 	::logging::log::emit() << "dest_pan: " << (int) header.dest_pan << ::logging::log::endl;
 	::logging::log::emit() << "dest_adress: " << (int) header.dest_adress << ::logging::log::endl;

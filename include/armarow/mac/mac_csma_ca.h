@@ -4,7 +4,7 @@
 #define __MAC_CSMA_CA__
 
 
-#define MAC_LAYER_VERBOSE_OUTPUT true
+#define MAC_LAYER_VERBOSE_OUTPUT false
 
 
 #include "mac.h"
@@ -288,7 +288,6 @@ namespace armarow{
 						
 						//we wait for an ack, so we set the bit
 						waits_for_ack=true;
-						
 
 						initialized_ack_mechanism=true;
 
@@ -333,6 +332,8 @@ namespace armarow{
 						//TODO:FIXME:TEST for delayed ACK, if that gets to its destination, remove LATER!!!!
 						//delay_ms(1);
 
+
+						if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::SUCCESS;
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending ACK..." << ::logging::log::endl;
 
@@ -461,6 +462,34 @@ namespace armarow{
 					}
 
 					send_receive_buffer = *mac_msg;
+
+					//===========================================================
+					//================= MESSAGE FILTERING START =================
+
+					if(send_receive_buffer.header.dest_adress==MAC_Config::mac_adress_of_node  						  
+					   || send_receive_buffer.header.dest_adress==MAC_BROADCAST_ADRESS){
+					//TODO: && mac_message.header.dest_pan==MAC_Config::pan_id
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "accepted message..." << ::logging::log::endl;
+
+					}else{
+						//message is not for us, so we drop it
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "dropped message..." << ::logging::log::endl;
+						has_message_ready_for_delivery=false; //we are not interested in messages, that are not for us
+
+						//::logging::log::emit() << "dropped message..." << ::logging::log::endl;
+						//send_receive_buffer.print();
+						return;
+
+					}
+
+					//at this point, we can be shure, that the received message is for us
+
+
+					//================= MESSAGE FILTERING END ==================
+					//===========================================================
+
+
+
 					if(send_receive_buffer.header.controlfield.frametype!=Data) {
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "===> got meta msg..." << ::logging::log::endl << ::logging::log::endl;
@@ -487,13 +516,14 @@ namespace armarow{
 					}
 
 
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> start data message:" << ::logging::log::endl;
-					send_receive_buffer.print();
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> end data message:" << ::logging::log::endl;
+					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> start data message:" << ::logging::log::endl;
+					//send_receive_buffer.print();
+					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> end data message:" << ::logging::log::endl;
 
 					//at this point, we know that we have received a data frame, so we have to send an ack
 					//TODO: send ACK
 					//acknolagement_handler.
+
 					send_ACK_for_MAC_Message(send_receive_buffer);
 
 
@@ -545,7 +575,7 @@ namespace armarow{
 						this->print_and_reset_number_of_received_bytes();
 
 						if(MAC_LAYER_VERBOSE_OUTPUT){
-						 ::logging::log::emit() << "decrement_timeout_counter..." << ::logging::log::endl;
+						 //::logging::log::emit() << "decrement_timeout_counter..." << ::logging::log::endl;
 						  acknolagement_handler.print();
 						}
 
@@ -570,6 +600,8 @@ namespace armarow{
 
 					//it can be called per interrupt, so we secure it
 					avr_halib::locking::GlobalIntLock lock;
+
+					if(send_buffer.header.controlfield.ackrequest==1){
 
 					
 					//validation: if we have a message to send, then we want an ack, if we are no longer waiting for an ack and we didn't receive one, it means the timeout for receiving an ACK was reached and the "periodic timer interrupt" reset the acknolagement_handler.waits_for_ack bit (it is set, as long as we wait for a Bit)
@@ -611,7 +643,7 @@ namespace armarow{
 
 					}
 
-
+					}
 
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
 
@@ -635,6 +667,9 @@ namespace armarow{
 					//we want to send (tranceiver on)
 					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
+					//::logging::log::emit() << "transmit message..." << ::logging::log::endl;
+					//send_buffer.print();
+
 					//send
 					Radiocontroller::send(*send_buffer.getPhysical_Layer_Message());
 
@@ -643,10 +678,19 @@ namespace armarow{
 
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending..." << ::logging::log::endl;					
 
+					if(send_buffer.header.controlfield.ackrequest==1){
 					//init variables of acknolagement_handler, so that it waits for the ACK message for the transmitted message (ONLY that one)
 					acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(send_buffer);
 
 					one_shot_timer.start(1); //minimal waiting time, we can make the one shot timer wait, the ACK needs some time anyway
+
+					}else{
+
+						has_message_to_send=false;
+						//FIXME: TODO: this delegate should be called outside of the critical section
+						 if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+
+					}
 
 					//has_message_to_send=false;
 
@@ -794,15 +838,9 @@ namespace armarow{
 
 				}
 
-				int send_async(MAC_Message mac_message){
 
-					return this->send_async(mac_message,MAC_BROADCAST_ADRESS);
-
-
-				}
-
-				//wieder auf ursprüngliche Schnittstelle ändern
-				int send_async(MAC_Message& mac_message,DeviceAddress destination_adress){
+		
+				int send_async(MAC_Message& mac_message){
 
 				   avr_halib::locking::GlobalIntLock lock;
 
@@ -821,9 +859,9 @@ namespace armarow{
 
 
 					//vom nutzer setzbar
-					mac_message.header.dest_adress=destination_adress;
-					mac_message.header.dest_pan=0;
-					mac_message.header.controlfield.ackrequest=MAC_Config::ack_request;
+					//mac_message.header.dest_adress=destination_adress;
+					//mac_message.header.dest_pan=0;
+					//mac_message.header.controlfield.ackrequest=MAC_Config::ack_request;
 
 	
 					//copy message into send message buffer

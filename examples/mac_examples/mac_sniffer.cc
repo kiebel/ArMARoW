@@ -42,46 +42,23 @@
 /* === includes ============================================================= */
 
 #include "armarow/mac/mac_csma_ca.h"
-//#include "armarow/mac/mac.h"
 
 /* === globals ============================================================== */
-platform::config::mob_t message = {0,{0}};
-
-		/*
-		struct MAC_Configuration{
-
-			enum {
-
-				channel=11,
-				mac_adress_of_node=28 //Node ID	
-
-			};
-
-		};*/
-
 
 struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
-enum {
-channel=3,
-mac_adress_of_node=20
-};
+	enum {
+		channel=3,
+		mac_adress_of_node=20
+	};
 
 };
 
-struct lol{};
 
-//armarow::MAC::MAC_CSMA_CA<lol> mac;
-armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Enable> mac;
 
-//armarow::MAC::MAC_CSMA_CA<lol,platform::config::rc_t,armarow::MAC::Enable> mac;
+armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Disable> mac;
 
-//armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,lol> mac;
-//armarow::MAC::MAC_CSMA_CA<lol,platform::config::rc_t> mac;
 
-//armarow::MAC::MAC_CSMA_CA<MAC_Configuration> mac;
-//armarow::MAC::MAC_CSMA_CA<platform::config::rc_t> mac;
-//armarow::MAC::MAC_Base<platform::config::rc_t> mac;
 armarow::MAC::mob_t messageobject;
 
 uint8_t channel = 11;                   // channel number
@@ -102,7 +79,7 @@ void callback_recv() {
         	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
 		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
 		<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
-        	<< ::logging::log::endl << ::logging::log::endl;
+        	<< ::logging::log::endl; // << ::logging::log::endl;
 
 	}else{
 
