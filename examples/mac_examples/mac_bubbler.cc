@@ -111,6 +111,32 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
 }
 
+struct My_Information{
+
+	//char data[100];
+
+	int messwert1;
+	int messwert2;
+	int messwert3;
+
+	My_Information(){
+
+	    messwert1=10;
+	    messwert2=20;
+	    messwert3=30;
+
+
+	}
+
+	void print(){
+
+	    ::logging::log::emit() << "messwert1: " << messwert1 << ::logging::log::endl;
+	    ::logging::log::emit() << "messwert2: " << messwert2 << ::logging::log::endl;
+	    ::logging::log::emit() << "messwert3: " << messwert3 << ::logging::log::endl;
+
+	}
+	
+} a;
 
 //armarow::MAC::MAC_CSMA_CA mac;
 
@@ -142,7 +168,24 @@ int main() {
 	messageobject.header.dest_pan = 0;
 	messageobject.header.controlfield.ackrequest = 0;
 
+            a.messwert1=40;
+	    a.messwert2=50;
+	    a.messwert3=60;
 
+	::logging::log::emit() << "Object a: " << ::logging::log::endl;
+	a.print();
+
+	messageobject.store_object_in_payload(a);
+
+	My_Information b;
+
+	::logging::log::emit() << "Object b before: " << ::logging::log::endl;
+	b.print();
+
+	messageobject.get_object_from_payload(b);
+
+	::logging::log::emit() << "Object b after: " << ::logging::log::endl;
+	b.print();
 
     sei();                              // enable interrupts
     ::logging::log::emit()

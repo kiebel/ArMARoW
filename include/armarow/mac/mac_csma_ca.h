@@ -105,7 +105,7 @@ namespace armarow{
 
 				static const uint8_t minimal_backoff_exponend = MAC_Config::minimal_backoff_exponend;
 
-				uint8_t number_of_backoffs;  //TODO: not really used until now, remove is unneccessary
+				uint8_t number_of_backoffs;  //TODO: not really used until now, remove if unneccessary
 
 				static const uint8_t maximum_number_of_backoffs = 10; //TODO: add IEEE number here
 

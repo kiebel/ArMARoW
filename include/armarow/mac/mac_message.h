@@ -397,11 +397,54 @@ struct MAC_Message{
 		return true;
 	}
 
+	/*
+	template <class T>
+	int store_object_in_payload(T obj){
 
 
+		//static const bool k=(MAX_NUMBER_OF_DATABYTES>=sizeof(T));
+
+		//ARMAROW_STATIC_ASSERT_ERROR(k,INVALID_MAC_CONFIGURATION__TYPE_DOESNT_INHERIT_FROM_CLASS__MAC_CONFIGURATION,(MAC_Config));
+		
+	return 0;
+
+	}
+*/
 
 
+	
 
+	template <class T>
+	int store_object_in_payload(T& obj){
+
+		static const bool k=(MAX_NUMBER_OF_DATABYTES>=sizeof(T))?true:false;
+		ARMAROW_STATIC_ASSERT_ERROR(k,TYPE_TO_LARGE__DOES_NOT_FIT_IN_MESSAGE_PAYLOAD,(T));
+
+		char* tmp = (char*) &obj;
+
+
+		for(unsigned int i=0;i<sizeof(T);i++)
+		 payload[i]=tmp[i];
+
+		size=sizeof(T);
+
+	return 0;
+	}
+
+	template <class T>
+	int get_object_from_payload(T& obj){
+
+		static const bool k=(MAX_NUMBER_OF_DATABYTES>=sizeof(T))?true:false;
+		ARMAROW_STATIC_ASSERT_ERROR(k,TYPE_TO_LARGE__DOES_NOT_FIT_IN_MESSAGE_PAYLOAD,(T));
+
+		char* tmp = (char*) &obj;
+
+		for(unsigned int i=0;i<sizeof(T);i++)
+		 tmp[i]=payload[i];
+
+	return 0;
+	}
+	
 
 	platform::config::mob_t* getPhysical_Layer_Message(){
 		size += sizeof(MAC_Header); //the size value now have to correspond to the payload of the physical layer Message, and the the MAC_Header of the MAC_Message is part of that payload 
