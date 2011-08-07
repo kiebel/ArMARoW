@@ -168,6 +168,8 @@ int main() {
 	messageobject.header.dest_pan = 0;
 	messageobject.header.controlfield.ackrequest = 0;
 
+
+	/* //example for usage of object storage functionality
             a.messwert1=40;
 	    a.messwert2=50;
 	    a.messwert3=60;
@@ -186,6 +188,10 @@ int main() {
 
 	::logging::log::emit() << "Object b after: " << ::logging::log::endl;
 	b.print();
+
+	//end of example
+	*/
+
 
     sei();                              // enable interrupts
     ::logging::log::emit()

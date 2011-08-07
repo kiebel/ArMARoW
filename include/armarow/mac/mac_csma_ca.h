@@ -4,7 +4,7 @@
 #define __MAC_CSMA_CA__
 
 
-#define MAC_LAYER_VERBOSE_OUTPUT false
+#define MAC_LAYER_VERBOSE_OUTPUT true
 
 
 #include "mac.h"
@@ -198,15 +198,23 @@ namespace armarow{
 
 					uint8_t timeout_duration_in_ms;
 
+					ACK_ERROR_CODE result_of_last_send_operation_errorcode;
+
+					//volatile bool& has_message_to_send;
+
+					//Send_Operation_Result& result_of_last_send_operation;
+
 					//MAC_CSMA_CA<MAC_Config,Radiocontroller,Mac_Evaluation_activation_state>& mac_instance;
 
-					Acknolagement_Handler(){ //(MAC_CSMA_CA<MAC_Config,Radiocontroller,Mac_Evaluation_activation_state>& a_mac_instance) : mac_instance(a_mac_instance){
+					//Acknolagement_Handler(Send_Operation_Result a_result_of_last_send_operation) : result_of_last_send_operation(a_result_of_last_send_operation){ //(MAC_CSMA_CA<MAC_Config,Radiocontroller,Mac_Evaluation_activation_state>& a_mac_instance) : mac_instance(a_mac_instance){
 
+					Acknolagement_Handler(){//(volatile bool& a_has_message_to_send) : has_message_to_send(a_has_message_to_send){
 						reset();
 
 						timeout_duration_in_ms=20;
 						maximal_number_of_retransmissions=3;
 						initialized_ack_mechanism=false;
+						result_of_last_send_operation_errorcode=SUCCESS;
 
 					}
 
@@ -227,11 +235,15 @@ namespace armarow{
 						::logging::log::emit() << "waits_for_ack: " << (int)waits_for_ack << ::logging::log::endl;
 						::logging::log::emit() << "current_number_of_retransmissions: " << (int)current_number_of_retransmissions << ::logging::log::endl;
 						::logging::log::emit() << "timeout_counter_in_ms: " << (int)timeout_counter_in_ms << ::logging::log::endl;
+
+						::logging::log::emit() << "timeout_counter_in_ms: " << (int) timeout_occured << ::logging::log::endl;
+
 					}
 
 					//if an ACK message is received, this method decides, whether its the ACK frame we are waiting for or not
 					//if yes, we set the corrosponding bits, if not we just ignore the ACK
 					void handle_received_ACK(MAC_Message& ack,volatile bool& has_message_to_send,Delegate<>& onMessage_Successfull_Transmitted_Delegate){
+					//void handle_received_ACK(MAC_Message& ack,Delegate<>& onMessage_Successfull_Transmitted_Delegate){
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ack was received, validating..." << ::logging::log::endl;
 
@@ -254,6 +266,8 @@ namespace armarow{
 
 							has_message_to_send=false;
 
+							result_of_last_send_operation_errorcode=SUCCESS;
+
 							if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
 
 							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK" << ::logging::log::endl;
@@ -265,9 +279,17 @@ namespace armarow{
 
 
 					//called by the periodic timer ISR every ms
-					void decrement_timeout_counter_every_ms(){
+					void decrement_timeout_counter_every_ms(volatile bool& has_message_to_send){
 					
+						static int loopcounter=0;
 
+						if(loopcounter>=100){
+
+						print();
+						loopcounter=0;
+						}else{
+						loopcounter++;
+						}
 
 						if(waits_for_ack){
 							if(timeout_counter_in_ms < timeout_duration_in_ms){
@@ -276,8 +298,22 @@ namespace armarow{
 								current_number_of_retransmissions++;
 							
 								waits_for_ack=false;  //timeout event, delete bit, so the busy wait in the sender function will end and 
+
+								//this is the ACK for the last transmitted message
+								received_ack_for_last_transmitted_message=false;
+
+								//mechanism has to be initialized again by calling "init_waiting_mechanism_for_ACK_for_MAC_Message"
+								initialized_ack_mechanism=false;
+			
+							
+
 								timeout_occured=true;
 								if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
+
+								has_message_to_send=false;
+
+								result_of_last_send_operation_errorcode=TIMEOUT;
+								//FIXME: TODO: call send operation finished delegate
 
 							}
 						}
@@ -431,9 +467,19 @@ namespace armarow{
 		
 				}
 
+				/*
+				struct Send_Operation_Result{
 
+					enum ErrorCodes{SUCCESS,TIMEOUT};
 
+					ErrorCodes errorcode;
 
+					Send_Operation_Result(){
+						errorcode=SUCCESS;
+					}
+
+				} result_of_last_send_operation;
+				*/
 
 				//=============================================================================================================================
 				//============== Start Interrupt Service Routines =============================================================================
@@ -570,7 +616,7 @@ namespace armarow{
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "entered periodic timer interupt" << ::logging::log::endl;
 
-					acknolagement_handler.decrement_timeout_counter_every_ms();
+					acknolagement_handler.decrement_timeout_counter_every_ms(has_message_to_send);
 
 					this->clocktick_counter++;
 
@@ -787,6 +833,8 @@ namespace armarow{
 
 					//setDelegateMethod(clock.timer.onTimerDelegate, MAC_Base, MAC_Base::callback_periodic_timer_activation_event, *this);
 
+					//turn LED on
+					this->led.toggle();
 
 					return 0;
 				}
