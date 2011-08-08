@@ -74,7 +74,6 @@ void callback_recv() {
 
  	if(mac.receive(messageobject)!=0){
 		
-
 		::logging::log::emit()
         	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
 		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress

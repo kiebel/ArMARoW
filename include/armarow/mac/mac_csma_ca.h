@@ -211,7 +211,7 @@ namespace armarow{
 					Acknolagement_Handler(){//(volatile bool& a_has_message_to_send) : has_message_to_send(a_has_message_to_send){
 						reset();
 
-						timeout_duration_in_ms=20;
+						timeout_duration_in_ms=100;
 						maximal_number_of_retransmissions=3;
 						initialized_ack_mechanism=false;
 						result_of_last_send_operation_errorcode=SUCCESS;
@@ -251,9 +251,17 @@ namespace armarow{
 						//if(waits_for_ack==false) return; 
 
 
-						if (sequence_number_of_last_transmitted_message == ack.header.sequencenumber
-						&&  destination_id_of_last_transmitted_message == ack.header.dest_adress
-						&& destination_panid_of_last_transmitted_message == ack.header.dest_pan)
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit()
+						<< "last message sequence number: " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl
+						<< "ack sequence number: " << (int) ack.header.sequencenumber << ::logging::log::endl;
+
+
+
+
+						if (sequence_number_of_last_transmitted_message == ack.header.sequencenumber)
+						//if(send_buffer.header.sequencenumber == ack.header.sequencenumber)
+						//&&  destination_id_of_last_transmitted_message == ack.header.dest_adress
+						//&& destination_panid_of_last_transmitted_message == ack.header.dest_pan)
 						{
 
 							//this is the ACK for the last transmitted message
@@ -270,7 +278,8 @@ namespace armarow{
 
 							if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
 
-							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK" << ::logging::log::endl;
+							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK for message " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl;
+							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: " << (int) timeout_duration_in_ms << ::logging::log::endl;
 
 						}
 
@@ -285,7 +294,7 @@ namespace armarow{
 
 						if(loopcounter>=100){
 
-						print();
+						//print();
 						loopcounter=0;
 						}else{
 						loopcounter++;
@@ -298,6 +307,7 @@ namespace armarow{
 								current_number_of_retransmissions++;
 							
 								waits_for_ack=false;  //timeout event, delete bit, so the busy wait in the sender function will end and 
+								timeout_counter_in_ms=0;
 
 								//this is the ACK for the last transmitted message
 								received_ack_for_last_transmitted_message=false;
@@ -577,7 +587,7 @@ namespace armarow{
 
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> start data message:" << ::logging::log::endl;
-					//send_receive_buffer.print();
+					send_receive_buffer.print();
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> end data message:" << ::logging::log::endl;
 
 					//at this point, we know that we have received a data frame, so we have to send an ack
@@ -721,8 +731,8 @@ namespace armarow{
 					//we want to send (tranceiver on)
 					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
-					//::logging::log::emit() << "transmit message..." << ::logging::log::endl;
-					//send_buffer.print();
+					::logging::log::emit() << "transmit message..." << ::logging::log::endl;
+					send_buffer.print();
 
 					//send
 					Radiocontroller::send(*send_buffer.getPhysical_Layer_Message());
