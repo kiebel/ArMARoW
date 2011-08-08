@@ -54,8 +54,9 @@ namespace armarow{
 				mac_adress_of_node=28, //Node ID	
 				pan_id=0,
 				ack_request=1,
-				minimal_backoff_exponend=0  //means, we wait 2^0=1 ms until we send a message 
-
+				minimal_backoff_exponend=0,  //means, we wait 2^0=1 ms until we send a message 
+				maximal_number_of_retransmissions=3,
+				promiscuous_mode=0 //if 1 turns out the message filter and accepts all messages 
 
 			};
 
@@ -67,7 +68,7 @@ namespace armarow{
 		template<class MAC_Config,class Radiocontroller,MAC_EVALUATION_ACTIVATION_STATE Mac_Evaluation_activation_state>
 		struct MAC_CSMA_CA : public MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>{
 
-		
+			typedef MAC_CSMA_CA<MAC_Config,Radiocontroller,Mac_Evaluation_activation_state> MAC_LAYER;
 
 			protected:
 
@@ -93,70 +94,7 @@ namespace armarow{
 				
 				MAC_Message& send_buffer;
 
-				//an experiment
-				//structuring feature related variables and constands in a sub class for better readability and maintainability
-				//(idea: reduce code scattering)
-				struct Backoff_Timing{
 
-				uint8_t current_backoff_exponend;
-
-				//ieee maximal backoff exponend
-				static const uint8_t maximal_backoff_exponend = 7; //TODO: add IEEE number here -> its a pain finding it in the standard, so we just take this value, since 2^7= 128 ms, that is quite a long backoff time
-
-				static const uint8_t minimal_backoff_exponend = MAC_Config::minimal_backoff_exponend;
-
-				uint8_t number_of_backoffs;  //TODO: not really used until now, remove if unneccessary
-
-				static const uint8_t maximum_number_of_backoffs = 10; //TODO: add IEEE number here
-
-					Backoff_Timing(){
-
-						//init variables
-						this->reset();
-
-					}
-
-					//idea: if(is_in_boundaries()) oneshottimer.start(get_random_backoff_time_in_ms()); else drop_message();
-
-					//has the exponend grown above the allowed limit?
-					bool is_in_boundaries(){
-						if(this->current_backoff_exponend<=maximal_backoff_exponend){
-							return true;
-						}else{
-							return false;
-						}
-					}
-
-					//this method is intended for the one shot timer, to get the waiting time easier 
-					uint16_t get_random_backoff_time_in_ms(){
-						
-						//compute ieee compatible maximal backoff waiting time, that will grow exponentionally with number of backoffs
-						uint8_t current_maximal_backofftime = 2^(this->current_backoff_exponend);
-						this->current_backoff_exponend++;
-
-						//get random number
-						uint32_t randomnumber = rand();
-
-						//0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
-				     		uint32_t random_waitingtime = ( ((uint32_t)randomnumber * current_maximal_backofftime) / (0x8000)); 
-
-						//return random waiting time as uint16_t, so that the one shot timer can just use it
-						return (uint16_t)random_waitingtime;
-
-					}
-
-					//for easily resetting the counters, intended to use in the send function, when you just accepted a new message for transmission
-					void reset(){
-
-						current_backoff_exponend=0;
-						number_of_backoffs=0;
-						
-					}
-
-					
-
-
-				} backoff_timing;
 
 
 				struct Acknolagement_Handler{
@@ -184,15 +122,97 @@ namespace armarow{
 					};
 
 
+				//an experiment
+				//structuring feature related variables and constands in a sub class for better readability and maintainability
+				//(idea: reduce code scattering)
+				struct Backoff_Timing{
+
+				uint8_t current_backoff_exponend;
+
+				//ieee maximal backoff exponend
+				static const uint8_t maximal_backoff_exponend = 7; //TODO: add IEEE number here -> its a pain finding it in the standard, so we just take this value, since 2^7= 128 ms, that is quite a long backoff time
+
+				//static const uint8_t minimal_backoff_exponend = MAC_Config::minimal_backoff_exponend;
+
+				//uint8_t number_of_backoffs;  //TODO: not really used until now, remove if unneccessary
+
+				//static const uint8_t maximum_number_of_backoffs = 10; //TODO: add IEEE number here
+
+
+				uint8_t maximal_number_of_retransmissions;
+
+				uint8_t current_number_of_retransmissions;
+
+					Backoff_Timing(){
+
+						//init variables
+						this->reset();
+						maximal_number_of_retransmissions=MAC_Config::maximal_number_of_retransmissions; //3;
+
+					}
+
+					//idea: if(is_in_boundaries()) oneshottimer.start(get_random_backoff_time_in_ms()); else drop_message();
+
+					//has the exponend grown above the allowed limit?
+					/*
+					bool is_in_boundaries(){
+						if(this->current_backoff_exponend<=maximal_backoff_exponend){
+							return true;
+						}else{
+							return false;
+						}
+					}
+					*/
+
+					//this method is intended for the one shot timer, to get the waiting time easier 
+					uint16_t get_random_backoff_time_in_ms(){
+						
+						//compute ieee compatible maximal backoff waiting time, that will grow exponentionally with number of backoffs
+						uint8_t current_maximal_backofftime = 2^(this->current_backoff_exponend);
+						this->current_backoff_exponend++;
+
+						//get random number
+						uint32_t randomnumber = rand();
+
+						//0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
+				     		uint32_t random_waitingtime = ( ((uint32_t)randomnumber * current_maximal_backofftime) / (0x8000)); 
+
+						//return random waiting time as uint16_t, so that the one shot timer can just use it
+						return (uint16_t)random_waitingtime;
+
+					}
+
+					//for easily resetting the counters, intended to use in the send function, when you just accepted a new message for transmission
+					void reset(){
+
+						current_backoff_exponend=MAC_Config::minimal_backoff_exponend; //0;
+
+						//number_of_backoffs=0;
+
+						current_number_of_retransmissions=0;
+
+						
+
+						
+					}
+
+					
+
+
+				} backoff_timing;
+
+
+
+
 					uint8_t sequence_number_of_last_transmitted_message;
 
 					uint8_t destination_id_of_last_transmitted_message;
 
 					uint8_t destination_panid_of_last_transmitted_message;
 
-					uint8_t maximal_number_of_retransmissions;
+					//uint8_t maximal_number_of_retransmissions;
 
-					uint8_t current_number_of_retransmissions;
+					//uint8_t current_number_of_retransmissions;
 
 					uint8_t timeout_counter_in_ms;
 
@@ -212,7 +232,7 @@ namespace armarow{
 						reset();
 
 						timeout_duration_in_ms=100;
-						maximal_number_of_retransmissions=3;
+						//maximal_number_of_retransmissions=3;
 						initialized_ack_mechanism=false;
 						result_of_last_send_operation_errorcode=SUCCESS;
 
@@ -224,7 +244,7 @@ namespace armarow{
 
 						received_ack_for_last_transmitted_message=false;
 						waits_for_ack=false;
-						current_number_of_retransmissions=0;
+						//current_number_of_retransmissions=0;
 						timeout_counter_in_ms=0;
 						timeout_occured=false;
 
@@ -233,7 +253,7 @@ namespace armarow{
 					void print(){
 						::logging::log::emit() << "received_ack_for_last_transmitted_message: " << (int)received_ack_for_last_transmitted_message << ::logging::log::endl;
 						::logging::log::emit() << "waits_for_ack: " << (int)waits_for_ack << ::logging::log::endl;
-						::logging::log::emit() << "current_number_of_retransmissions: " << (int)current_number_of_retransmissions << ::logging::log::endl;
+						::logging::log::emit() << "current_number_of_retransmissions: " << (int)backoff_timing.current_number_of_retransmissions << ::logging::log::endl;
 						::logging::log::emit() << "timeout_counter_in_ms: " << (int)timeout_counter_in_ms << ::logging::log::endl;
 
 						::logging::log::emit() << "timeout_counter_in_ms: " << (int) timeout_occured << ::logging::log::endl;
@@ -290,7 +310,8 @@ namespace armarow{
 
 
 					//called by the periodic timer ISR every ms
-					void decrement_timeout_counter_every_ms(volatile bool& has_message_to_send){
+					void decrement_timeout_counter_every_ms(volatile bool& has_message_to_send,MAC_LAYER& mac_layer){
+		//void (MAC_LAYER::*pointer_to_async_sending_ISR)()){
 					
 						static int loopcounter=0;
 
@@ -306,7 +327,7 @@ namespace armarow{
 							if(timeout_counter_in_ms < timeout_duration_in_ms){
 								timeout_counter_in_ms++;
 							}else{
-								current_number_of_retransmissions++;
+								backoff_timing.current_number_of_retransmissions++;
 							
 								waits_for_ack=false;  //timeout event, delete bit, so the busy wait in the sender function will end and 
 								timeout_counter_in_ms=0;
@@ -317,15 +338,36 @@ namespace armarow{
 								//mechanism has to be initialized again by calling "init_waiting_mechanism_for_ACK_for_MAC_Message"
 								initialized_ack_mechanism=false;
 			
-							
+								//void (MAC_LAYER::*pt2Member)() = NULL;	
 
+								//pt2Member=0x0;
+								
 								timeout_occured=true;
-								if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
-
-								has_message_to_send=false;
+								
 
 								result_of_last_send_operation_errorcode=TIMEOUT;
-								//FIXME: TODO: call send operation finished delegate
+
+								
+								
+
+								if(backoff_timing.current_number_of_retransmissions<= backoff_timing.maximal_number_of_retransmissions){ 
+
+									if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "retry transmitting..." << ::logging::log::endl;
+									//FIXME: TODO: uncomment this
+									//send_async_intern(); //retry sending
+									mac_layer.send_async_intern();
+
+									//pointer_to_async_sending_ISR
+									
+
+								}else{
+									//number of retries exceeded boundaries
+									has_message_to_send=false;
+									if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
+
+									//FIXME: TODO: call send operation finished delegate
+
+								}								
 
 							}
 						}
@@ -376,11 +418,12 @@ namespace armarow{
 					receiver: sends ack with its node id only, if received message has the destination id of the receiver or 255 (braodcast message)
 				*/
 
+							
 
 				} acknolagement_handler;
 				//Acknolagement_Handler acknolagement_handler(this);
 
-
+				
 
 				//automatically evaluates all relevant information from the mac message, to avoid errors, and then creates aquivalent ACK Message
 					int send_ACK_for_MAC_Message(MAC_Message& msg){
@@ -538,6 +581,9 @@ namespace armarow{
 					//===========================================================
 					//================= MESSAGE FILTERING START =================
 
+
+					if(MAC_Config::promiscuous_mode==0){
+
 					if(send_receive_buffer.header.dest_adress==MAC_Config::mac_adress_of_node  						  
 					   || send_receive_buffer.header.dest_adress==MAC_BROADCAST_ADRESS){
 					//TODO: && mac_message.header.dest_pan==MAC_Config::pan_id
@@ -556,6 +602,7 @@ namespace armarow{
 
 					//at this point, we can be shure, that the received message is for us
 
+					} //end if promiscuous mode
 
 					//================= MESSAGE FILTERING END ==================
 					//===========================================================
@@ -628,7 +675,7 @@ namespace armarow{
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "entered periodic timer interupt" << ::logging::log::endl;
 
-					acknolagement_handler.decrement_timeout_counter_every_ms(has_message_to_send);
+					acknolagement_handler.decrement_timeout_counter_every_ms(has_message_to_send,*this);//&MAC_LAYER::send_async_intern);
 
 					this->clocktick_counter++;
 
@@ -777,11 +824,12 @@ namespace armarow{
 						//FIXME: if something doesn't work, look if this type cast cracks everything
 					
 						
-						int randomnumber = rand();
-				     		uint32_t waitingtime = ( ((uint32_t)randomnumber * this->maximal_waiting_time_in_milliseconds) / (0x8000)); //0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
+						//int randomnumber = rand();
+				     		//uint32_t waitingtime = ( ((uint32_t)randomnumber * this->maximal_waiting_time_in_milliseconds) / (0x8000)); //0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
 
 //one shot timer neu stellen, dieser ruft diese Funktion nach einer zufälligen Zeit erneut auf, solange bis Nachricht erfolgreich versendet wurde
-						one_shot_timer.start((uint16_t)waitingtime);
+						//one_shot_timer.start((uint16_t)waitingtime);
+						one_shot_timer.start(acknolagement_handler.backoff_timing.get_random_backoff_time_in_ms());
 
 						//one_shot_timer.start((uint16_t) 1000); //one shot timer test
 
@@ -897,6 +945,7 @@ namespace armarow{
 					mac_message.header.source_pan=MAC_Config::pan_id;
 					//mac_message.header.controlfield.frametype=Data;
 
+					acknolagement_handler.backoff_timing.reset(); //backoff timing includes retransmission related variables. Since we start a new transmission, they have to be set to default values
 
 					//vom nutzer setzbar
 					//mac_message.header.dest_adress=destination_adress;
