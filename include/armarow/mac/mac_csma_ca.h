@@ -4,7 +4,7 @@
 #define __MAC_CSMA_CA__
 
 
-#define MAC_LAYER_VERBOSE_OUTPUT true
+#define MAC_LAYER_VERBOSE_OUTPUT false
 
 
 #include "mac.h"
@@ -274,12 +274,14 @@ namespace armarow{
 
 							has_message_to_send=false;
 
-							result_of_last_send_operation_errorcode=SUCCESS;
+							result_of_last_send_operation_errorcode=SUCCESS;							
+
+							//if(MAC_LAYER_VERBOSE_OUTPUT) 
+							::logging::log::emit() << "received ACK for message " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl;
+							//if(MAC_LAYER_VERBOSE_OUTPUT) 
+							::logging::log::emit() << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: " << (int) timeout_duration_in_ms << ::logging::log::endl;
 
 							if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
-
-							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK for message " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl;
-							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: " << (int) timeout_duration_in_ms << ::logging::log::endl;
 
 						}
 
@@ -587,7 +589,7 @@ namespace armarow{
 
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> start data message:" << ::logging::log::endl;
-					send_receive_buffer.print();
+					if(MAC_LAYER_VERBOSE_OUTPUT) send_receive_buffer.print();
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> end data message:" << ::logging::log::endl;
 
 					//at this point, we know that we have received a data frame, so we have to send an ack
@@ -646,7 +648,7 @@ namespace armarow{
 
 						if(MAC_LAYER_VERBOSE_OUTPUT){
 						 //::logging::log::emit() << "decrement_timeout_counter..." << ::logging::log::endl;
-						  acknolagement_handler.print();
+						  //acknolagement_handler.print();
 						}
 
 					}
@@ -731,8 +733,8 @@ namespace armarow{
 					//we want to send (tranceiver on)
 					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
-					::logging::log::emit() << "transmit message..." << ::logging::log::endl;
-					send_buffer.print();
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "transmit message..." << ::logging::log::endl;
+					if(MAC_LAYER_VERBOSE_OUTPUT) send_buffer.print();
 
 					//send
 					Radiocontroller::send(*send_buffer.getPhysical_Layer_Message());
@@ -858,6 +860,11 @@ namespace armarow{
 					return 0;
 				}
 
+
+				//Acknolagement_Handler::ACK_ERROR_CODE
+				int get_result_of_last_send_operation(){
+					return acknolagement_handler.result_of_last_send_operation_errorcode;
+				}
 
 				void get_MAC_Attribut(typename MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::mac_attributes attributes,  AttributType value){
 

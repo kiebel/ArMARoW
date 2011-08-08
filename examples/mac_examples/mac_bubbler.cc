@@ -73,7 +73,7 @@ void success_transmission_callback(){
 avr_halib::locking::GlobalIntLock lock;
 
 ::logging::log::emit()
-            << PROGMEMSTRING("msg...")
+            << PROGMEMSTRING("msg...") << (int) mac.get_result_of_last_send_operation()
             << ::logging::log::endl;
 
 }
@@ -105,7 +105,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
             << ::logging::log::endl;
 	}
 
-     delay_ms(1000);
+     //delay_ms(1000);
 
   }
 

@@ -56,7 +56,7 @@ struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
 
 
-armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Disable> mac;
+armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Enable> mac;
 
 
 armarow::MAC::mob_t messageobject;
