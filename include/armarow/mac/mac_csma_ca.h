@@ -4,7 +4,7 @@
 #define __MAC_CSMA_CA__
 
 
-#define MAC_LAYER_VERBOSE_OUTPUT false
+#define MAC_LAYER_VERBOSE_OUTPUT false //true
 
 
 #include "mac.h"
@@ -54,9 +54,10 @@ namespace armarow{
 				mac_adress_of_node=28, //Node ID	
 				pan_id=0,
 				ack_request=1,
-				minimal_backoff_exponend=0,  //means, we wait 2^0=1 ms until we send a message 
+				minimal_backoff_exponend=2,  //means, we wait 2^0=1 ms until we send a message 
 				maximal_number_of_retransmissions=3,
-				promiscuous_mode=0 //if 1 turns out the message filter and accepts all messages 
+				promiscuous_mode=0, //if 1 turns out the message filter and accepts all messages 
+				acknolagement_timeout_duration_in_ms=100 //timeout event occures after the specified time is exeeded, it will then attempt a retransmission
 
 			};
 
@@ -130,7 +131,7 @@ namespace armarow{
 				uint8_t current_backoff_exponend;
 
 				//ieee maximal backoff exponend
-				static const uint8_t maximal_backoff_exponend = 7; //TODO: add IEEE number here -> its a pain finding it in the standard, so we just take this value, since 2^7= 128 ms, that is quite a long backoff time
+				//static const uint8_t maximal_backoff_exponend = 7; //TODO: add IEEE number here -> its a pain finding it in the standard, so we just take this value, since 2^7= 128 ms, that is quite a long backoff time
 
 				//static const uint8_t minimal_backoff_exponend = MAC_Config::minimal_backoff_exponend;
 
@@ -177,6 +178,11 @@ namespace armarow{
 						//0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
 				     		uint32_t random_waitingtime = ( ((uint32_t)randomnumber * current_maximal_backofftime) / (0x8000)); 
 
+
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit()
+						<< "random waiting time in ms: " << (int) random_waitingtime 
+						<< ::logging::log::endl;
+
 						//return random waiting time as uint16_t, so that the one shot timer can just use it
 						return (uint16_t)random_waitingtime;
 
@@ -184,7 +190,7 @@ namespace armarow{
 
 					//for easily resetting the counters, intended to use in the send function, when you just accepted a new message for transmission
 					void reset(){
-
+						//set to default value
 						current_backoff_exponend=MAC_Config::minimal_backoff_exponend; //0;
 
 						//number_of_backoffs=0;
@@ -231,7 +237,7 @@ namespace armarow{
 					Acknolagement_Handler(){//(volatile bool& a_has_message_to_send) : has_message_to_send(a_has_message_to_send){
 						reset();
 
-						timeout_duration_in_ms=100;
+						timeout_duration_in_ms=MAC_Config::acknolagement_timeout_duration_in_ms;//100;
 						//maximal_number_of_retransmissions=3;
 						initialized_ack_mechanism=false;
 						result_of_last_send_operation_errorcode=SUCCESS;
@@ -262,8 +268,8 @@ namespace armarow{
 
 					//if an ACK message is received, this method decides, whether its the ACK frame we are waiting for or not
 					//if yes, we set the corrosponding bits, if not we just ignore the ACK
-					void handle_received_ACK(MAC_Message& ack,volatile bool& has_message_to_send,Delegate<>& onMessage_Successfull_Transmitted_Delegate){
-					//void handle_received_ACK(MAC_Message& ack,Delegate<>& onMessage_Successfull_Transmitted_Delegate){
+					void handle_received_ACK(MAC_Message& ack,volatile bool& has_message_to_send,Delegate<>& onSend_Operation_Completed_Delegtate){
+					//void handle_received_ACK(MAC_Message& ack,Delegate<>& onSend_Operation_Completed_Delegtate){
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ack was received, validating..." << ::logging::log::endl;
 
@@ -301,7 +307,7 @@ namespace armarow{
 							//if(MAC_LAYER_VERBOSE_OUTPUT) 
 							::logging::log::emit() << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: " << (int) timeout_duration_in_ms << ::logging::log::endl;
 
-							if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+							if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
 
 						}
 
@@ -338,10 +344,7 @@ namespace armarow{
 								//mechanism has to be initialized again by calling "init_waiting_mechanism_for_ACK_for_MAC_Message"
 								initialized_ack_mechanism=false;
 			
-								//void (MAC_LAYER::*pt2Member)() = NULL;	
-
-								//pt2Member=0x0;
-								
+							
 								timeout_occured=true;
 								
 
@@ -352,7 +355,11 @@ namespace armarow{
 
 								if(backoff_timing.current_number_of_retransmissions<= backoff_timing.maximal_number_of_retransmissions){ 
 
-									if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "retry transmitting..." << ::logging::log::endl;
+									//if(MAC_LAYER_VERBOSE_OUTPUT) 
+										::logging::log::emit() << "retry transmitting... attempt number " 
+										<< (int) backoff_timing.current_number_of_retransmissions << ::logging::log::endl;
+
+
 									//FIXME: TODO: uncomment this
 									//send_async_intern(); //retry sending
 									mac_layer.send_async_intern();
@@ -365,7 +372,10 @@ namespace armarow{
 									has_message_to_send=false;
 									if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
 
+									::logging::log::emit() << "number of retries has exeeded..." << ::logging::log::endl;
 									//FIXME: TODO: call send operation finished delegate
+
+									 if(!mac_layer.onSend_Operation_Completed_Delegtate.isEmpty()) mac_layer.onSend_Operation_Completed_Delegtate();
 
 								}								
 
@@ -437,7 +447,6 @@ namespace armarow{
 						//TODO:FIXME:TEST for delayed ACK, if that gets to its destination, remove LATER!!!!
 						//delay_ms(1);
 
-
 						if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::SUCCESS;
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending ACK..." << ::logging::log::endl;
@@ -495,7 +504,7 @@ namespace armarow{
 
 				Delegate<> onMessageReceiveDelegate;
 
-				Delegate<> onMessage_Successfull_Transmitted_Delegate;
+				Delegate<> onSend_Operation_Completed_Delegtate;
 
 				MAC_CSMA_CA() : send_buffer(send_receive_buffer){   // : channel(11), mac_adress(0){
 
@@ -625,7 +634,7 @@ namespace armarow{
 						if(send_receive_buffer.header.controlfield.frametype==Acknowledgment){
 
 							//set bit to 1
-							acknolagement_handler.handle_received_ACK(send_receive_buffer,has_message_to_send,onMessage_Successfull_Transmitted_Delegate); //this bit has to be set to false if neccessary, so we have to provide it via reference
+							acknolagement_handler.handle_received_ACK(send_receive_buffer,has_message_to_send,onSend_Operation_Completed_Delegtate); //this bit has to be set to false if neccessary, so we have to provide it via reference
 
 
 						}
@@ -752,7 +761,7 @@ namespace armarow{
 						has_message_to_send=false;
 						acknolagement_handler.waits_for_ack=false;
 
-						if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+						if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK" << ::logging::log::endl;
 
@@ -802,7 +811,7 @@ namespace armarow{
 
 						has_message_to_send=false;
 						//FIXME: TODO: this delegate should be called outside of the critical section
-						 if(!onMessage_Successfull_Transmitted_Delegate.isEmpty()) onMessage_Successfull_Transmitted_Delegate();
+						 if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
 
 					}
 

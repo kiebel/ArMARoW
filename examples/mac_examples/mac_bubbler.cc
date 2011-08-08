@@ -63,7 +63,7 @@ armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Dis
 
 
 
-void success_transmission_callback(){
+void transmission_completed_callback(){
 
 //::logging::log::emit()
 //            << PROGMEMSTRING("Successful send a message...")
@@ -76,14 +76,22 @@ avr_halib::locking::GlobalIntLock lock;
             << PROGMEMSTRING("msg...") << (int) mac.get_result_of_last_send_operation()
             << ::logging::log::endl;
 
+	if(mac.get_result_of_last_send_operation()!=0)
+	::logging::log::emit()
+            << PROGMEMSTRING("ERROR: couldn't transmit last message...") 
+            << ::logging::log::endl;
+
+
 }
 
 
 void async_sending_test(armarow::MAC::mob_t msg){
 
-  mac.onMessage_Successfull_Transmitted_Delegate.bind<success_transmission_callback>();
+  mac.onSend_Operation_Completed_Delegtate.bind<transmission_completed_callback>();
 
   int ret;
+
+  bool verbose = false;
 
   while(1){
 
@@ -94,15 +102,20 @@ void async_sending_test(armarow::MAC::mob_t msg){
 	   //::logging::log::emit()  << PROGMEMSTRING("Try sending a message...") << ::logging::log::endl;
      {
 
-        
-   
         ret=mac.send_async(msg);
      
+	
+
+	if(verbose){
+
 	avr_halib::locking::GlobalIntLock lock;
 
 	::logging::log::emit()
             << PROGMEMSTRING("ret is: ") << ret
             << ::logging::log::endl;
+
+	}
+
 	}
 
      //delay_ms(1000);
