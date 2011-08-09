@@ -1,8 +1,6 @@
 
 #include "armarow/mac/mac_csma_ca.h"
 
-//#include "../examples/mac_examples/util.h"
-
 #include "armarow/mac/util.h"
 
 #undef LOGGING_DISABLE
@@ -58,13 +56,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
   while(1){
 
-	//test for one shot timer
-	//mac.send_async(msg);
-	//while(1);
-     
-
-
-	   //::logging::log::emit()  << PROGMEMSTRING("Try sending a message...") << ::logging::log::endl;
+	
      {
 
 	msg.store_object_in_payload(msg_measurement_object);
@@ -131,28 +123,7 @@ int main() {
 
 	
 
-	/* //example for usage of object storage functionality
-            a.messwert1=40;
-	    a.messwert2=50;
-	    a.messwert3=60;
 
-	::logging::log::emit() << "Object a: " << ::logging::log::endl;
-	a.print();
-
-	messageobject.store_object_in_payload(a);
-
-	My_Information b;
-
-	::logging::log::emit() << "Object b before: " << ::logging::log::endl;
-	b.print();
-
-	messageobject.get_object_from_payload(b);
-
-	::logging::log::emit() << "Object b after: " << ::logging::log::endl;
-	b.print();
-
-	//end of example
-	*/
 
 
     sei();                              // enable interrupts
@@ -163,28 +134,5 @@ int main() {
 
     async_sending_test(messageobject);
 
-    //main loop
-    do {
-
-		::logging::log::emit()
-        	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
-		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
-		<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
-        	<< ::logging::log::endl << ::logging::log::endl;
-
-
-	
-
-	if(mac.send(messageobject)<0){
-
-			 ::logging::log::emit()
-           << PROGMEMSTRING("couldn't transmit message because medium was busy...") 
-           << ::logging::log::endl << ::logging::log::endl;
-
-	}
-
-	//delay_ms(1000);
-
-    } while (true);
 }
 
