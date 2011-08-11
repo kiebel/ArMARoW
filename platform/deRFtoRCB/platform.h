@@ -60,14 +60,13 @@ typedef avr_halib::power::Morpheus<MorpheusSyncList> Morpheus;
 
 typedef avr_halib::drivers::Clock<ClockConfig> TimeTriggeredEventSource;
 
-
 class cpuinit
 {
   public:
   cpuinit()
   {
     UseRegMap(rm,avr_halib::regmaps::local::atmega128rfa1::Systemclock);
-    rm.setps(rm.ps1);
+    rm.setps(rm.psnone);
   }
 } in;
 
