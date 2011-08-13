@@ -4,8 +4,8 @@
 #define __MAC_CSMA_CA__
 
 
-#define MAC_LAYER_VERBOSE_OUTPUT false //true
-
+#define MAC_LAYER_VERBOSE_OUTPUT true //false //true
+#define ENABLE_FILTERING_OF_DUPLICATES false
 
 #include "mac.h"
 #include "atmega1281_timer3_regmap.h"
@@ -99,14 +99,14 @@ namespace armarow{
 				struct Message_Filter{
 
 					uint8_t sequence_number_of_last_received_message; //= msg.header.sequencenumber;
-					uint8_t destination_id_of_last_received_message; //= msg.header.dest_adress;
-					uint8_t destination_panid_of_last_received_message; //= msg.header.dest_pan;
+					uint8_t source_id_of_last_received_message; //= msg.header.dest_adress;
+					uint8_t source_panid_of_last_received_message; //= msg.header.dest_pan;
 
 					Message_Filter(){
 						//init variables for last message
 						sequence_number_of_last_received_message=0;
-						destination_id_of_last_received_message=255; //Broadcast adress
-						destination_panid_of_last_received_message=255; 
+						source_id_of_last_received_message=255; //Broadcast adress
+						source_panid_of_last_received_message=255; 
 						
 					}
 
@@ -361,12 +361,7 @@ namespace armarow{
 			
 							
 								timeout_occured=true;
-								
-
-								result_of_last_send_operation_errorcode=TIMEOUT;
-
-								
-								
+																				
 
 								if(backoff_timing.current_number_of_retransmissions<= backoff_timing.maximal_number_of_retransmissions){ 
 
@@ -383,6 +378,7 @@ namespace armarow{
 									
 
 								}else{
+									result_of_last_send_operation_errorcode=TIMEOUT;
 									//number of retries exceeded boundaries
 									has_message_to_send=false;
 									if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
@@ -626,15 +622,23 @@ namespace armarow{
 
 					//at this point, we can be sure, that the received message is for us
 
+					if(ENABLE_FILTERING_OF_DUPLICATES){
 
-					//did we already receive the message -> we determine this by looking at the sequence number
-
-					if(message_filter.sequence_number_of_last_received_message == send_receive_buffer.header.sequencenumber
-						&& message_filter.destination_id_of_last_received_message == send_receive_buffer.header.dest_adress
-						&& message_filter.destination_panid_of_last_received_message == send_receive_buffer.header.dest_pan
+					//did we already receive the message (only data) -> we determine this by looking at the sequence number
+					//we don'T want to filte out double Acks
+					if(send_receive_buffer.header.controlfield.frametype==Data 
+						&& message_filter.sequence_number_of_last_received_message == send_receive_buffer.header.sequencenumber
+						&& message_filter.source_id_of_last_received_message == send_receive_buffer.header.source_adress
+						&& message_filter.source_panid_of_last_received_message == send_receive_buffer.header.source_pan
 					){
 
-						::logging::log::emit() << "filtered out duplicate message..." << ::logging::log::endl;
+						::logging::log::emit() << "filtered out duplicate message...(" 
+						<< (int) message_filter.sequence_number_of_last_received_message << ","
+						<< (int) message_filter.source_id_of_last_received_message << ","
+						<< (int) message_filter.source_panid_of_last_received_message << ")"
+						<< ::logging::log::endl;
+
+		
 						has_message_ready_for_delivery=false;
 						return;
 
@@ -642,9 +646,11 @@ namespace armarow{
 
 					//init message filter with the header data of the current message				
 					message_filter.sequence_number_of_last_received_message=send_receive_buffer.header.sequencenumber;
-					message_filter.destination_id_of_last_received_message = send_receive_buffer.header.dest_adress;
-					message_filter.destination_panid_of_last_received_message = send_receive_buffer.header.dest_pan;
+					message_filter.source_id_of_last_received_message = send_receive_buffer.header.source_adress;
+					message_filter.source_panid_of_last_received_message = send_receive_buffer.header.source_pan;
 
+
+					} //end enable feature duplicate filtering
 
 					} //end if promiscuous mode
 
@@ -844,6 +850,8 @@ namespace armarow{
 
 					}else{
 
+						acknolagement_handler.result_of_last_send_operation_errorcode = Acknolagement_Handler::SUCCESS;
+
 						has_message_to_send=false;
 						//FIXME: TODO: this delegate should be called outside of the critical section
 						 if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
@@ -858,7 +866,7 @@ namespace armarow{
 						one_shot_timer.stop();
 
 						if(MAC_LAYER_VERBOSE_OUTPUT)  ::logging::log::emit()
-           				 					<< PROGMEMSTRING("Medium busy, starting one shot timer...")
+           				 					<< PROGMEMSTRING("Medium busy...")
             									<< ::logging::log::endl;
 
 

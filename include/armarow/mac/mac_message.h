@@ -214,6 +214,9 @@ struct MAC_Message{
 		//set the correct size value for this layer (size refers always only to the payload, the Headerlength is not included. Since the MAC_Header is part of the Payload of the physical Message, its length has to be subtracted from the size value of the physical message, so that value specifies now the Number of Bytes in the MAC_Payload)
 		size = physical_layer_message.size - sizeof(MAC_Header);
 
+		this->minfo.ed=physical_layer_message.minfo.ed;
+		this->minfo.lqi=physical_layer_message.minfo.lqi;
+
 
 		//if we already know, that the decoding has failed, we have no further need for confirmation
 		if(decoding_was_successful) decoding_was_successful = isValid();
@@ -311,7 +314,7 @@ struct MAC_Message{
 	::logging::log::emit() << "source_pan: " << (int) header.source_pan << ::logging::log::endl;
 	::logging::log::emit() << "source_adress: " <<  (int) header.source_adress << ::logging::log::endl;
 
-
+	/*
 		if (size > 0){
 			::logging::log::emit() << "content of Payload: ";
 			for(uint8_t i=0;i<size;i++)
@@ -319,7 +322,7 @@ struct MAC_Message{
 			::logging::log::emit() << ::logging::log::endl;	
 
 		}
-
+	*/
 	}
 
 

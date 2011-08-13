@@ -34,7 +34,9 @@ void callback_recv() {
 		::logging::log::emit()
         	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
 		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
-		//<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
+		<< PROGMEMSTRING("msnr: ") << (int) messageobject.header.sequencenumber << ::logging::log::endl
+		<< "r ED:" << (int) messageobject.minfo.ed << log::endl  //from repeater
+	    	<< "r LQI:" << (int) messageobject.minfo.lqi
         	<< ::logging::log::endl; // << ::logging::log::endl;
 
 
@@ -45,6 +47,10 @@ void callback_recv() {
 		::logging::log::emit()
 		<< "gsnr: " << a.global_sequence_number
         	<< ::logging::log::endl; // << ::logging::log::endl;
+
+		::logging::log::emit()
+		<< "b ED:" << (int) a.ed << log::endl	//from bubbler
+		<< "b LQI:" << (int) a.lqi << log::endl;
 
 
 	}else{

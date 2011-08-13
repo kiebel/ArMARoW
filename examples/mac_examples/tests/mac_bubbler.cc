@@ -106,7 +106,7 @@ int main() {
 	messageobject.header.dest_adress = 12; //adress of repeater //armarow::MAC::MAC_BROADCAST_ADRESS;
 	messageobject.header.dest_pan = 0;
 
-	messageobject.header.controlfield.ackrequest = 1;
+	messageobject.header.controlfield.ackrequest = 1; //0; //1;
 
 
 

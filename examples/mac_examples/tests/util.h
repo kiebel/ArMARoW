@@ -10,6 +10,9 @@ struct My_Information{
 
 	int global_sequence_number;
 
+ 	uint8_t lqi;
+	uint8_t ed;
+
 	armarow::MAC::MAC_Header header;
 
 	My_Information(){
