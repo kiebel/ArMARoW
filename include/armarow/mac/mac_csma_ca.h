@@ -96,7 +96,22 @@ namespace armarow{
 				MAC_Message& send_buffer;
 
 
+				struct Message_Filter{
 
+					uint8_t sequence_number_of_last_received_message; //= msg.header.sequencenumber;
+					uint8_t destination_id_of_last_received_message; //= msg.header.dest_adress;
+					uint8_t destination_panid_of_last_received_message; //= msg.header.dest_pan;
+
+					Message_Filter(){
+						//init variables for last message
+						sequence_number_of_last_received_message=0;
+						destination_id_of_last_received_message=255; //Broadcast adress
+						destination_panid_of_last_received_message=255; 
+						
+					}
+
+
+				} message_filter;
 
 				struct Acknolagement_Handler{
 
@@ -609,7 +624,27 @@ namespace armarow{
 
 					}
 
-					//at this point, we can be shure, that the received message is for us
+					//at this point, we can be sure, that the received message is for us
+
+
+					//did we already receive the message -> we determine this by looking at the sequence number
+
+					if(message_filter.sequence_number_of_last_received_message == send_receive_buffer.header.sequencenumber
+						&& message_filter.destination_id_of_last_received_message == send_receive_buffer.header.dest_adress
+						&& message_filter.destination_panid_of_last_received_message == send_receive_buffer.header.dest_pan
+					){
+
+						::logging::log::emit() << "filtered out duplicate message..." << ::logging::log::endl;
+						has_message_ready_for_delivery=false;
+						return;
+
+					}
+
+					//init message filter with the header data of the current message				
+					message_filter.sequence_number_of_last_received_message=send_receive_buffer.header.sequencenumber;
+					message_filter.destination_id_of_last_received_message = send_receive_buffer.header.dest_adress;
+					message_filter.destination_panid_of_last_received_message = send_receive_buffer.header.dest_pan;
+
 
 					} //end if promiscuous mode
 
@@ -950,7 +985,7 @@ namespace armarow{
 
 					//TODO; in überladenen Konstruktor packen
 					//optional source adress pan und message type dürfen vom nutzen nicht geändert werden -> private machen und MAC ALyer als frind deklaieren
-					mac_message.header.source_adress=MAC_Config::mac_adress_of_node; 
+					mac_message.header.source_adress=MAC_Config::mac_adress_of_node;
 					mac_message.header.source_pan=MAC_Config::pan_id;
 					//mac_message.header.controlfield.frametype=Data;
 

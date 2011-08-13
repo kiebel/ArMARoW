@@ -152,6 +152,19 @@ struct MAC_Header{
 	}
 
 
+	void print(){
+
+		::logging::log::emit() << "MAC_HEADER:" << ::logging::log::endl;
+		::logging::log::emit() << "message_type: " << (int) controlfield.frametype << ::logging::log::endl << ::logging::log::endl;
+		::logging::log::emit() << "ackrequest: " << (int) controlfield.ackrequest << ::logging::log::endl << ::logging::log::endl;
+		::logging::log::emit() << "sequencenumber: " << (int) sequencenumber << ::logging::log::endl << ::logging::log::endl;
+		::logging::log::emit() << "dest_pan: " << (int) dest_pan << ::logging::log::endl;
+		::logging::log::emit() << "dest_adress: " << (int) dest_adress << ::logging::log::endl;
+		::logging::log::emit() << "source_pan: " << (int) source_pan << ::logging::log::endl;
+		::logging::log::emit() << "source_adress: " <<  (int) source_adress << ::logging::log::endl;
+	
+	}
+
 	explicit MAC_Header(platform::config::mob_t physical_layer_message){
 	
 
@@ -169,7 +182,11 @@ struct MAC_Message{
 	uint8_t size; //just there to be there (placeholder [Platzhalter] for uint_8 in platform::config::mob_t object, so that the header starts exactly at the adress of the payload of the platform::config::mob_t object)
 	MAC_Header header;
 	char payload[MAX_NUMBER_OF_DATABYTES]; 
-
+	struct {  //physical layer info, will not be transmitted
+                uint8_t lqi;  /*!< last measured LQI value*/
+		uint8_t ed;
+		bool    crc  : 1;
+        } minfo;
 	//MAC_Payload payload;
 
   //this constructor have to be used with the placement new operator, hence it may not called directly
