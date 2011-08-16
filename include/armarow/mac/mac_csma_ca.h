@@ -99,8 +99,9 @@ namespace armarow{
 				//bit we need for timer interrupt routine, to decide if there is a message to send (asynchron message delivery)
 				volatile bool has_message_to_send;
 				
-				MAC_Message& send_buffer;
+				MAC_Message send_buffer;
 
+				
 
 				struct Message_Filter{
 
@@ -141,6 +142,8 @@ namespace armarow{
 
 						bool initialized_ack_mechanism : 1; //we need that, so we know at the beginning of the programm, if we have an error situation or are in setup state
 						bool timeout_occured : 1;
+
+						bool ack_to_send : 1;
 					};
 
 
@@ -239,6 +242,7 @@ namespace armarow{
 
 
 
+					MAC_Message acknolagement_buffer; //for sending acknolagements
 
 					uint8_t sequence_number_of_last_transmitted_message;
 
@@ -283,6 +287,8 @@ namespace armarow{
 						//current_number_of_retransmissions=0;
 						timeout_counter_in_ms=0;
 						timeout_occured=false;
+
+						ack_to_send=false;
 
 					}
 
@@ -385,16 +391,21 @@ namespace armarow{
 										<< (int) backoff_timing.current_number_of_retransmissions << ::logging::log::endl;
 
 
+									//reset backoff exponent, so that the mximal waiting time is not growing from retransmission to retransmission
+									backoff_timing.current_backoff_exponend=MAC_Config::minimal_backoff_exponend;
+
+									
+
 									//FIXME: TODO: uncomment this
 									//send_async_intern(); //retry sending
 									mac_layer.send_async_intern();
 
 									//pointer_to_async_sending_ISR
 									
-									result_of_last_send_operation_errorcode=TIMEOUT;
+									//result_of_last_send_operation_errorcode=TIMEOUT;
 
 								}else{
-									
+									result_of_last_send_operation_errorcode=TIMEOUT;
 									//number of retries exceeded boundaries
 									has_message_to_send=false;
 									if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
@@ -508,9 +519,20 @@ namespace armarow{
 						if(MAC_LAYER_VERBOSE_OUTPUT) ack_message.print();
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=====> end ACK msg..." << ::logging::log::endl << ::logging::log::endl;
 
+						
+						//set bit, that ack is to send, so the send function knows, that there is a valid Ack 
+						//frame waiting for transmission in the acknolagement_buffer
+						acknolagement_handler.ack_to_send=true;
 
+						//copy build message into mac layer ack buffer
+						acknolagement_handler.acknolagement_buffer=ack_message;
+
+						send_async_intern();
+
+
+						/*
 						//TODO: clear channel accessmant machen
-
+	
 						//we want to send (tranceiver on)
 						Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
@@ -519,7 +541,7 @@ namespace armarow{
 
 						//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
 						Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
-
+						*/
 
 
 						return Acknolagement_Handler::SUCCESS;
@@ -784,13 +806,22 @@ namespace armarow{
 					uint8_t ccaValue;
 					armarow::PHY::State status;
 
+					MAC_Message message_to_send=send_buffer;
+
+
+
 
 					{ //critial section start
 
 					//it can be called per interrupt, so we secure it
 					avr_halib::locking::GlobalIntLock lock;
 
-					
+					if(acknolagement_handler.ack_to_send==true){
+						message_to_send=acknolagement_handler.acknolagement_buffer;
+					}//else{
+					//	message_to_send=send_buffer;
+					//}
+
 
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
 
@@ -805,21 +836,29 @@ namespace armarow{
 					//we want to send (tranceiver on)
 					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "transmit message..." << ::logging::log::endl;
-					if(MAC_LAYER_VERBOSE_OUTPUT) send_buffer.print();
+					//if(MAC_LAYER_VERBOSE_OUTPUT) 
+					//::logging::log::emit() << "transmit message..." << ::logging::log::endl;
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending..." << ::logging::log::endl;	
+					if(MAC_LAYER_VERBOSE_OUTPUT) message_to_send.print();
 
 					//send
-					Radiocontroller::send(*send_buffer.getPhysical_Layer_Message());
+					Radiocontroller::send(*message_to_send.getPhysical_Layer_Message());
 
 					//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
 					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
 
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending..." << ::logging::log::endl;					
+									
 
-					if(send_buffer.header.controlfield.ackrequest==1){
+					//we have transmitted our ack, we can now return to normal operation, where we send the data messages
+					if(acknolagement_handler.ack_to_send==true){
+						acknolagement_handler.ack_to_send=false;
+						return;
+					}
+
+					if(message_to_send.header.controlfield.ackrequest==1){
 
 					//init variables of acknolagement_handler, so that it waits for the ACK message for the transmitted message (ONLY that one)
-					acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(send_buffer);
+					acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(message_to_send);
 
 					//one_shot_timer.start(1); //minimal waiting time, we can make the one shot timer wait, the ACK needs some time anyway
 
@@ -857,7 +896,25 @@ namespace armarow{
 //one shot timer neu stellen, dieser ruft diese Funktion nach einer zufälligen Zeit erneut auf, solange bis Nachricht erfolgreich versendet wurde
 						//one_shot_timer.start((uint16_t)waitingtime);
 
+						
+						//we couldn't transmit our ack, so we have to compute a random waiting time and try again later
+						//since we don't want to influence the backoff timing of data messages, we use our own method 
+						if(acknolagement_handler.ack_to_send==true){
 
+							int randomnumber = rand();
+												//the 20 is the maximal waiting time for an ACK
+							uint32_t waitingtime = ( ((uint32_t)randomnumber * 20) / (0x8000)); //0x8000 = RAND_MAX+1 -> Optimization, so that we can do a shift instead of a division
+
+							//one shot timer neu stellen, dieser ruft diese Funktion nach einer zufälligen Zeit
+							//erneut auf, solange bis Nachricht erfolgreich versendet wurde
+							one_shot_timer.start((uint16_t)waitingtime);
+
+
+						return;
+
+						}
+
+	
 						if(acknolagement_handler.backoff_timing.number_of_backoffs_has_exeeded()){
 
 									//number of backoffs exceeded boundaries
@@ -1047,7 +1104,8 @@ namespace armarow{
 					delay_ms(waitingtime);	
 			
 
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
+					if(MAC_LAYER_VERBOSE_OUTPUT) 
+						::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
 									<< "Sending MAC_Message... " << ::logging::log::endl;
 					//mac_message.print();
 

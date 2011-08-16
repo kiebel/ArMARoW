@@ -1,5 +1,5 @@
 
-#define MAC_LAYER_VERBOSE_OUTPUT true
+#define MAC_LAYER_VERBOSE_OUTPUT false
 
 #include "armarow/mac/mac_csma_ca.h"
 
@@ -91,7 +91,7 @@ void async_sending_test(){
 
 	}
 
-     delay_ms(200);
+     //delay_ms(200);
 
   }
 
@@ -111,7 +111,7 @@ int main() {
 	messageobject.header.dest_adress = 12; //adress of repeater //armarow::MAC::MAC_BROADCAST_ADRESS;
 	messageobject.header.dest_pan = 0;
 
-	messageobject.header.controlfield.ackrequest = 0; //0; //1;
+	messageobject.header.controlfield.ackrequest = 1; //0; //1;
 
 
 
