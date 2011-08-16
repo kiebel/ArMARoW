@@ -78,7 +78,7 @@ namespace armarow{
 	struct ClockConfig
 	{
 		typedef uint16_t TickValueType;
-		typedef Frequency<1000> TargetFrequency; //every ms one timer interrupt
+		typedef Frequency<50> TargetFrequency; //every 20 ms one timer interrupt for acknolagement timeout (1000 times per second is 1 ms, we want every 20 ms an interrupt (if the timer is running) and then we have 1/0.020s = 50 times per second)
 		typedef CPUClock TimerFrequency; //CPUClock
 		typedef local::Timer1 Timer;
 	};

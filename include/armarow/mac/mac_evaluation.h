@@ -116,6 +116,9 @@ struct Mac_Evaluation<Enable> : public Mac_Evaluation_Interface{
 	//the Idea is to call this method every second in a periodic interrupt service routine triggered by a clock 
 	void print_and_reset_number_of_received_bytes(){
 
+		//secure ISR
+		avr_halib::locking::GlobalIntLock lock;
+
 	  ::logging::log::emit() << "received bytes in last second:\t"  << this->received_bytes_in_last_second << ::logging::log::endl;
 	led.toggle();
 	  this->received_bytes_in_last_second=0;

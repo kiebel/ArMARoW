@@ -118,7 +118,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
 	}
 
-     delay_ms(100);
+     //delay_ms(100);
 
   }
 
@@ -180,7 +180,7 @@ int main() {
 	messageobject.header.dest_adress = 20; //armarow::MAC::MAC_BROADCAST_ADRESS;
 	messageobject.header.dest_pan = 0;
 
-	messageobject.header.controlfield.ackrequest = 0;//1;
+	messageobject.header.controlfield.ackrequest = 1;//1;
 
 
 	/* //example for usage of object storage functionality

@@ -91,7 +91,10 @@ namespace armarow{
 
 
 				// CLOCK 
-				MAC_Clock clock;
+				MAC_Clock acknolagement_timeout_timer; //not a one shot timer, we abuse the clock for that ;-)
+
+				//ExactEggTimer<Timer1> acknolagement_timeout_timer;
+
 				//typename avr_halib::drivers::
 				ExactEggTimer<Timer3> one_shot_timer;				
 				//avr_halib::drivers::Timer<avr_halib::config::DefaultTimerConfig<avr_halib::regmaps::local::Timer2>> a;
@@ -110,7 +113,6 @@ namespace armarow{
 				MAC_Message send_buffer;
 
 				
-
 				struct Message_Filter{
 
 					uint8_t sequence_number_of_last_received_message; //= msg.header.sequencenumber;
@@ -312,7 +314,7 @@ namespace armarow{
 
 					//if an ACK message is received, this method decides, whether its the ACK frame we are waiting for or not
 					//if yes, we set the corrosponding bits, if not we just ignore the ACK
-					void handle_received_ACK(MAC_Message& ack,volatile bool& has_message_to_send,Delegate<>& onSend_Operation_Completed_Delegtate){
+					void handle_received_ACK(MAC_Message& ack,volatile bool& has_message_to_send,Delegate<>& onSend_Operation_Completed_Delegtate,MAC_LAYER& mac_layer){
 					//void handle_received_ACK(MAC_Message& ack,Delegate<>& onSend_Operation_Completed_Delegtate){
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ack was received, validating..." << ::logging::log::endl;
@@ -333,6 +335,8 @@ namespace armarow{
 						//&&  destination_id_of_last_transmitted_message == ack.header.dest_adress
 						//&& destination_panid_of_last_transmitted_message == ack.header.dest_pan)
 						{
+
+							mac_layer.reset_acknolagement_timer();
 
 							//this is the ACK for the last transmitted message
 							received_ack_for_last_transmitted_message=true;
@@ -431,7 +435,7 @@ namespace armarow{
 					}
 
 					//may not be called in a critical section!!!
-					ACK_ERROR_CODE init_waiting_mechanism_for_ACK_for_MAC_Message(MAC_Message& msg){
+					ACK_ERROR_CODE init_waiting_mechanism_for_ACK_for_MAC_Message(MAC_Message& msg,MAC_LAYER& mac_layer){
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "wait for ACK..." << ::logging::log::endl;
 
@@ -458,6 +462,8 @@ namespace armarow{
 
 						//if(!received_ack_for_last_transmitted_message) return TIMEOUT;
 
+						mac_layer.acknolagement_timeout_timer.start(); //start ack timeout Timer 
+
 						return SUCCESS;
 
 					}
@@ -474,7 +480,11 @@ namespace armarow{
 					receiver: sends ack with its node id only, if received message has the destination id of the receiver or 255 (braodcast message)
 				*/
 
-							
+						
+
+
+
+	
 
 				} acknolagement_handler;
 				//Acknolagement_Handler acknolagement_handler(this);
@@ -607,7 +617,67 @@ namespace armarow{
 				//=============================================================================================================================
 
 
+					void callback_wait_for_ack_timeout(){
 
+						//start of ISR, secure with lock
+						avr_halib::locking::GlobalIntLock lock;
+
+						if(acknolagement_handler.waits_for_ack){
+					
+								acknolagement_handler.backoff_timing.current_number_of_retransmissions++;
+							
+								acknolagement_handler.waits_for_ack=false;  //timeout event, delete bit, so the busy wait in the sender function will end and 
+								acknolagement_handler.timeout_counter_in_ms=0;
+
+								//this is the ACK for the last transmitted message
+								acknolagement_handler.received_ack_for_last_transmitted_message=false;
+
+								//mechanism has to be initialized again by calling "init_waiting_mechanism_for_ACK_for_MAC_Message"
+								acknolagement_handler.initialized_ack_mechanism=false;
+			
+							
+								acknolagement_handler.timeout_occured=true;
+																				
+
+								if(acknolagement_handler.backoff_timing.current_number_of_retransmissions<= acknolagement_handler.backoff_timing.maximal_number_of_retransmissions){ 
+
+									//if(MAC_LAYER_VERBOSE_OUTPUT) 
+										if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "retry transmitting... attempt number " 
+										<< (int) acknolagement_handler.backoff_timing.current_number_of_retransmissions << ::logging::log::endl;
+
+
+									//reset backoff exponent, so that the mximal waiting time is not growing from retransmission to retransmission
+									acknolagement_handler.backoff_timing.current_backoff_exponend=MAC_Config::minimal_backoff_exponend;
+
+									
+
+									//FIXME: TODO: uncomment this
+									//send_async_intern(); //retry sending
+									send_async_intern();
+									return;
+									//pointer_to_async_sending_ISR
+									
+									//result_of_last_send_operation_errorcode=TIMEOUT;
+
+								}else{
+									acknolagement_handler.result_of_last_send_operation_errorcode=Acknolagement_Handler::TIMEOUT;
+									//number of retries exceeded boundaries
+									has_message_to_send=false;
+									if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
+
+									if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT)::logging::log::emit() << "number of retries has exeeded..." << ::logging::log::endl;
+									//FIXME: TODO: call send operation finished delegate
+
+									 if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
+
+								}								
+
+							
+							}
+
+
+
+					}
 
 
 
@@ -725,7 +795,7 @@ namespace armarow{
 						if(send_receive_buffer.header.controlfield.frametype==Acknowledgment){
 
 							//set bit to 1
-							acknolagement_handler.handle_received_ACK(send_receive_buffer,has_message_to_send,onSend_Operation_Completed_Delegtate); //this bit has to be set to false if neccessary, so we have to provide it via reference
+							acknolagement_handler.handle_received_ACK(send_receive_buffer,has_message_to_send,onSend_Operation_Completed_Delegtate,*this); //this bit has to be set to false if neccessary, so we have to provide it via reference
 
 
 						}
@@ -866,7 +936,7 @@ namespace armarow{
 					if(message_to_send.header.controlfield.ackrequest==1){
 
 					//init variables of acknolagement_handler, so that it waits for the ACK message for the transmitted message (ONLY that one)
-					acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(message_to_send);
+					acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(message_to_send,*this);
 
 					//one_shot_timer.start(1); //minimal waiting time, we can make the one shot timer wait, the ACK needs some time anyway
 
@@ -966,6 +1036,13 @@ namespace armarow{
 				//=============================================================================================================================
 
 
+				void reset_acknolagement_timer(){
+
+					acknolagement_timeout_timer.stop();
+					acknolagement_timeout_timer.setCounter(0); //reset clock
+
+
+				}
 
 
 				int init(){
@@ -987,7 +1064,14 @@ namespace armarow{
 
 					
 					//typeof *this = MAC_CSMA_CA
-					clock.registerCallback<typeof *this, &MAC_CSMA_CA::callback_periodic_timer_activation_event>(*this);
+					//clock.registerCallback<typeof *this, &MAC_CSMA_CA::callback_periodic_timer_activation_event>(*this);
+
+					acknolagement_timeout_timer.registerCallback<typeof *this, &MAC_CSMA_CA::callback_wait_for_ack_timeout>(*this);
+
+					reset_acknolagement_timer();//it doesn't coint anymore and if you start it again, it begins from the beginning
+
+
+
 					//this->onReceive.template bind<MAC_CSMA_CA, &MAC_CSMA_CA::callback_periodic_timer_activation_event>(this);
 					//this->onReceive.template bind<MAC_CSMA_CA, &MAC_CSMA_CA::callback_receive_message>(this);
 
