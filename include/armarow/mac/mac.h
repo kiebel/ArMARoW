@@ -236,8 +236,9 @@ namespace armarow{
 					Radiocontroller::setAttribute(armarow::PHY::phyCurrentChannel, &channel);
 					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
 					
-
-	
+					//init valuation framework
+					Mac_Evaluation<state>::init();
+					
 
 					//sets the seed value for the pseudo random numbers used for a random waiting time for medium access controll
 					srandom(mac_adress_of_node);

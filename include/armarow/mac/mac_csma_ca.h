@@ -791,7 +791,7 @@ namespace armarow{
 
 						//evaluation.received_bytes_in_last_second=0;
 
-						this->print_and_reset_number_of_received_bytes();
+						//this->print_and_reset_number_of_received_bytes();
 
 						if(MAC_LAYER_VERBOSE_OUTPUT){
 						 //::logging::log::emit() << "decrement_timeout_counter..." << ::logging::log::endl;
@@ -1008,7 +1008,7 @@ namespace armarow{
 					//setDelegateMethod(clock.timer.onTimerDelegate, MAC_Base, MAC_Base::callback_periodic_timer_activation_event, *this);
 
 					//turn LED on
-					this->led.toggle();
+					//this->led.toggle();
 
 					return 0;
 				}

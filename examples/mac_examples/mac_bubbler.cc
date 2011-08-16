@@ -59,7 +59,7 @@ struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
 
 
-armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Disable> mac;
+armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Enable> mac;
 
 
 
@@ -118,7 +118,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
 	}
 
-     //delay_ms(1000);
+     delay_ms(100);
 
   }
 
