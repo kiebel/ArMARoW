@@ -122,7 +122,7 @@ namespace armarow{
 				MAC_Clock clock;
 				//const long maximal_waiting_time_in_milliseconds;
 
-				Led<Led0> led;
+				
 
 				DeviceAddress mac_adress_of_node;
 
@@ -221,7 +221,7 @@ namespace armarow{
 
 					if(clocktick_counter>=1000) {
 
-						led.toggle();
+						//led.toggle();
 						clocktick_counter=0;
 
 					}

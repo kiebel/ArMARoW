@@ -89,7 +89,7 @@ struct Mac_Evaluation<Enable> : public Mac_Evaluation_Interface{
 
 	Clock<EvaluationClockConfig> eval_clock;
 
-
+	Led<Led0> led;
 
 	uint16_t received_bytes_in_last_second;
 
@@ -117,7 +117,7 @@ struct Mac_Evaluation<Enable> : public Mac_Evaluation_Interface{
 	void print_and_reset_number_of_received_bytes(){
 
 	  ::logging::log::emit() << "received bytes in last second:\t"  << this->received_bytes_in_last_second << ::logging::log::endl;
-
+	led.toggle();
 	  this->received_bytes_in_last_second=0;
 
 	}

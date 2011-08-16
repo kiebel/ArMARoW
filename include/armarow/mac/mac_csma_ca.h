@@ -782,7 +782,7 @@ namespace armarow{
 					
 					if(this->clocktick_counter>=1000) {
 
-						this->led.toggle();
+						//this->led.toggle();
 						this->clocktick_counter=0;
 						
 						//::logging::log::emit() << "received bytes in last second: "  << evaluation.received_bytes_in_last_second << ::logging::log::endl;
