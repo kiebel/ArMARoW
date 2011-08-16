@@ -4,13 +4,21 @@
 #define __MAC_CSMA_CA__
 
 #ifndef MAC_LAYER_VERBOSE_OUTPUT
-	#define MAC_LAYER_VERBOSE_OUTPUT true //false //true
+	#define MAC_LAYER_VERBOSE_OUTPUT false //false //true
+#endif
+
+
+#ifndef MAC_VERBOSE_ACK_OUTPUT 
+	#define MAC_VERBOSE_ACK_OUTPUT false //false //true
 #endif
 
 
 #ifndef ENABLE_FILTERING_OF_DUPLICATES
 	#define ENABLE_FILTERING_OF_DUPLICATES false
 #endif
+
+
+
 
 #include "mac.h"
 #include "atmega1281_timer3_regmap.h"
@@ -339,9 +347,9 @@ namespace armarow{
 							result_of_last_send_operation_errorcode=SUCCESS;							
 
 							//if(MAC_LAYER_VERBOSE_OUTPUT) 
-							::logging::log::emit() << "received ACK for message " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl;
+							if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK for message " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl;
 							//if(MAC_LAYER_VERBOSE_OUTPUT) 
-							::logging::log::emit() << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: " << (int) timeout_duration_in_ms << ::logging::log::endl;
+							if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: " << (int) timeout_duration_in_ms << ::logging::log::endl;
 
 							if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
 
@@ -387,7 +395,7 @@ namespace armarow{
 								if(backoff_timing.current_number_of_retransmissions<= backoff_timing.maximal_number_of_retransmissions){ 
 
 									//if(MAC_LAYER_VERBOSE_OUTPUT) 
-										::logging::log::emit() << "retry transmitting... attempt number " 
+										if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "retry transmitting... attempt number " 
 										<< (int) backoff_timing.current_number_of_retransmissions << ::logging::log::endl;
 
 
@@ -408,9 +416,9 @@ namespace armarow{
 									result_of_last_send_operation_errorcode=TIMEOUT;
 									//number of retries exceeded boundaries
 									has_message_to_send=false;
-									if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
+									if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
 
-									::logging::log::emit() << "number of retries has exeeded..." << ::logging::log::endl;
+									if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT)::logging::log::emit() << "number of retries has exeeded..." << ::logging::log::endl;
 									//FIXME: TODO: call send operation finished delegate
 
 									 if(!mac_layer.onSend_Operation_Completed_Delegtate.isEmpty()) mac_layer.onSend_Operation_Completed_Delegtate();
@@ -487,7 +495,7 @@ namespace armarow{
 
 						if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::SUCCESS;
 
-						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending ACK..." << ::logging::log::endl;
+						if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending ACK..." << ::logging::log::endl;
 
 						//if the sender doesnt want an ACK, he won't get one
 						//if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::SUCCESS;
@@ -627,7 +635,7 @@ namespace armarow{
 
 					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) {
 
-						::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
+						if(MAC_LAYER_VERBOSE_OUTPUT)::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
 
 						has_message_ready_for_delivery=false; //message is somehow invalid 
 						return;
