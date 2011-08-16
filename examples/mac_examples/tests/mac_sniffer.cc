@@ -1,3 +1,7 @@
+
+
+#define MAC_LAYER_VERBOSE_OUTPUT false
+
 #include "armarow/mac/mac_csma_ca.h"
 
 #include "util.h"

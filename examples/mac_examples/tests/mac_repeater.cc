@@ -1,8 +1,12 @@
+
+#define MAC_LAYER_VERBOSE_OUTPUT false
+
 #include "armarow/mac/mac_csma_ca.h"
 
 #include "util.h"
 
 #undef LOGGING_DISABLE
+
 
 /* === globals ============================================================== */
 
@@ -32,8 +36,8 @@ void callback_recv() {
 		
 		::logging::log::emit()
         	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
-		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
-		<< PROGMEMSTRING("msnr: ") << (int) messageobject.header.sequencenumber
+		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress << ::logging::log::endl
+		<< PROGMEMSTRING("msnr: ") << (int) messageobject.header.sequencenumber << ::logging::log::endl
 		<< "ED:" << (int) messageobject.minfo.ed << log::endl
 	   	<< "LQI:" << (int) messageobject.minfo.lqi
         	<< ::logging::log::endl; // << ::logging::log::endl;

@@ -1,8 +1,13 @@
+
+#define MAC_LAYER_VERBOSE_OUTPUT true
+
 #include "armarow/mac/mac_csma_ca.h"
 
 #include "util.h"
 
+
 #undef LOGGING_DISABLE
+
 
 /* === globals ============================================================== */
 
@@ -76,7 +81,7 @@ void async_sending_test(){
 	avr_halib::locking::GlobalIntLock lock;
 
 	::logging::log::emit()
-	    << a.global_sequence_number 
+	    << (int) a.global_sequence_number 
             //<< PROGMEMSTRING("ret is: ") << ret
             << ::logging::log::endl;
 
@@ -86,7 +91,7 @@ void async_sending_test(){
 
 	}
 
-     delay_ms(50);
+     delay_ms(200);
 
   }
 
@@ -106,7 +111,7 @@ int main() {
 	messageobject.header.dest_adress = 12; //adress of repeater //armarow::MAC::MAC_BROADCAST_ADRESS;
 	messageobject.header.dest_pan = 0;
 
-	messageobject.header.controlfield.ackrequest = 1; //0; //1;
+	messageobject.header.controlfield.ackrequest = 0; //0; //1;
 
 
 

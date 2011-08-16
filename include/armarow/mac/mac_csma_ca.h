@@ -3,9 +3,14 @@
 #ifndef __MAC_CSMA_CA__
 #define __MAC_CSMA_CA__
 
+#ifndef MAC_LAYER_VERBOSE_OUTPUT
+	#define MAC_LAYER_VERBOSE_OUTPUT true //false //true
+#endif
 
-#define MAC_LAYER_VERBOSE_OUTPUT true //false //true
-#define ENABLE_FILTERING_OF_DUPLICATES false
+
+#ifndef ENABLE_FILTERING_OF_DUPLICATES
+	#define ENABLE_FILTERING_OF_DUPLICATES false
+#endif
 
 #include "mac.h"
 #include "atmega1281_timer3_regmap.h"
@@ -55,6 +60,7 @@ namespace armarow{
 				pan_id=0,
 				ack_request=1,
 				minimal_backoff_exponend=2,  //means, we wait 2^0=1 ms until we send a message 
+				maximal_backoff_exponend=7,
 				maximal_number_of_retransmissions=3,
 				promiscuous_mode=0, //if 1 turns out the message filter and accepts all messages 
 				acknolagement_timeout_duration_in_ms=100 //timeout event occures after the specified time is exeeded, it will then attempt a retransmission
@@ -115,7 +121,7 @@ namespace armarow{
 
 				struct Acknolagement_Handler{
 
-					enum ACK_ERROR_CODE {SUCCESS,TIMEOUT};
+					enum ACK_ERROR_CODE {SUCCESS,TIMEOUT,MEDIUM_BUSY};
 
 				//if a maximal waiting time is exceeded, then waits for ack will be set to false and an error is reported
 				//received_ack_for_last_transmitted_message is set only if an ack was received, if the timeout occur beforhand, it will still be false and indicates an error -> retransmission, or if number of retransmission exceeds a limit, than report an error
@@ -179,12 +185,21 @@ namespace armarow{
 						}
 					}
 					*/
+					bool number_of_backoffs_has_exeeded(){
+						if(current_backoff_exponend>MAC_Config::maximal_backoff_exponend){ //number off backoffs exeeded?							
+							return true;
+						}else{
+							return false;
+						}
+					}
+
 
 					//this method is intended for the one shot timer, to get the waiting time easier 
 					uint16_t get_random_backoff_time_in_ms(){
 						
+
 						//compute ieee compatible maximal backoff waiting time, that will grow exponentionally with number of backoffs
-						uint8_t current_maximal_backofftime = 2^(this->current_backoff_exponend);
+						uint32_t current_maximal_backofftime = 2^(this->current_backoff_exponend);
 						this->current_backoff_exponend++;
 
 						//get random number
@@ -376,9 +391,10 @@ namespace armarow{
 
 									//pointer_to_async_sending_ISR
 									
+									result_of_last_send_operation_errorcode=TIMEOUT;
 
 								}else{
-									result_of_last_send_operation_errorcode=TIMEOUT;
+									
 									//number of retries exceeded boundaries
 									has_message_to_send=false;
 									if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
@@ -611,7 +627,11 @@ namespace armarow{
 
 					}else{
 						//message is not for us, so we drop it
-						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "dropped message..." << ::logging::log::endl;
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "dropped message...(" 
+						<< (int) send_receive_buffer.header.controlfield.frametype << ","  //type
+						<< (int) send_receive_buffer.header.sequencenumber << ","   //sequence number
+						<< (int) send_receive_buffer.header.source_adress << ")" << ::logging::log::endl; //sender id
+
 						has_message_ready_for_delivery=false; //we are not interested in messages, that are not for us
 
 						//::logging::log::emit() << "dropped message..." << ::logging::log::endl;
@@ -770,52 +790,7 @@ namespace armarow{
 					//it can be called per interrupt, so we secure it
 					avr_halib::locking::GlobalIntLock lock;
 
-					/*
-					if(send_buffer.header.controlfield.ackrequest==1){
-
 					
-					//validation: if we have a message to send, then we want an ack, if we are no longer waiting for an ack and we didn't receive one, it means the timeout for receiving an ACK was reached and the "periodic timer interrupt" reset the acknolagement_handler.waits_for_ack bit (it is set, as long as we wait for a Bit)
-					if(has_message_to_send==true && acknolagement_handler.initialized_ack_mechanism==true && acknolagement_handler.waits_for_ack==false && acknolagement_handler.received_ack_for_last_transmitted_message == false){
-
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ERROR: didn't become an ACK!!! " << (int) acknolagement_handler.sequence_number_of_last_transmitted_message << "," << (int) send_buffer.header.sequencenumber <<  ::logging::log::endl;
-						//(int) send_buffer.header.sequencenumber << ::logging::log::endl;
-						 acknolagement_handler.initialized_ack_mechanism=false;
-
-					}
-
-
-					//polling, bei dem die ISR verlassen wird, es wird pro ms einmal gepollt
-					if(acknolagement_handler.waits_for_ack && !acknolagement_handler.received_ack_for_last_transmitted_message){
-						one_shot_timer.stop();
-						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "async send: start one shot timer for waiting of ack" << ::logging::log::endl;
-						//FIXME: increased default waiting period (waiting time, until we call ourself again to check if the ack is there)
-						one_shot_timer.start(20); //one_shot_timer.start(1);
-						return;
-					}
-
-					//wenn wir eine Nachricht gesendet haben, warten wir auf ein ACK, wenn wir das ACK empfangen haben, war das senden erfolgreich
-					if(acknolagement_handler.waits_for_ack && acknolagement_handler.received_ack_for_last_transmitted_message){
-
-							//typename Acknolagement_Handler::ACK_ERROR_CODE errorcode = 								acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(send_buffer);
-					
-						//if(errorcode==Acknolagement_Handler::SUCCESS){
-						has_message_to_send=false;
-						acknolagement_handler.waits_for_ack=false;
-
-						if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
-
-						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK" << ::logging::log::endl;
-
-						return;
-						//}
-
-						
-
-					}
-
-					}
-
-					*/
 
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
 
@@ -881,7 +856,29 @@ namespace armarow{
 
 //one shot timer neu stellen, dieser ruft diese Funktion nach einer zufälligen Zeit erneut auf, solange bis Nachricht erfolgreich versendet wurde
 						//one_shot_timer.start((uint16_t)waitingtime);
-						one_shot_timer.start(acknolagement_handler.backoff_timing.get_random_backoff_time_in_ms());
+
+
+						if(acknolagement_handler.backoff_timing.number_of_backoffs_has_exeeded()){
+
+									//number of backoffs exceeded boundaries
+									has_message_to_send=false;
+
+									acknolagement_handler.result_of_last_send_operation_errorcode=Acknolagement_Handler::MEDIUM_BUSY;
+									//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "Mediumk to BUSY..." << ::logging::log::endl;
+
+									::logging::log::emit() << "number of backoffs has exeeded..." << ::logging::log::endl;
+									//FIXME: TODO: call send operation finished delegate
+
+									acknolagement_handler.backoff_timing.reset();
+
+									 if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
+
+												
+
+						}else{
+							//start one shot timer
+							one_shot_timer.start(acknolagement_handler.backoff_timing.get_random_backoff_time_in_ms());
+						}
 
 						//one_shot_timer.start((uint16_t) 1000); //one shot timer test
 
