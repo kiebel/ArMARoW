@@ -198,7 +198,7 @@ struct MAC_Message{
 		if(physical_layer_message.size<sizeof(header)){
 
 			::logging::log::emit() << "ERROR: MAC_Message constructor: physical Message to short, to contain a MAC_Header!" << ::logging::log::endl;
-			::logging::log::emit() << "Minimal Size: " << sizeof(header) << " size of current MAC_Frame: " << physical_layer_message.size << ::logging::log::endl;
+			::logging::log::emit() << "Minimal Size: " << sizeof(header) << " size of current MAC_Frame: " << (int) physical_layer_message.size << ::logging::log::endl;
 			decoding_was_successful=false;
 
 			::logging::log::emit() << ::logging::log::endl;

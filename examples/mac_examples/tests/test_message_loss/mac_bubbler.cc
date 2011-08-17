@@ -19,7 +19,7 @@ struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
 
 
-armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Disable> mac;
+armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Enable> mac;
 
 
 
@@ -83,7 +83,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
 	}
 
-     //delay_ms(1000);
+     //delay_ms(3); //we have to wait a little, because the sniffer has to process the transmitted message, if we dont use an ACK, the sniffer will experience an overload situation, and loose messages unneccessarly
 
   }
 
@@ -119,7 +119,7 @@ int main() {
 	messageobject.header.dest_adress = 20; //armarow::MAC::MAC_BROADCAST_ADRESS;
 	messageobject.header.dest_pan = 0;
 
-	messageobject.header.controlfield.ackrequest = 0;
+	messageobject.header.controlfield.ackrequest = 1;
 
 	
 

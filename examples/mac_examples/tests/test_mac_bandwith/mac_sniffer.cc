@@ -27,7 +27,7 @@ armarow::MAC::mob_t messageobject;
 #undef LOGGING_DISABLE
 
 
-MessageLossMeasurement<100> msg_measurement_object;
+MessageLossMeasurement<110> msg_measurement_object;
 
 uint32_t global_sequence_number=0;
 
@@ -37,7 +37,7 @@ void callback_recv() {
  	if(mac.receive(messageobject)!=0){
 		
 		messageobject.get_object_from_payload(msg_measurement_object);
-		
+		/*		
 		while(global_sequence_number<msg_measurement_object.global_sequence_number){
 			::logging::log::emit()
 			<< PROGMEMSTRING("lost message: ") << (int) global_sequence_number++
@@ -50,6 +50,7 @@ void callback_recv() {
         	<< ::logging::log::endl;
 
 		global_sequence_number++;
+		*/
 	}else{
 
 		::logging::log::emit()

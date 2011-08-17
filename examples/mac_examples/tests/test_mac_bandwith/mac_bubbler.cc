@@ -19,7 +19,7 @@ struct My_MAC_Config : public armarow::MAC::MAC_Configuration{
 
 
 
-armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Disable> mac;
+armarow::MAC::MAC_CSMA_CA<My_MAC_Config,platform::config::rc_t,armarow::MAC::Enable> mac;
 
 
 
@@ -29,7 +29,8 @@ void transmission_completed_callback(){
 avr_halib::locking::GlobalIntLock lock;
 
 ::logging::log::emit()
-            << PROGMEMSTRING("msg...") << (int) mac.get_result_of_last_send_operation()
+            //<< PROGMEMSTRING("msg...") 
+	    << "," << (int) mac.get_result_of_last_send_operation()
             << ::logging::log::endl;
 
 	if(mac.get_result_of_last_send_operation()!=0)
@@ -49,7 +50,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
   bool verbose = false;
 
-	MessageLossMeasurement<100> msg_measurement_object;
+	MessageLossMeasurement<110> msg_measurement_object;
 
 	msg_measurement_object.global_sequence_number=0;
 
@@ -64,6 +65,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
         ret=mac.send_async(msg);
      
 	if(ret==0){
+	   avr_halib::locking::GlobalIntLock lock;
 	   ::logging::log::emit()
             << msg_measurement_object.global_sequence_number
             << ::logging::log::endl;
@@ -119,7 +121,7 @@ int main() {
 	messageobject.header.dest_adress = 20; //armarow::MAC::MAC_BROADCAST_ADRESS;
 	messageobject.header.dest_pan = 0;
 
-	messageobject.header.controlfield.ackrequest = 1;
+	messageobject.header.controlfield.ackrequest = 0;
 
 	
 
