@@ -93,6 +93,8 @@ struct Mac_Evaluation<Enable> : public Mac_Evaluation_Interface{
 
 	uint16_t received_bytes_in_last_second;
 
+	int uptime_in_sec;
+
 	Mac_Evaluation(){
 					
 		init();
@@ -104,6 +106,8 @@ struct Mac_Evaluation<Enable> : public Mac_Evaluation_Interface{
 
 		this->received_bytes_in_last_second=0;
 		eval_clock.registerCallback<typeof *this, &Mac_Evaluation<Enable>::print_and_reset_number_of_received_bytes>(*this);
+
+		this->uptime_in_sec=0;
 
 	}
 
@@ -120,11 +124,16 @@ struct Mac_Evaluation<Enable> : public Mac_Evaluation_Interface{
 	  avr_halib::locking::GlobalIntLock lock;
 
 	  led.toggle();
-	  ::logging::log::emit() << "received bytes:\t"  << this->received_bytes_in_last_second << ::logging::log::endl 
-	  << ((int) this->received_bytes_in_last_second << 3) << " kbit/s" //mal 8
+	  ::logging::log::emit() 
+	  //<< "received bytes:\t"  << this->received_bytes_in_last_second << "\t"//<< ::logging::log::endl 
+	  //<< ((int) this->received_bytes_in_last_second << 3) << " kbit/s" //mal 8
+	  //<< ::logging::log::endl
+	  << "uptime:\t" << uptime_in_sec << " sec"
 	  << ::logging::log::endl;
+
 	  this->received_bytes_in_last_second=0;
 
+	  this->uptime_in_sec++;
 	}
 
 };

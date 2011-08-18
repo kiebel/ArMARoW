@@ -93,17 +93,23 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
   bool verbose = false;
 
+
+  //FIXME: TODO: Test
+
+ //while(1); //do nothing
+
+ delay_ms(500);
+
   while(1){
 
-	//test for one shot timer
-	//mac.send_async(msg);
-	//while(1);
-     
-	   //::logging::log::emit()  << PROGMEMSTRING("Try sending a message...") << ::logging::log::endl;
+
      {
 
         ret=mac.send_async(msg);
      
+	if(ret==0){
+		delay_ms(1000);
+	}
 	
 
 	if(verbose){
@@ -215,28 +221,6 @@ int main() {
 
     async_sending_test(messageobject);
 
-    //main loop
-    do {
 
-		::logging::log::emit()
-        	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
-		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
-		<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
-        	<< ::logging::log::endl << ::logging::log::endl;
-
-
-	
-
-	if(mac.send(messageobject)<0){
-
-			 ::logging::log::emit()
-           << PROGMEMSTRING("couldn't transmit message because medium was busy...") 
-           << ::logging::log::endl << ::logging::log::endl;
-
-	}
-
-	//delay_ms(1000);
-
-    } while (true);
 }
 
