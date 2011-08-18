@@ -225,13 +225,13 @@ struct MAC_Message{
 		if(decoding_was_successful) decoding_was_successful = isValid();
 
 
-		::logging::log::emit() << "PHY: " << (int) sizeof(platform::config::mob_t) << ::logging::log::endl;
+		//::logging::log::emit() << "PHY: " << (int) sizeof(platform::config::mob_t) << ::logging::log::endl;
 
-		::logging::log::emit() << "MAC: " << (int) sizeof(MAC_Message) << ::logging::log::endl;
+		//::logging::log::emit() << "MAC: " << (int) sizeof(MAC_Message) << ::logging::log::endl;
 		//#error (sizeof(platform::config::mob_t)
- 		//static const bool k=((sizeof(platform::config::mob_t) == sizeof(MAC_Message))?true:false);
+ 		static const bool k=((sizeof(platform::config::mob_t) == sizeof(MAC_Message))?true:false);
 
-		//ARMAROW_STATIC_ASSERT_ERROR(k,ERROR,(int));
+		ARMAROW_STATIC_ASSERT_ERROR(k,MAC_MESSAGE_AND_PHY_MESSAGE_HAVE_DIFFERENT_SIZES__MESSAGEDECODING_WILL_NOT_WORK,(int));
 
 	
 		
@@ -425,6 +425,8 @@ struct MAC_Message{
 
 		}else{
 			::logging::log::emit() << "FATAL ERROR: failed decoding MAC Message" << ::logging::log::endl;
+			//if(MAC_LAYER_VERBOSE_OUTPUT) 
+				print();
 			return false;
 		}
 

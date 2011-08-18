@@ -510,20 +510,22 @@ namespace armarow{
 						//if the sender doesnt want an ACK, he won't get one
 						//if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::SUCCESS;
 
-
+						/*
 	//MAC_Message(IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer)
 						//sende es wieder dorthin, wo es her kam
 						MAC_Message ack_message(Acknowledgment,  //frametype is ACK
 							MAC_Config::mac_adress_of_node, //source adress of ACK, take it from Config
 							msg.header.source_adress, //dest adress, is source adress of data message
 							(char*)"ACK",4);//(char*) 0,0);   //ACK doesn't contain data, all relevant information are stored in the header
+						*/
 
-						ack_message.header.sequencenumber=msg.header.sequencenumber; //the ACK is for this data message, so we need the same seuqnce numbers
-						ack_message.header.dest_pan = msg.header.source_pan; //destination_panid_of_last_transmitted_message;
-						ack_message.header.dest_adress = msg.header.source_adress;
-						ack_message.header.source_adress = MAC_Config::mac_adress_of_node;
+						acknolagement_handler.acknolagement_buffer.header.sequencenumber=msg.header.sequencenumber; //the ACK is for this data message, so we need the same seuqnce numbers
+						acknolagement_handler.acknolagement_buffer.header.dest_pan = msg.header.source_pan; //destination_panid_of_last_transmitted_message;
+						acknolagement_handler.acknolagement_buffer.header.dest_adress = msg.header.source_adress;
+						acknolagement_handler.acknolagement_buffer.header.source_adress = MAC_Config::mac_adress_of_node;
+						acknolagement_handler.acknolagement_buffer.header.source_pan=MAC_Config::pan_id;
 
-						ack_message.header.controlfield.frametype = Acknowledgment;
+						acknolagement_handler.acknolagement_buffer.header.controlfield.frametype = Acknowledgment;
 
 						//ack_message.header.source_pan = 0; 
 
@@ -531,10 +533,10 @@ namespace armarow{
 						//destination_id_of_last_transmitted_message = msg.header.dest_adress;
 						
 
-						ack_message.header.controlfield.ackrequest=0;
+						acknolagement_handler.acknolagement_buffer.header.controlfield.ackrequest=0;
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=====> start ACK msg..." << ::logging::log::endl << ::logging::log::endl;
-						if(MAC_LAYER_VERBOSE_OUTPUT) ack_message.print();
+						if(MAC_LAYER_VERBOSE_OUTPUT) acknolagement_handler.acknolagement_buffer.print();
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=====> end ACK msg..." << ::logging::log::endl << ::logging::log::endl;
 
 						
@@ -543,23 +545,10 @@ namespace armarow{
 						acknolagement_handler.ack_to_send=true;
 
 						//copy build message into mac layer ack buffer
-						acknolagement_handler.acknolagement_buffer=ack_message;
+						//acknolagement_handler.acknolagement_buffer=ack_message;
 
 						send_async_intern();
 
-
-						/*
-						//TODO: clear channel accessmant machen
-	
-						//we want to send (tranceiver on)
-						Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
-
-						//send
-						Radiocontroller::send(*ack_message.getPhysical_Layer_Message());
-
-						//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
-						Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
-						*/
 
 
 						return Acknolagement_Handler::SUCCESS;
@@ -581,14 +570,7 @@ namespace armarow{
 
 				 ARMAROW_STATIC_ASSERT_ERROR(k,INVALID_MAC_CONFIGURATION__TYPE_DOESNT_INHERIT_FROM_CLASS__MAC_CONFIGURATION,(MAC_Config));
 
-				 //BOOST_STATIC_ASSERT(k);
-
-
-					MAC_Message msg;
-
-					send_buffer = msg; 
-			// = IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer
-
+			
 					this->channel=MAC_Config::channel; //11;
 					this->mac_adress_of_node=MAC_Config::mac_adress_of_node;      //28;          //this parameter can be configured 
 
@@ -598,19 +580,6 @@ namespace armarow{
 		
 				}
 
-				/*
-				struct Send_Operation_Result{
-
-					enum ErrorCodes{SUCCESS,TIMEOUT};
-
-					ErrorCodes errorcode;
-
-					Send_Operation_Result(){
-						errorcode=SUCCESS;
-					}
-
-				} result_of_last_send_operation;
-				*/
 
 				//=============================================================================================================================
 				//============== Start Interrupt Service Routines =============================================================================
@@ -705,7 +674,9 @@ namespace armarow{
 
 					if(mac_msg == (armarow::MAC::MAC_Message*) 0 ) {
 
-						if(MAC_LAYER_VERBOSE_OUTPUT)::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
+						//if(MAC_LAYER_VERBOSE_OUTPUT)::logging::log::emit() << "has_message_ready_for_delivery=false" << ::logging::log::endl;
+						
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
 
 						has_message_ready_for_delivery=false; //message is somehow invalid 
 						return;
@@ -736,6 +707,7 @@ namespace armarow{
 
 						//::logging::log::emit() << "dropped message..." << ::logging::log::endl;
 						//send_receive_buffer.print();
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
 						return;
 
 					}
@@ -760,6 +732,7 @@ namespace armarow{
 
 		
 						has_message_ready_for_delivery=false;
+						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
 						return;
 
 					}
@@ -836,7 +809,7 @@ namespace armarow{
 					//send_receive_buffer.print(); 
 					//if we reach this instruction, everything went well and we can call a user defined interrupt service routine
 					
-
+				if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
 					
 
 				}
@@ -903,23 +876,31 @@ namespace armarow{
 					//}
 
 
-					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "called async send interrupt handler" << ::logging::log::endl;
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "enter send ISR" << ::logging::log::endl;
 
 					//uncomment this  
 					one_shot_timer.stop();
 
+					//if(MAC_LAYER_VERBOSE_OUTPUT) 
+						::logging::log::emit() << "do CCA" << ::logging::log::endl;
+
 					status=Radiocontroller::doCCA(ccaValue);
+
+					
+					//if(MAC_LAYER_VERBOSE_OUTPUT) 
+						::logging::log::emit() << "finished CCA" << ::logging::log::endl;
 
 					if(status==armarow::PHY::SUCCESS && ccaValue)
 					{
-						
-					//we want to send (tranceiver on)
-					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
+					
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) 
 					//::logging::log::emit() << "transmit message..." << ::logging::log::endl;
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending..." << ::logging::log::endl;	
 					if(MAC_LAYER_VERBOSE_OUTPUT) message_to_send.print();
+	
+					//we want to send (tranceiver on)
+					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
 
 					//send
 					Radiocontroller::send(*message_to_send.getPhysical_Layer_Message());
@@ -932,6 +913,8 @@ namespace armarow{
 					//we have transmitted our ack, we can now return to normal operation, where we send the data messages
 					if(acknolagement_handler.ack_to_send==true){
 						acknolagement_handler.ack_to_send=false;
+						//FIXME: TODO: send ISR have to call itself here again, because otherwise the data message currently in the buffer could never get transmitted
+						if(has_message_to_send) one_shot_timer.start(1);
 						return;
 					}
 
@@ -1022,7 +1005,7 @@ namespace armarow{
 					}
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving async send interrupt handler, calling delegate" << ::logging::log::endl;
-					
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave send ISR" << ::logging::log::endl;
 					
 				} //critial section end
 
