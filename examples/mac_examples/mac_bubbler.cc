@@ -186,7 +186,7 @@ int main() {
 	messageobject.header.dest_adress = 20; //armarow::MAC::MAC_BROADCAST_ADRESS;
 	messageobject.header.dest_pan = 0;
 
-	messageobject.header.controlfield.ackrequest = 1;//1;
+	messageobject.header.controlfield.ackrequest = 0;//1;
 
 
 	/* //example for usage of object storage functionality

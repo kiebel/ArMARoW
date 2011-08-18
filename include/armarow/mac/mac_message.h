@@ -11,8 +11,9 @@
 
 //armarow::PHY::aMaxPHYPacketSize is the brutto payload. Since we can activate CRC, we could get additional overhead, that is considered in rc_t::info::payload
 //rc_t::info::payload = available payload considering frame size and overhead
-#define MAX_NUMBER_OF_DATABYTES (platform::config::rc_t::info::payload - sizeof(MAC_Header))
+//#define MAX_NUMBER_OF_DATABYTES (platform::config::rc_t::info::payload - sizeof(MAC_Header))
 
+#define MAX_NUMBER_OF_DATABYTES (platform::config::rc_t::info::frame - sizeof(MAC_Header))
 
 
 /*from armarow start*/ 
@@ -218,10 +219,22 @@ struct MAC_Message{
 		this->minfo.lqi=physical_layer_message.minfo.lqi;
 
 
+
+
 		//if we already know, that the decoding has failed, we have no further need for confirmation
 		if(decoding_was_successful) decoding_was_successful = isValid();
 
 
+		::logging::log::emit() << "PHY: " << (int) sizeof(platform::config::mob_t) << ::logging::log::endl;
+
+		::logging::log::emit() << "MAC: " << (int) sizeof(MAC_Message) << ::logging::log::endl;
+		//#error (sizeof(platform::config::mob_t)
+ 		//static const bool k=((sizeof(platform::config::mob_t) == sizeof(MAC_Message))?true:false);
+
+		//ARMAROW_STATIC_ASSERT_ERROR(k,ERROR,(int));
+
+	
+		
 
 
 	}

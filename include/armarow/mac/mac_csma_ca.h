@@ -828,12 +828,14 @@ namespace armarow{
 
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving receive message interrupt, calling delegate" << ::logging::log::endl;
 
+					if(!onMessageReceiveDelegate.isEmpty()) onMessageReceiveDelegate();
+
 					} //critial section end
 
 
 					//send_receive_buffer.print(); 
 					//if we reach this instruction, everything went well and we can call a user defined interrupt service routine
-					if(!onMessageReceiveDelegate.isEmpty()) onMessageReceiveDelegate();
+					
 
 					
 

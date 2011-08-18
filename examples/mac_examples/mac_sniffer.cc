@@ -75,14 +75,14 @@ void callback_recv() {
 	avr_halib::locking::GlobalIntLock lock;
 
  	if(mac.receive(messageobject)!=0){
-		
+		/*
 		::logging::log::emit()
         	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
 		//<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress
 		//<< PROGMEMSTRING("Message Sequence Number: ") << (int) messageobject.header.sequencenumber
 		<< (int) messageobject.header.source_adress << "," <<(int) messageobject.header.sequencenumber
         	<< ::logging::log::endl; // << ::logging::log::endl;
-
+		*/
 	}else{
 
 		::logging::log::emit()
