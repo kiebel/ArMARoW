@@ -15,7 +15,7 @@ UseInterrupt(SIG_OUTPUT_COMPARE5A);
 		typedef uint16_t TickValueType;
 		typedef Frequency<1> TargetFrequency; //every second one timer interrupt
 		typedef CPUClock TimerFrequency; //CPUClock
-		typedef local::Timer5 Timer;
+		typedef local::Timer5 Timer; //16 Bit timer
 	};
 
 
@@ -58,10 +58,23 @@ void callback_recv() {
 
  	if(mac.receive(messageobject)!=0){
 
-		new_timer_value=(int) jitter_clock.getCounter();
-		
+		new_timer_value=(int) jitter_clock.getCounter(); //read microticks
+
+		Clock<JitterMeasurementClockConfig>::Time timeobject;	
+
+		jitter_clock.getTime(timeobject);
+
+		//(int) timeobject.ticks
+		//(int) timeobject.microticks
+
+		Clock<JitterMeasurementClockConfig>::config::TickValueType tick = timeobject.ticks;
+		Clock<JitterMeasurementClockConfig>::config::MicroTickValueType microtick = timeobject.microticks;
+
+
 		messageobject.get_object_from_payload(msg_measurement_object);
-		/*		
+
+
+/*		
 		while(global_sequence_number<msg_measurement_object.global_sequence_number){
 			::logging::log::emit()
 			<< PROGMEMSTRING("lost message: ") << (int) global_sequence_number++
