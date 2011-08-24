@@ -426,15 +426,15 @@ namespace armarow {
                     //delay_us( spec_t::Duration::TRX_CCA_TIME_US );
 					
                     // CCA_DONE and CCA_STATUS are valid only for one read
-                    while(true){
-						rc.readRegister(spec_t::registerDefault::TRXSTATUS, registerValue);
-                    	if(registerValue.TRXSTATUS.CCA_DONE)
-							break;
-					}
-
-					value=registerValue.TRXSTATUS.CCA_STATUS;
-
-					return armarow::PHY::SUCCESS;
+		    delay_us(140);
+		    rc.readRegister(spec_t::registerDefault::TRXSTATUS, registerValue);
+                    if(registerValue.TRXSTATUS.CCA_DONE)
+		    {
+			value=registerValue.TRXSTATUS.CCA_STATUS;
+			return armarow::PHY::SUCCESS;
+		    }
+		    else
+		    	return armarow::PHY::BUSY;
                 }
 
                 /*! \brief  Performs an energy detection on the medium without
