@@ -409,7 +409,7 @@ namespace armarow {
                  *            <code>PLME-CCA.confirm-primitive</code>
                  *            as defined in IEEE 802.15.4 (possible values
                  *            are <code>TRX_OFF</code>,
-                 *            <code>BUSY, IDLE</code>)
+                 *            <code>busy, IDLE</code>)
                  */
                 armarow::PHY::State doCCA(uint8_t& value) { //FIXME still untested
                     TRACE_FUNCTION;
@@ -425,16 +425,16 @@ namespace armarow {
                     rc.writeRegister(spec_t::registerDefault::PHYCCCCA,registerValue);
                     //delay_us( spec_t::Duration::TRX_CCA_TIME_US );
 					
-                    // CCA_DONE and CCA_STATUS are valid only for one read
+                    // cca_done and cca_status are valid only for one read
 		    delay_us(140);
-		    rc.readRegister(spec_t::registerDefault::TRXSTATUS, registerValue);
-                    if(registerValue.TRXSTATUS.CCA_DONE)
+		    rc.readRegister(spec_t::registerDefault::trxStatus, registerValue);
+                    if(registerValue.trxStatus.cca_done)
 		    {
-			value=registerValue.TRXSTATUS.CCA_STATUS;
-			return armarow::PHY::SUCCESS;
+			value=registerValue.trxStatus.cca_status;
+			return armarow::PHY::success;
 		    }
 		    else
-		    	return armarow::PHY::BUSY;
+		    	return armarow::PHY::busy;
                 }
 
                 /*! \brief  Performs an energy detection on the medium without
@@ -448,7 +448,7 @@ namespace armarow {
                  *            similar to an invocation of the
                  *            <code>PLME-ED.confirm-primitive</code> as
                  *            defined in IEEE 802.15.4 (possible values are
-                 *            <code>SUCCESS</code>, <code>TRX_OFF</code>,
+                 *            <code>success</code>, <code>TRX_OFF</code>,
                  *            <code>TX_ON</code>)
                  */
                 armarow::PHY::State doED(uint8_t& pEnergyLevel) {//FIXME still untested
@@ -485,7 +485,7 @@ namespace armarow {
                  *            invocation of the
                  *            <code>PLME-GET.confirm-primitive</code> as
                  *            defined in IEEE 802.15.4 (possible values are
-                 *            <code>SUCCESS</code>,
+                 *            <code>success</code>,
                  *            <code>UNSUPPORTED_ATTRIBUTE</code>)
                  *  \todo add phyMaxFrameDuration, phySHRDuration, phySymbolsPerOctet
                  */
@@ -537,7 +537,7 @@ namespace armarow {
                  *            invocation of the
                  *            <code>PLME-SET.confirm-primitive</code> as
                  *            defined in IEEE 802.15.4 (possible values are
-                 *            <code>SUCCESS</code>,
+                 *            <code>success</code>,
                  *            <code>UNSUPPORTED_ATTRIBUTE</code>,
                  *            <code>INVALID_PARAMETER</code>,
                  *            <code>READ_ONLY</code>)
@@ -611,8 +611,8 @@ namespace armarow {
                  *          as defined in IEEE 802.15.4.
                  *  \return Returns current state of the radio controller
                  *          (available modes are <code>RX_ON</code>,
-                 *          <code>TRX_OFF</code>, <code>BUSY_RX</code>,
-                 *          <code>BUSY_TX</code>, <code>TX_ON</code>).
+                 *          <code>TRX_OFF</code>, <code>busy_RX</code>,
+                 *          <code>busy_TX</code>, <code>TX_ON</code>).
                  */
                 armarow::PHY::State getStateTRX() {
                     typename ControllerInterface_t::regval_t registerValue;
