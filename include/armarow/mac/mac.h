@@ -234,7 +234,7 @@ namespace armarow{
 					//message={0,{0}};
 					Radiocontroller::init();
 					Radiocontroller::setAttribute(armarow::PHY::phyCurrentChannel, &channel);
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 					
 					//init valuation framework
 					Mac_Evaluation<state>::init();
@@ -289,19 +289,19 @@ namespace armarow{
 
 
 					//for a Clear Channel assesment we need to change into Receive State
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 
 					uint8_t ccaValue;
 					armarow::PHY::State status=Radiocontroller::doCCA(ccaValue);
 
-					if(status==armarow::PHY::IDLE){
+					if(status==armarow::PHY::idle){
 
 						::logging::log::emit()
 							<< PROGMEMSTRING("Medium frei!!!")
 							<< ::logging::log::endl << ::logging::log::endl;						
 						
 
-					}else if (status==armarow::PHY::BUSY){
+					}else if (status==armarow::PHY::busy){
 
 						::logging::log::emit()
 							<< PROGMEMSTRING("Medium belegt!!!")
@@ -309,7 +309,7 @@ namespace armarow{
 					
 							return -1;
 
-					}else if (status==armarow::PHY::TRX_OFF){
+					}else if (status==armarow::PHY::trx_off){
 						
 						
 						::logging::log::emit()
@@ -319,7 +319,7 @@ namespace armarow{
 					}else{
 
 						::logging::log::emit()
-							<< PROGMEMSTRING("armarow::PHY::State return Value of Clear channel Assessment not in {BUSY,IDLE,TRX_OFF}!!!")
+							<< PROGMEMSTRING("armarow::PHY::State return Value of Clear channel Assessment not in {busy,idle,trx_off}!!!")
 							<< ::logging::log::endl << ::logging::log::endl;
 
 					return -1;	
@@ -332,7 +332,7 @@ namespace armarow{
 
 
 					//we want to send (tranceiver on)
-					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::tx_on);
 
 					Radiocontroller::send(*mac_message.getPhysical_Layer_Message());
 
@@ -352,7 +352,7 @@ namespace armarow{
 					mac_message.setPayloadNULL();
 
 
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 					//Radiocontroller::receive_blocking(message);
 
 					Radiocontroller::receive(message);
@@ -412,25 +412,25 @@ namespace armarow{
 
 
 					//for a Clear Channel assesment we need to change into Receive State
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 
 					uint8_t ccaValue;
 					armarow::PHY::State status=Radiocontroller::doCCA(ccaValue);
 
-					if(status==armarow::PHY::IDLE){
+					if(status==armarow::PHY::idle){
 
 						::logging::log::emit()
 							<< PROGMEMSTRING("Medium frei!!!")
 							<< ::logging::log::endl << ::logging::log::endl;						
 						
 
-					}else if (status==armarow::PHY::BUSY){
+					}else if (status==armarow::PHY::busy){
 
 						::logging::log::emit()
 							<< PROGMEMSTRING("Medium belegt!!!")
 							<< ::logging::log::endl << ::logging::log::endl;
 					
-					}else if (status==armarow::PHY::TRX_OFF){
+					}else if (status==armarow::PHY::trx_off){
 						
 						
 						::logging::log::emit()
@@ -440,24 +440,24 @@ namespace armarow{
 					}else{
 
 						::logging::log::emit()
-							<< PROGMEMSTRING("armarow::PHY::State return Value of Clear channel Assessment not in {BUSY,IDLE,TRX_OFF}!!!")
+							<< PROGMEMSTRING("armarow::PHY::State return Value of Clear channel Assessment not in {busy,idle,trx_off}!!!")
 							<< ::logging::log::endl << ::logging::log::endl;	
 					}
 
 
 					//we want to send (tranceiver on)
-					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::tx_on);
 
 					Radiocontroller::send(*mac_message1.getPhysical_Layer_Message());
 
 
 /*
 					for(int i=0;i<3;i++){
-						if((status=Radiocontroller::send(*mac_message1.getPhysical_Layer_Message()))==armarow::PHY::SUCCESS) break;
+						if((status=Radiocontroller::send(*mac_message1.getPhysical_Layer_Message()))==armarow::PHY::success) break;
 
 					}
 
-					if(armarow::PHY::SUCCESS != status){
+					if(armarow::PHY::success != status){
 						::logging::log::emit()
 							<< PROGMEMSTRING("tried to send message 3 times and always failed!!!")
 							<< ::logging::log::endl << ::logging::log::endl;
@@ -510,7 +510,7 @@ namespace armarow{
 					}
 
 
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 					Radiocontroller::receive_blocking(message);
 
 					armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);

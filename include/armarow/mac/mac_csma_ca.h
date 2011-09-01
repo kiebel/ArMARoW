@@ -132,7 +132,7 @@ namespace armarow{
 
 				struct Acknolagement_Handler{
 
-					enum ACK_ERROR_CODE {SUCCESS,TIMEOUT,MEDIUM_BUSY};
+					enum ACK_ERROR_CODE {success,TIMEOUT,MEDIUM_BUSY};
 
 				//if a maximal waiting time is exceeded, then waits for ack will be set to false and an error is reported
 				//received_ack_for_last_transmitted_message is set only if an ack was received, if the timeout occur beforhand, it will still be false and indicates an error -> retransmission, or if number of retransmission exceeds a limit, than report an error
@@ -284,7 +284,7 @@ namespace armarow{
 						timeout_duration_in_ms=MAC_Config::acknolagement_timeout_duration_in_ms;//100;
 						//maximal_number_of_retransmissions=3;
 						initialized_ack_mechanism=false;
-						result_of_last_send_operation_errorcode=SUCCESS;
+						result_of_last_send_operation_errorcode=success;
 
 					}
 
@@ -348,7 +348,7 @@ namespace armarow{
 
 							has_message_to_send=false;
 
-							result_of_last_send_operation_errorcode=SUCCESS;							
+							result_of_last_send_operation_errorcode=success;							
 
 							//if(MAC_LAYER_VERBOSE_OUTPUT) 
 							if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK for message " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl;
@@ -439,7 +439,7 @@ namespace armarow{
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "wait for ACK..." << ::logging::log::endl;
 
-						//if(msg.header.controlfield.ackrequest==0) return SUCCESS; //message header indicates, that the sender doesn't want an ACK
+						//if(msg.header.controlfield.ackrequest==0) return success; //message header indicates, that the sender doesn't want an ACK
 
 						sequence_number_of_last_transmitted_message = msg.header.sequencenumber;
 						destination_id_of_last_transmitted_message = msg.header.dest_adress;
@@ -464,7 +464,7 @@ namespace armarow{
 
 						mac_layer.acknolagement_timeout_timer.start(); //start ack timeout Timer 
 
-						return SUCCESS;
+						return success;
 
 					}
 
@@ -503,12 +503,12 @@ namespace armarow{
 						//TODO:FIXME:TEST for delayed ACK, if that gets to its destination, remove LATER!!!!
 						//delay_ms(1);
 
-						if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::SUCCESS;
+						if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::success;
 
 						if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "sending ACK..." << ::logging::log::endl;
 
 						//if the sender doesnt want an ACK, he won't get one
-						//if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::SUCCESS;
+						//if(msg.header.controlfield.ackrequest==0) return Acknolagement_Handler::success;
 
 						/*
 	//MAC_Message(IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer)
@@ -551,7 +551,7 @@ namespace armarow{
 
 
 
-						return Acknolagement_Handler::SUCCESS;
+						return Acknolagement_Handler::success;
 					}
 
 
@@ -890,7 +890,7 @@ namespace armarow{
 					//if(MAC_LAYER_VERBOSE_OUTPUT) 
 						::logging::log::emit() << "finished CCA" << ::logging::log::endl;
 
-					if(status==armarow::PHY::SUCCESS && ccaValue)
+					if(status==armarow::PHY::success && ccaValue)
 					{
 					
 
@@ -900,13 +900,13 @@ namespace armarow{
 					if(MAC_LAYER_VERBOSE_OUTPUT) message_to_send.print();
 	
 					//we want to send (tranceiver on)
-					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::tx_on);
 
 					//send
 					Radiocontroller::send(*message_to_send.getPhysical_Layer_Message());
 
 					//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 
 									
 
@@ -927,7 +927,7 @@ namespace armarow{
 
 					}else{
 
-						acknolagement_handler.result_of_last_send_operation_errorcode = Acknolagement_Handler::SUCCESS;
+						acknolagement_handler.result_of_last_send_operation_errorcode = Acknolagement_Handler::success;
 
 						has_message_to_send=false;
 						//FIXME: TODO: this delegate should be called outside of the critical section
@@ -1188,13 +1188,13 @@ namespace armarow{
 
 
 					//for a Clear Channel assessment we need to change into Receive State
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 
 					uint8_t ccaValue;
 					armarow::PHY::State status=Radiocontroller::doCCA(ccaValue);
 
 
-					if(status==armarow::PHY::SUCCESS)
+					if(status==armarow::PHY::success)
 					{
 						if(!ccaValue){
 							
@@ -1215,12 +1215,12 @@ namespace armarow{
 
 
 					//we want to send (tranceiver on)
-					Radiocontroller::setStateTRX(armarow::PHY::TX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::tx_on);
 
 					Radiocontroller::send(*mac_message.getPhysical_Layer_Message());
 
 					//after sending we need to change in the Transive mode again, so that we get received messages per interrupt
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 
 					//Radiocontroller::setStateTRX(armarow::PHY::TX_OFF);
 					//::logging::log::emit() << ::logging::log::endl << ::logging::log::endl 
@@ -1242,7 +1242,7 @@ namespace armarow{
 					mac_message.setPayloadNULL();
 
 
-					Radiocontroller::setStateTRX(armarow::PHY::RX_ON);
+					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 					//Radiocontroller::receive_blocking(message);
 
 
