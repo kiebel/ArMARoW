@@ -75,6 +75,10 @@ namespace armarow{
 	typedef MAC_Message mob_t;
 
 		// CLOCK
+/*!
+  \brief The configuration of the acknolagement timeout timer.
+  It is actually a little hack to use a class intended for periodic timer interrupts as one shot timer, but since we don't have a timer framework, we use this little trick. The idea is, that the acknolagment timeout is 20 millisecs, so we need a frequency of 50. After the first timer interupt occures, we stop the timer and reset it, so that it starts from the beginning again if neccessary.
+*/
 	struct ClockConfig
 	{
 		typedef uint16_t TickValueType;
@@ -98,7 +102,10 @@ namespace armarow{
 
 		//template <uint8_t channel>
 		//class MAC_Base : public Radiocontroller {
-
+/*!
+ \brief This is the interface class of every Mac Protocol. It should provide all neccessary methods that a Mac protocol should have.
+ there are two template parameters. The first one is the Physical Layer. The second one is the activation status of the evaluation feature. This class then inherit from the Physical Layer and the Mac_Evaluation class(Second template parameter of this class is passed as a template parameter of Mac_Evaluation.)
+*/
 		template<class Radiocontroller,MAC_EVALUATION_ACTIVATION_STATE state>
 		struct MAC_Base : public Radiocontroller,Mac_Evaluation<state>{
 

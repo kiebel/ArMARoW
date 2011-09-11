@@ -54,7 +54,9 @@ namespace armarow{
 
 enum MAC_EVALUATION_ACTIVATION_STATE{Enable,Disable};
 
-
+	/*!
+	  \brief This is the configuration class for the Clock needed for the evaluation feature. The clock will cause an interrupt every Second and call a run to completion Task.
+	*/
 	struct EvaluationClockConfig
 	{
 		typedef uint16_t TickValueType;
@@ -65,13 +67,24 @@ enum MAC_EVALUATION_ACTIVATION_STATE{Enable,Disable};
 
 
 
-
+/*!
+  \brief This is the Interface of the Mac_Evaluation class.
+*/
 struct Mac_Evaluation_Interface{
 
+/*!
+  \brief This method is called in the receive function of the Mac Layer with the size parameter in the mac header. It therefore contains only payload bytes.
+  It is used to correctly measure the netto bandwith.
+*/
 	void add_number_of_received_bytes(uint8_t number_of_received_bytes);
 
+/*!
+  \brief This method is a run to completion task, that outputs statistical information every second.
+*/
 	void print_and_reset_number_of_received_bytes();
-
+/*!
+  \brief This method initializes all neccessary data for the evaluation feature.
+*/
 	void init();
 
 };
@@ -82,7 +95,10 @@ struct Mac_Evaluation_Interface{
 template <MAC_EVALUATION_ACTIVATION_STATE>
 struct Mac_Evaluation;
 
-//here is the actual implementation of the evaluation for a mac protocoll
+/*!
+  \brief This is the actual implementation of the evaluation feature for the mac protocol. It is only used, if you pass the Enable constant as third template parameter to the Mac_Layer.
+  This class is mainly used to output statistical information every second and is used to meaure uptime and bandwith.
+*/
 template <>
 struct Mac_Evaluation<Enable> : public Mac_Evaluation_Interface{
 
@@ -138,7 +154,10 @@ struct Mac_Evaluation<Enable> : public Mac_Evaluation_Interface{
 
 };
 
-//if you want to disable evaluation, this class is used, if used correctly, it doesn't even cause one byte overhead (MAC Protocoll has to inherit from evaluation, in that way it will be no overhead at all, because empty methods are thrown away by the compiler)
+/*!
+  \brief This is the dummy implementation of the evaluation feature for the mac protocol with only empty methods. It is only used, if you pass the Disable constant as third template parameter to the Mac_Layer.
+If you want to disable evaluation, this class is used, if used correctly, it doesn't even cause one byte overhead (MAC Protocoll has to inherit from evaluation, in that way it will be no overhead at all, because empty methods are thrown away by the compiler)
+*/
 template <>
 struct Mac_Evaluation<Disable> : public Mac_Evaluation_Interface{
 

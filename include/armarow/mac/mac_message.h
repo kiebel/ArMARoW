@@ -56,7 +56,7 @@ struct IEEE_Frame_Control_Field{
 
 	//TODO: aus Standard "richtige" Werte raussuchen
 
-	frametype = Data;
+	frametype = Data;    //Bits 0-2
         securityenabled = 0; //Bit 3
         framepending = 0; //Bit 4   //ist das eine fragmentierte Nachricht
         ackrequest = 0; //Bit 5     //wollen wir Aknolegment haben?
@@ -98,6 +98,10 @@ enum MessageType{RTS,CTS,DATA,ACK};
 //enum MessageType{RTS=256,CTS=257,DATA=258,ACK=259}; //we have the compiler option short enums enabled, thats we we only get 1 byte size instead of 2 byte -> but the IEEE standard wants it to be 16 Bit, so we enter values that doesn't fit into one byte, so that the compiler have to keep 16 bit values 
 
 
+
+/*!
+  \brief This class encapsulates all Mac Header concerning data in exactly the order specified by IEEE 802.15.4 . It is an important part of the message decoding mechanism. 
+*/
 struct MAC_Header{
 
 	//MessageType messagetype;   //16 Bit
@@ -113,7 +117,12 @@ struct MAC_Header{
 
 
 	}
-
+/*!
+  \brief This is a convinience constructor, but since we initialize the whole Mac Header on a per variable basis, it is not used anymore.
+  \param a_messagetype an IEEE message type
+  \param a_source_adress
+  \param a_dest_adress
+*/
 	MAC_Header(IEEE_Frametype a_messagetype, DeviceAddress a_source_adress, DeviceAddress a_dest_adress){
 
 		controlfield.init();
@@ -133,7 +142,9 @@ struct MAC_Header{
 	}
 
 
-
+/*!
+  \brief This method is used for debug purposes. You can identify message decoding problems with it.
+*/
 	void printFrameFormat(){
 
 	::logging::log::emit() << "SIZE OF MAC_HEADER:" << sizeof(MAC_Header) << ::logging::log::endl;
@@ -152,7 +163,9 @@ struct MAC_Header{
 
 	}
 
-
+/*!
+  \brief This method is used for debug purposes. You can identify message decoding problems with it.
+*/
 	void print(){
 
 		::logging::log::emit() << "MAC_HEADER:" << ::logging::log::endl;
@@ -166,6 +179,9 @@ struct MAC_Header{
 	
 	}
 
+/*!
+  \brief This method is used with the placement new operator, to lay over the Mac Header over the Physical Layer message payload to decode the message.
+*/
 	explicit MAC_Header(platform::config::mob_t physical_layer_message){
 	
 
@@ -177,7 +193,10 @@ struct MAC_Header{
 } __attribute__((packed));
 
 
-
+/*!
+  \brief This class is the abstraction of a MAC_Message. It is used to decode Physical Layer Messages into Mac Layer Messages and the other way around. 
+  It uses the placement new operator to implement its functionality.
+*/
 struct MAC_Message{
 	
 	uint8_t size; //just there to be there (placeholder [Platzhalter] for uint_8 in platform::config::mob_t object, so that the header starts exactly at the adress of the payload of the platform::config::mob_t object)
@@ -188,9 +207,11 @@ struct MAC_Message{
 		uint8_t ed;
 		bool    crc  : 1;
         } minfo;
-	//MAC_Payload payload;
 
-  //this constructor have to be used with the placement new operator, hence it may not called directly
+/*!
+  \brief This constructor is responsible for the decoding of the Physical Layer message into a Mac message.
+  This constructor have to be used with the placement new operator, hence it may not be called directly.
+*/
   private:
 
 	explicit MAC_Message(platform::config::mob_t& physical_layer_message, bool& decoding_was_successful){
@@ -243,7 +264,10 @@ struct MAC_Message{
 	public:
 
 
-
+/*!
+  \brief This is the default constructor. It sets default values to all variables of the Mac Header.
+  We use the principle: Everything works with the default configuration. Hence you only have to init variables yourself, that need non default values. This makes your code more readable and simplifies developement. (And it avoids errors as well)
+*/
 	explicit MAC_Message(){
 
 		//set default values
@@ -267,7 +291,14 @@ struct MAC_Message{
 	}
 
 
-
+/*!
+  \brief This is a convinience constructor, but since we initialize the whole Mac Header on a per variable basis, it is not used anymore.
+  \param msgtyp a message type defined in IEEE
+  \param source_adress local node adress
+  \param dest_adress destination mac adress
+  \param pointer_to_databuffer points to a buffer that contains the data to transmit
+  \param size_of_databuffer 
+*/
 	explicit MAC_Message(IEEE_Frametype msgtyp, DeviceAddress source_adress, DeviceAddress dest_adress, char* pointer_to_databuffer, uint8_t size_of_databuffer){
 
 		if(size_of_databuffer>MAX_NUMBER_OF_DATABYTES){
@@ -303,7 +334,9 @@ struct MAC_Message{
 		//uint8_t 
 	}
 
-
+/*!
+  \brief This methods fill the Payload area of the mac message with zero bytes and sets the size to 0.
+*/
 	void setPayloadNULL(){
 
 		for(unsigned int i=0;i<MAX_NUMBER_OF_DATABYTES;i++){
@@ -314,7 +347,9 @@ struct MAC_Message{
 
 	}
 
-
+/*!
+  \brief Prints the content of the Mac Message. Helpful for Debuggging.
+*/
 	void print(){
 
 
@@ -338,7 +373,9 @@ struct MAC_Message{
 	*/
 	}
 
-
+/*!
+  \brief Prints the content of the Mac Message in Hexcode. Helpful for Debuggging.
+*/
 	void hexdump(){
 
 
@@ -391,10 +428,9 @@ struct MAC_Message{
 
 	}
 
-
-
-
-	//validating mechanism
+/*!
+  \brief This Method implements the validating mechanism.
+*/
 	bool isValid(){
 
 		if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "Validate MAC Frame..." << ::logging::log::endl;
@@ -489,6 +525,14 @@ struct MAC_Message{
 		return (platform::config::mob_t*) this;
 	}
 
+
+/*!
+  \brief This method converts a Physical Layer message to a Mac Layer message.
+This Method is intended to return a pointer to a decoded MAC_Message. Therefore we need a Physical Layer message as parameter. If we couldn't decode the Physical Layer message, a zero pointer is returned.
+  \param physical_layer_message the message shall be decoded
+  \return by successful decoding, it points to a valid MAC_Message object, otherwise it is a zero pointer
+
+*/
 	static MAC_Message* create_MAC_Message_from_Physical_Message(platform::config::mob_t& physical_layer_message){
 
 		bool decoding_was_successful=true;

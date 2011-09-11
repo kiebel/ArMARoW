@@ -337,6 +337,7 @@ namespace armarow{
 					  \param ack a reference to the received acknolagement message
 					  \param has_message_to_send a reference to a needed bit of the MAC Layer
 					  \param onSend_Operation_Completed_Delegtate the reference to a Delegate, that contains the callback function we want to call, to notify the user upon completion
+					  \param mac_layer a reference to the Mac Layer, because we need some of its functionality
 					*/
 					void handle_received_ACK(MAC_Message& ack,volatile bool& has_message_to_send,Delegate<>& onSend_Operation_Completed_Delegtate,MAC_LAYER& mac_layer){
 					//void handle_received_ACK(MAC_Message& ack,Delegate<>& onSend_Operation_Completed_Delegtate){
@@ -673,7 +674,7 @@ namespace armarow{
 
 
 
-				///*receiver Thread, if the mac protocol needs an asyncron receive routine*/
+				
  /*! callback_receive_message 
 					
       \brief Run to completion Task of the Mac protocol, is executed by the Physical Layer, if a new message is received.
@@ -1034,6 +1035,10 @@ namespace armarow{
 				//=============================================================================================================================
 
 
+				/*!
+				  \brief resets the acknolagement timer, so that it starts counting from zero again, if you call the start function
+				  It is aconvinience function that can be replaced if a timerframework is available.
+				*/
 				void reset_acknolagement_timer(){
 
 					acknolagement_timeout_timer.stop();
@@ -1042,7 +1047,10 @@ namespace armarow{
 
 				}
 
-
+				/*!
+				  \brief Initialises all relevant data needed for correct operation of the protocol.
+				  It binds special functions of the Mac Layer to delegates of the Physical Layer and Clocks to implement the event triggered system.
+				*/
 				int init(){
 
 					//mac specific callback for received messages 
@@ -1072,6 +1080,9 @@ namespace armarow{
 					return 0;
 				}
 
+				/*!
+				  \brief This method resets the Physical Layer and reinitializes the Mac Layer. It is intended to use in fatal error situations, where normal operation of the protocol is no longer possible.
+				*/
 				int reset(){
 
 					//here we need to call the radio controller directly, because a MAC_Base::init() wouldn't consider the extensions from this class
@@ -1081,26 +1092,38 @@ namespace armarow{
 					return 0;
 				}
 
-
-				//Acknolagement_Handler::ACK_ERROR_CODE
+				/*!
+				  \brief This Method is intended to be called in a user defined function, that is bound to the onSend_Operation_Completed_Delegtate, to get the errorcode for the last send operation.
+				  \return errorcode describing the result of the last send operation. \see Acknolagement_Handler for possible errorcodes.
+				*/
 				int get_result_of_last_send_operation(){
 					return acknolagement_handler.result_of_last_send_operation_errorcode;
 				}
 
-				void get_MAC_Attribut(typename MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::mac_attributes attributes,  AttributType value){
-
+				/*!
+				  \brief Writes the current value from the specified attribute into the second parameter value.
+				  \param attributes indicates the attribute that should be read
+				  \param value contains the value of the specified attribute after execution of this function
+				*/
+				void get_MAC_Attribut(typename MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::mac_attributes attributes,  AttributType* value){
 					
-
-
-
 				}
 
+				/*!
+				  \brief Writes the content of the second parameter in the variable of the specified attribute.
+				  \param attributes indicates the attribute that should be written
+				  \param value contains the value that should be assigned to the specified attribute
+				*/
 				void set_MAC_Attribut(typename MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::mac_attributes attributes,  AttributType value){
 
 				}
 
 
-		
+				/*!
+				  \brief This funtion is intended to be called, if the user wants to transmit data.
+				  It will send the message asynchron to the main application. It first initializes the neccessary data and then tries to send the message. Sequence number, mac source_adress and mac source_pan are set according to the MAC_Configuration, passed as template argument to the Main class. If it cannot transmit the message in the first attempt, it will try again later asynchron to the main program. (Task will be executed again after some time due to a one shot timer.)
+				  \param mac_message a reference to the message that has to be transmitted
+				*/		
 				int send_async(MAC_Message& mac_message){
 
 				   avr_halib::locking::GlobalIntLock lock;
@@ -1141,7 +1164,9 @@ namespace armarow{
 				}
 
 
-
+				/*!
+				  \brief Just an alternativ name for send_async, since we don't need a synchron send method.
+				*/
 				int send(MAC_Message mac_message){
 
 					//call asynchron send routine
@@ -1150,11 +1175,10 @@ namespace armarow{
 
 				}
 
-				/*
-
-					receive blocks until a message is received (or it returns an already received, but not delivered message (delivered with respect to the application))
+/*!
+				  \brief receive blocks until a message is received (or it returns an already received, but not delivered message (delivered with respect to the application))
+				  Use this function only, if you want to explicitly wait for a received message. (You can do more meaningful things than busy wait you know, so you should consider binding a message handler on the onMessageReceive Delegate of the Mac Layer. That way, you receive asynchron and that is usually what you want.)
 				*/
-
 				int receive(MAC_Message& mac_message){
 
 					//::logging::log::emit() << "enter receive function: onreceive delegate empty: " << (int) this->onReceive.isEmpty() << ::logging::log::endl;
