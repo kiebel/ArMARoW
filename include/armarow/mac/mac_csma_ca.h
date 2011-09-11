@@ -52,7 +52,10 @@ namespace armarow{
 		typedef uint16_t DeviceAddress; 
 		
 
-		
+/*! \brief MAC_Configuration: the abstraction of a MAC Configuration, all user defined configurations have to inherit from this class
+  This class contains all parameters of the Mac Layer that are configurable.
+  This class doesn't need memory at run time, since it exits only at compile time
+ */
 		struct MAC_Configuration{
 
 			enum {
@@ -74,9 +77,18 @@ namespace armarow{
 
 		enum MAC_Special_Adresses{MAC_BROADCAST_ADRESS=255};
 
+/*! \brief MAC_CSMA_CA: the implementation of the Mac protocol CSMA/CA
+  This class inherits from MAC_Base, because all Mac protocols have to have the same interface. (so it inherits the Physical Layer as well)
+  The first template parameter is a Configuration class, that inherits from the MAC_Configuration class. It contains all MAC_Layer relevant configuration parameters.
+  The desired Physical Layer is the second template parameter, and MAC_Base will inherit from it. 
+  The third template parameter indicates the usage of the evaluation features of the Mac protocol. In the MAC namespace there are to constants, Enables and Disable. If you don't want to use the evaluation features (e.g. measuring bandwith), then you should turn this feature of with the Disable parameter. Otherwise you should pass the Enable parameter. 
+ */
 		template<class MAC_Config,class Radiocontroller,MAC_EVALUATION_ACTIVATION_STATE Mac_Evaluation_activation_state>
 		struct MAC_CSMA_CA : public MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>{
 
+			/*!
+			    For ease of use and debugging purposes, we make a Typedef for the Mac protocol, so that it can be accessed as MAC_LAYER.
+			*/
 			typedef MAC_CSMA_CA<MAC_Config,Radiocontroller,Mac_Evaluation_activation_state> MAC_LAYER;
 
 			protected:
@@ -87,26 +99,21 @@ namespace armarow{
 				// CLOCK 
 				MAC_Clock acknolagement_timeout_timer; //not a one shot timer, we abuse the clock for that ;-)
 
-				//ExactEggTimer<Timer1> acknolagement_timeout_timer;
-
-				//typename avr_halib::drivers::
 				ExactEggTimer<Timer3> one_shot_timer;				
-				//avr_halib::drivers::Timer<avr_halib::config::DefaultTimerConfig<avr_halib::regmaps::local::Timer2>> a;
-
-
-				//since we can either send orreceive, but not both at the same time, we just need one buffer
+				
 				MAC_Message send_receive_buffer;
 				typename Radiocontroller::mob_t physical_layer_receive_buffer;
 
 				//we don't want to deliver the same message twice, so we need a flag for that
 				volatile bool has_message_ready_for_delivery; //and we declare it as volatile, so that the compiler doesn't do anything fishy to it (optimization)
-				
 				//bit we need for timer interrupt routine, to decide if there is a message to send (asynchron message delivery)
 				volatile bool has_message_to_send;
 				
 				MAC_Message send_buffer;
 
-				
+				/*!
+			          \brief The abstraction of all needed variables to implement a simple Message Filter. We will only remember the last received message to save memory.
+				*/
 				struct Message_Filter{
 
 					uint8_t sequence_number_of_last_received_message; //= msg.header.sequencenumber;
@@ -124,6 +131,9 @@ namespace armarow{
 
 				} message_filter;
 
+				/*!
+				  \brief The abstraction of all variables and program logic to implement an acknolagement mechanism in the Mac protocol.
+				*/
 				struct Acknolagement_Handler{
 
 					enum ACK_ERROR_CODE {success,TIMEOUT,MEDIUM_BUSY};
@@ -151,9 +161,11 @@ namespace armarow{
 					};
 
 
-				//an experiment
-				//structuring feature related variables and constands in a sub class for better readability and maintainability
-				//(idea: reduce code scattering)
+				/*!
+				  \brief Implements the functionality of the IEEE backoff Timing computation. Neccessary variables and program logic are encapsulated here.
+				  The Idea of this class is the structuring of feature related variables and constants in a sub class for better readability and maintainability. (Reducing code scattering.)
+				
+				*/
 				struct Backoff_Timing{
 
 				uint8_t current_backoff_exponend;
@@ -192,6 +204,7 @@ namespace armarow{
 						}
 					}
 					*/
+
 					bool number_of_backoffs_has_exeeded(){
 						if(current_backoff_exponend>MAC_Config::maximal_backoff_exponend){ //number off backoffs exeeded?							
 							return true;
@@ -201,7 +214,10 @@ namespace armarow{
 					}
 
 
-					//this method is intended for the one shot timer, to get the waiting time easier 
+					
+					/*!
+					  \brief This method is intended for the one shot timer, to get the waiting time easier.
+					*/
 					uint16_t get_random_backoff_time_in_ms(){
 						
 
@@ -225,7 +241,10 @@ namespace armarow{
 
 					}
 
-					//for easily resetting the counters, intended to use in the send function, when you just accepted a new message for transmission
+					
+					/*!
+					  \brief Method for easily reseting the counters, intended to use in the send function, when you just accepted a new message for transmission.
+					*/
 					void reset(){
 						//set to default value
 						current_backoff_exponend=MAC_Config::minimal_backoff_exponend; //0;
@@ -282,7 +301,10 @@ namespace armarow{
 
 					}
 
-					//resets variables to default value
+					
+					/*!
+					  \brief resets variables to default value
+					*/
 					void reset(){
 
 
@@ -296,6 +318,9 @@ namespace armarow{
 
 					}
 
+					/*!
+					  \brief This is an intern debugging method. 
+					*/
 					void print(){
 						::logging::log::emit() << "received_ack_for_last_transmitted_message: " << (int)received_ack_for_last_transmitted_message << ::logging::log::endl;
 						::logging::log::emit() << "waits_for_ack: " << (int)waits_for_ack << ::logging::log::endl;
@@ -306,8 +331,13 @@ namespace armarow{
 
 					}
 
-					//if an ACK message is received, this method decides, whether its the ACK frame we are waiting for or not
-					//if yes, we set the corrosponding bits, if not we just ignore the ACK
+					/*!
+					  \brief If an ACK message is received, this method decides, whether its the ACK frame we are waiting for or not.
+					  If yes, we set the corrosponding bits, if not we just ignore the ACK.
+					  \param ack a reference to the received acknolagement message
+					  \param has_message_to_send a reference to a needed bit of the MAC Layer
+					  \param onSend_Operation_Completed_Delegtate the reference to a Delegate, that contains the callback function we want to call, to notify the user upon completion
+					*/
 					void handle_received_ACK(MAC_Message& ack,volatile bool& has_message_to_send,Delegate<>& onSend_Operation_Completed_Delegtate,MAC_LAYER& mac_layer){
 					//void handle_received_ACK(MAC_Message& ack,Delegate<>& onSend_Operation_Completed_Delegtate){
 
@@ -356,7 +386,7 @@ namespace armarow{
 
 					}
 
-
+					//TODO: delete this method
 					//called by the periodic timer ISR every ms
 					void decrement_timeout_counter_every_ms(volatile bool& has_message_to_send,MAC_LAYER& mac_layer){
 		//void (MAC_LAYER::*pointer_to_async_sending_ISR)()){
@@ -429,6 +459,14 @@ namespace armarow{
 					}
 
 					//may not be called in a critical section!!!
+
+
+					/*!
+					  \brief initializes the waiting mechanism to wait for an acknolagement message
+					  \param msg the transmitted Data message we want an acknolagement message for
+					  \param mac_layer a reference to the Mac Layer, because we need some functionality of it
+					  \return an error code
+					*/
 					ACK_ERROR_CODE init_waiting_mechanism_for_ACK_for_MAC_Message(MAC_Message& msg,MAC_LAYER& mac_layer){
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "wait for ACK..." << ::logging::log::endl;
@@ -462,30 +500,15 @@ namespace armarow{
 
 					}
 
-					//TODO: verschiebe Methode aus dieser Kalsse direkt in CSMA CA dass sollte klappen, bei ACK_ERROR_CODE muss dann ein Type davor (Acknolagement_Handler::)
-
-
-				/*idea: sender: 
-						//busy wait
-						while(received_ack_for_last_transmitted_message && waits_for_Ack){}
-						
-
-
-					receiver: sends ack with its node id only, if received message has the destination id of the receiver or 255 (braodcast message)
-				*/
-
-						
-
-
-
-	
-
 				} acknolagement_handler;
 				//Acknolagement_Handler acknolagement_handler(this);
 
-				
-
-				//automatically evaluates all relevant information from the mac message, to avoid errors, and then creates aquivalent ACK Message
+	
+					/*!
+					  \brief automatically evaluates all relevant information from the mac message, to avoid errors, and then creates equivalent ACK message, which the sender is expecting
+					  \param msg a valid MAC message (from IEEE type Data)
+					  \return an errorcode, \see Acknolagement_Handler for possible errorcodes
+					*/
 					int send_ACK_for_MAC_Message(MAC_Message& msg){
 						/* Acknolagement_Handler::ACK_ERROR_CODE
 						MAC_Message ack_message = msg;
@@ -558,6 +581,10 @@ namespace armarow{
 
 				Delegate<> onSend_Operation_Completed_Delegtate;
 
+				/*!
+				  \brief Constructor of the Mac Layer. Initializes the protocol and makes a compile time verification, whether the configuration is correct or not. 
+				  If the configuration class (first template parameter) doesn't inherit from MAC_Configuration, then it causes an compile time error, notifying the user about the error. 
+				*/
 				MAC_CSMA_CA() : send_buffer(send_receive_buffer){   // : channel(11), mac_adress(0){
 
 
@@ -580,7 +607,10 @@ namespace armarow{
 				//============== Start Interrupt Service Routines =============================================================================
 				//=============================================================================================================================
 
-
+					/*!
+					  \brief Run to completion Task of the Mac protocol, handles the timout event if an acknolagement message wasn't received in time.
+					  If a timeout event occures, then this task will be activated from the acknolagement timeout clock. Then it will determine, whether a retransmission is attempted or not. If the maximal number of retransmissions is already exceeded, then the onSend_Operation_Completed_Delegtate is called to notify the user about the failed transmission. Otherwise, we will just retry transmitting the message.   
+					*/
 					void callback_wait_for_ack_timeout(){
 
 						
@@ -643,7 +673,15 @@ namespace armarow{
 
 
 
-				/*receiver Thread, if the mac protocol needs an asyncron receive routine*/
+				///*receiver Thread, if the mac protocol needs an asyncron receive routine*/
+ /*! callback_receive_message 
+					
+      \brief Run to completion Task of the Mac protocol, is executed by the Physical Layer, if a new message is received.
+      The Task will first try to decode the Physical Layer Message. If the decoding fails the message is dropped. Otherwise the received Mac Message is passed to a Filter. 
+	If the message is adressed at us, we keep it, otherwise we drop it. 
+	If we received a Data Message, we send an acknolagement message if requested (send ack bit in the Mac Header controlfield) and call the onMessageReceiveDelegate to notify the user about the received message.
+
+  */
 				void callback_receive_message(){
 
 				//FIXME: test for finding race condition
@@ -805,6 +843,9 @@ namespace armarow{
 
 				}
 
+				/*!
+				  \brief 
+				*/
 				void callback_periodic_timer_activation_event(){
 
 					avr_halib::locking::GlobalIntLock lock;
@@ -841,7 +882,14 @@ namespace armarow{
 				}
 
 
-
+				/*!
+				  \brief Run to completion Task of the Mac protocol, tries to send the message that is stored in the send_buffer buffer.
+				  Acknolagement messages have priority over data messages. 
+				  The backoff timing behaviour is different for Ack and Data messages. 
+				  Data messages have the IEEE backoff timing implementation. 
+				  Ack messages have a constant backoff time, because they are time critical. 
+				  If the medium is busy, then a oneshot timer is started, that calls this Task again after the specified timing behaviour.
+				*/
 				void send_async_intern(){
 
 				    uint8_t ccaValue=0;
