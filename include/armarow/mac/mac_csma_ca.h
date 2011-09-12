@@ -4,16 +4,27 @@
 #define __MAC_CSMA_CA__
 
 #ifndef MAC_LAYER_VERBOSE_OUTPUT
+	/*! \def MAC_LAYER_VERBOSE_OUTPUT                                                                                  
+          contains a bool value indicating whether verbose output should be enabled or disabled 
+	  Since that is a Mac Layer debugging functionality, it is not represented to the user explicitly. (You won't have any benefit enabling this, since the logging uses the UART and thats is very slow.)                                                                                    
+       */
 	#define MAC_LAYER_VERBOSE_OUTPUT false //false //true
 #endif
 
 
 #ifndef MAC_VERBOSE_ACK_OUTPUT 
+	/*! \def MAC_VERBOSE_ACK_OUTPUT                                                                                 
+          contains a bool value indicating whether verbose output concerning the acknolagement mechanism should be enabled or disabled 
+	  Since that is a Mac Layer debugging functionality, it is not represented to the user explicitly. (You won't have any benefit enabling this, since the logging uses the UART and thats is very slow.)                                                                                    
+       */
 	#define MAC_VERBOSE_ACK_OUTPUT false //false //true
 #endif
 
 
 #ifndef ENABLE_FILTERING_OF_DUPLICATES
+	/*! \def ENABLE_FILTERING_OF_DUPLICATES                                                                                 
+          This enables an experimental feature for duplicate filtering. If you really need it, enable it. Otherwise just keep it false.                                                                                   
+       */
 	#define ENABLE_FILTERING_OF_DUPLICATES false
 #endif
 
@@ -38,15 +49,8 @@ namespace armarow{
 
 	typedef MAC_Message mob_t;
 
-		//this namespace contains all ERROR Messages neccessary for STATIC ASSERT ERROR MESSAGES 
-		//namespace MAC_ERROR_MESSAGES{
-
-			class INVALID_MAC_CONFIGURATION__TYPE_DOESNT_INHERIT_FROM_CLASS__MAC_CONFIGURATION;
-
-		//}
-
-
-		
+		/*! \brief ERROR Message neccessary for STATIC ASSERT ERROR MESSAGE to report invalid Configuration at compile time*/
+		class INVALID_MAC_CONFIGURATION__TYPE_DOESNT_INHERIT_FROM_CLASS__MAC_CONFIGURATION;
 
 		typedef void* AttributType;
 		typedef uint16_t DeviceAddress; 
@@ -87,28 +91,23 @@ namespace armarow{
 		struct MAC_CSMA_CA : public MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>{
 
 			/*!
-			    For ease of use and debugging purposes, we make a Typedef for the Mac protocol, so that it can be accessed as MAC_LAYER.
+			    \brief For ease of use and debugging purposes, we make a Typedef for the Mac protocol, so that it can be accessed as MAC_LAYER.
 			*/
 			typedef MAC_CSMA_CA<MAC_Config,Radiocontroller,Mac_Evaluation_activation_state> MAC_LAYER;
 
 			protected:
-
-				
-
-
 				// CLOCK 
 				MAC_Clock acknolagement_timeout_timer; //not a one shot timer, we abuse the clock for that ;-)
 
 				ExactEggTimer<Timer3> one_shot_timer;				
 				
-				MAC_Message send_receive_buffer;
+				MAC_Message receive_buffer;
 				typename Radiocontroller::mob_t physical_layer_receive_buffer;
-
-				//we don't want to deliver the same message twice, so we need a flag for that
-				volatile bool has_message_ready_for_delivery; //and we declare it as volatile, so that the compiler doesn't do anything fishy to it (optimization)
-				//bit we need for timer interrupt routine, to decide if there is a message to send (asynchron message delivery)
+				/*! we don't want to deliver the same message twice, so we need a flag for that and we declare it as volatile, so that the compiler doesn't do anything fishy to it (optimization)*/
+				volatile bool has_message_ready_for_delivery;
+				/*! bit we need for timer interrupt routine, to decide if there is a message to send (asynchron message delivery)*/
 				volatile bool has_message_to_send;
-				
+				/*! the send async method will copy the user data in this internal buffer*/
 				MAC_Message send_buffer;
 
 				/*!
@@ -387,81 +386,6 @@ namespace armarow{
 
 					}
 
-					//TODO: delete this method
-					//called by the periodic timer ISR every ms
-					void decrement_timeout_counter_every_ms(volatile bool& has_message_to_send,MAC_LAYER& mac_layer){
-		//void (MAC_LAYER::*pointer_to_async_sending_ISR)()){
-					
-						static int loopcounter=0;
-
-						if(loopcounter>=100){
-
-						//print();
-						loopcounter=0;
-						}else{
-						loopcounter++;
-						}
-
-						if(waits_for_ack){
-							if(timeout_counter_in_ms < timeout_duration_in_ms){
-								timeout_counter_in_ms++;
-							}else{
-								backoff_timing.current_number_of_retransmissions++;
-							
-								waits_for_ack=false;  //timeout event, delete bit, so the busy wait in the sender function will end and 
-								timeout_counter_in_ms=0;
-
-								//this is the ACK for the last transmitted message
-								received_ack_for_last_transmitted_message=false;
-
-								//mechanism has to be initialized again by calling "init_waiting_mechanism_for_ACK_for_MAC_Message"
-								initialized_ack_mechanism=false;
-			
-							
-								timeout_occured=true;
-																				
-
-								if(backoff_timing.current_number_of_retransmissions<= backoff_timing.maximal_number_of_retransmissions){ 
-
-									//if(MAC_LAYER_VERBOSE_OUTPUT) 
-										if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "retry transmitting... attempt number " 
-										<< (int) backoff_timing.current_number_of_retransmissions << ::logging::log::endl;
-
-
-									//reset backoff exponent, so that the mximal waiting time is not growing from retransmission to retransmission
-									backoff_timing.current_backoff_exponend=MAC_Config::minimal_backoff_exponend;
-
-									
-
-									//FIXME: TODO: uncomment this
-									//send_async_intern(); //retry sending
-									mac_layer.send_async_intern();
-
-									//pointer_to_async_sending_ISR
-									
-									//result_of_last_send_operation_errorcode=TIMEOUT;
-
-								}else{
-									result_of_last_send_operation_errorcode=TIMEOUT;
-									//number of retries exceeded boundaries
-									has_message_to_send=false;
-									if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "TIMEOUT..." << ::logging::log::endl;
-
-									if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT)::logging::log::emit() << "number of retries has exeeded..." << ::logging::log::endl;
-									//FIXME: TODO: call send operation finished delegate
-
-									 if(!mac_layer.onSend_Operation_Completed_Delegtate.isEmpty()) mac_layer.onSend_Operation_Completed_Delegtate();
-
-								}								
-
-							}
-						}
-
-					}
-
-					//may not be called in a critical section!!!
-
-
 					/*!
 					  \brief initializes the waiting mechanism to wait for an acknolagement message
 					  \param msg the transmitted Data message we want an acknolagement message for
@@ -577,16 +501,16 @@ namespace armarow{
 
 
 			public:
-
+				/*! \brief This delegate contains function, that is called if a valid MAC_Message was received. In the function you bind to this Delegate, you should use receive(MAC_Message& msg) to get the received message.*/
 				Delegate<> onMessageReceiveDelegate;
-
+				/*! \brief This delegate contains a functionpointer to a function, that is called if a send operation is completed. To get the errorcode  use get_result_of_last_send_operation() in the function to bind to this delegate*/
 				Delegate<> onSend_Operation_Completed_Delegtate;
 
 				/*!
 				  \brief Constructor of the Mac Layer. Initializes the protocol and makes a compile time verification, whether the configuration is correct or not. 
 				  If the configuration class (first template parameter) doesn't inherit from MAC_Configuration, then it causes an compile time error, notifying the user about the error. 
 				*/
-				MAC_CSMA_CA() : send_buffer(send_receive_buffer){   // : channel(11), mac_adress(0){
+				MAC_CSMA_CA() : send_buffer(receive_buffer){   // : channel(11), mac_adress(0){
 
 
 				//compile time verification, whether MAC_Configuration is the baseclass of the parameter MAC_Config, just to be shure we get a valid configuration
@@ -685,7 +609,6 @@ namespace armarow{
   */
 				void callback_receive_message(){
 
-				//FIXME: test for finding race condition
 				avr_halib::locking::GlobalIntLock lock;
 
 				{ //critial section start
@@ -713,7 +636,7 @@ namespace armarow{
 
 					}
 
-					send_receive_buffer = *mac_msg;
+					receive_buffer = *mac_msg;
 
 					//===========================================================
 					//================= MESSAGE FILTERING START =================
@@ -721,22 +644,22 @@ namespace armarow{
 
 					if(MAC_Config::promiscuous_mode==0){
 
-					if(send_receive_buffer.header.dest_adress==MAC_Config::mac_adress_of_node  						  
-					   || send_receive_buffer.header.dest_adress==MAC_BROADCAST_ADRESS){
+					if(receive_buffer.header.dest_adress==MAC_Config::mac_adress_of_node  						  
+					   || receive_buffer.header.dest_adress==MAC_BROADCAST_ADRESS){
 					//TODO: && mac_message.header.dest_pan==MAC_Config::pan_id
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "accepted message..." << ::logging::log::endl;
 
 					}else{
 						//message is not for us, so we drop it
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "dropped message...(" 
-						<< (int) send_receive_buffer.header.controlfield.frametype << ","  //type
-						<< (int) send_receive_buffer.header.sequencenumber << ","   //sequence number
-						<< (int) send_receive_buffer.header.source_adress << ")" << ::logging::log::endl; //sender id
+						<< (int) receive_buffer.header.controlfield.frametype << ","  //type
+						<< (int) receive_buffer.header.sequencenumber << ","   //sequence number
+						<< (int) receive_buffer.header.source_adress << ")" << ::logging::log::endl; //sender id
 
 						has_message_ready_for_delivery=false; //we are not interested in messages, that are not for us
 
 						//::logging::log::emit() << "dropped message..." << ::logging::log::endl;
-						//send_receive_buffer.print();
+						//receive_buffer.print();
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
 						return;
 
@@ -748,10 +671,10 @@ namespace armarow{
 
 					//did we already receive the message (only data) -> we determine this by looking at the sequence number
 					//we don'T want to filte out double Acks
-					if(send_receive_buffer.header.controlfield.frametype==Data 
-						&& message_filter.sequence_number_of_last_received_message == send_receive_buffer.header.sequencenumber
-						&& message_filter.source_id_of_last_received_message == send_receive_buffer.header.source_adress
-						&& message_filter.source_panid_of_last_received_message == send_receive_buffer.header.source_pan
+					if(receive_buffer.header.controlfield.frametype==Data 
+						&& message_filter.sequence_number_of_last_received_message == receive_buffer.header.sequencenumber
+						&& message_filter.source_id_of_last_received_message == receive_buffer.header.source_adress
+						&& message_filter.source_panid_of_last_received_message == receive_buffer.header.source_pan
 					){
 
 						::logging::log::emit() << "filtered out duplicate message...(" 
@@ -768,9 +691,9 @@ namespace armarow{
 					}
 
 					//init message filter with the header data of the current message				
-					message_filter.sequence_number_of_last_received_message=send_receive_buffer.header.sequencenumber;
-					message_filter.source_id_of_last_received_message = send_receive_buffer.header.source_adress;
-					message_filter.source_panid_of_last_received_message = send_receive_buffer.header.source_pan;
+					message_filter.sequence_number_of_last_received_message=receive_buffer.header.sequencenumber;
+					message_filter.source_id_of_last_received_message = receive_buffer.header.source_adress;
+					message_filter.source_panid_of_last_received_message = receive_buffer.header.source_pan;
 
 
 					} //end enable feature duplicate filtering
@@ -782,11 +705,11 @@ namespace armarow{
 
 
 
-					if(send_receive_buffer.header.controlfield.frametype!=Data) {
+					if(receive_buffer.header.controlfield.frametype!=Data) {
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "===> got meta msg..." << ::logging::log::endl << ::logging::log::endl;
 
-						if(MAC_LAYER_VERBOSE_OUTPUT) send_receive_buffer.print(); //just for debug purposes
+						if(MAC_LAYER_VERBOSE_OUTPUT) receive_buffer.print(); //just for debug purposes
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "===> end meta msg..." << ::logging::log::endl << ::logging::log::endl;
 
@@ -795,10 +718,10 @@ namespace armarow{
 
 
 						//TODO: set bit that sended message was acknolaged
-						if(send_receive_buffer.header.controlfield.frametype==Acknowledgment){
+						if(receive_buffer.header.controlfield.frametype==Acknowledgment){
 
 							//set bit to 1
-							acknolagement_handler.handle_received_ACK(send_receive_buffer,has_message_to_send,onSend_Operation_Completed_Delegtate,*this); //this bit has to be set to false if neccessary, so we have to provide it via reference
+							acknolagement_handler.handle_received_ACK(receive_buffer,has_message_to_send,onSend_Operation_Completed_Delegtate,*this); //this bit has to be set to false if neccessary, so we have to provide it via reference
 
 
 						}
@@ -809,20 +732,20 @@ namespace armarow{
 
 
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> start data message:" << ::logging::log::endl;
-					if(MAC_LAYER_VERBOSE_OUTPUT) send_receive_buffer.print();
+					if(MAC_LAYER_VERBOSE_OUTPUT) receive_buffer.print();
 					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=> end data message:" << ::logging::log::endl;
 
 					//at this point, we know that we have received a data frame, so we have to send an ack
 					//TODO: send ACK
 					//acknolagement_handler.
 
-					send_ACK_for_MAC_Message(send_receive_buffer);
+					send_ACK_for_MAC_Message(receive_buffer);
 
 
-					//evaluation.received_bytes_in_last_second+=send_receive_buffer.size;
+					//evaluation.received_bytes_in_last_second+=receive_buffer.size;
 
 					//intern evaluation feature for measurement of bandwith
-					this->add_number_of_received_bytes(send_receive_buffer.size);
+					this->add_number_of_received_bytes(receive_buffer.size);
 
 
 					//mac_msg->print();
@@ -836,52 +759,13 @@ namespace armarow{
 					} //critial section end
 
 
-					//send_receive_buffer.print(); 
+					//receive_buffer.print(); 
 					//if we reach this instruction, everything went well and we can call a user defined interrupt service routine
 					
 				if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
 					
 
 				}
-
-				/*!
-				  \brief 
-				*/
-				void callback_periodic_timer_activation_event(){
-
-					avr_halib::locking::GlobalIntLock lock;
-
-					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "entered periodic timer interupt" << ::logging::log::endl;
-
-					acknolagement_handler.decrement_timeout_counter_every_ms(has_message_to_send,*this);//&MAC_LAYER::send_async_intern);
-
-					this->clocktick_counter++;
-
-					
-					if(this->clocktick_counter>=1000) {
-
-						//this->led.toggle();
-						this->clocktick_counter=0;
-						
-						//::logging::log::emit() << "received bytes in last second: "  << evaluation.received_bytes_in_last_second << ::logging::log::endl;
-
-						//::logging::log::emit() << "has_message_ready_for_delivery=" << (int) has_message_ready_for_delivery << ::logging::log::endl;	
-
-						//evaluation.received_bytes_in_last_second=0;
-
-						//this->print_and_reset_number_of_received_bytes();
-
-						if(MAC_LAYER_VERBOSE_OUTPUT){
-						 //::logging::log::emit() << "decrement_timeout_counter..." << ::logging::log::endl;
-						  //acknolagement_handler.print();
-						}
-
-					}
-
-					//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving periodic timer interupt" << ::logging::log::endl;
-
-				}
-
 
 				/*!
 				  \brief Run to completion Task of the Mac protocol, tries to send the message that is stored in the send_buffer buffer.
@@ -1211,8 +1095,8 @@ namespace armarow{
 					//Radiocontroller::receive(message);
 
 					//armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
-					mac_message = send_receive_buffer;
-					//evaluation.received_bytes_in_last_second+=send_receive_buffer.size;
+					mac_message = receive_buffer;
+					//evaluation.received_bytes_in_last_second+=receive_buffer.size;
 						/*::logging::log::emit()
 							<< PROGMEMSTRING("leaving receive method...")
 							<< ::logging::log::endl << ::logging::log::endl;

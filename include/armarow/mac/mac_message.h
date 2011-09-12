@@ -550,39 +550,6 @@ This Method is intended to return a pointer to a decoded MAC_Message. Therefore 
 
 } __attribute__((packed));
 
-
-
-
-void send_test(char* buffer,unsigned int buffersize){
-
-int offset=0;
-
-while(buffersize>0){
-
-	int counterlimit;
-	if(buffersize<MAX_NUMBER_OF_DATABYTES) counterlimit=buffersize; else counterlimit=MAX_NUMBER_OF_DATABYTES;
-
-
-
-		MAC_Message mac_message1(Data,25,38,&buffer[offset],counterlimit);
-		::logging::log::emit() << ::logging::log::endl << ::logging::log::endl << "Sending MAC_Message... " << ::logging::log::endl;
-		mac_message1.print();
-
-
-	offset += counterlimit;
-	buffersize -= MAX_NUMBER_OF_DATABYTES;
-
-}
-
-
-
-}
-
-
-
-
-
-
 };  //namespace MAC end
 
 };  //namespace armarow end
