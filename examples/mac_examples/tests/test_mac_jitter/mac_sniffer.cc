@@ -67,8 +67,13 @@ void callback_recv() {
 		//(int) timeobject.ticks
 		//(int) timeobject.microticks
 
-		Clock<JitterMeasurementClockConfig>::config::TickValueType tick = timeobject.ticks;
-		Clock<JitterMeasurementClockConfig>::config::MicroTickValueType microtick = timeobject.microticks;
+		Clock<JitterMeasurementClockConfig>::config::TickValueType ticks = timeobject.ticks;
+		Clock<JitterMeasurementClockConfig>::config::MicroTickValueType microTicks = timeobject.microTicks;
+
+		::logging::log::emit() << "tick: " << ticks << "microtick:" << microTicks << ::logging::log::endl;
+
+		int total_number_of_micro_ticks=Clock<JitterMeasurementClockConfig>::config::microTickMax*ticks+microTicks;
+		::logging::log::emit() << "total microticks:" << total_number_of_micro_ticks << ::logging::log::endl;
 
 
 		messageobject.get_object_from_payload(msg_measurement_object);
@@ -84,20 +89,22 @@ void callback_recv() {
 
 		*/
 
-		int tmp = (new_timer_value-old_timer_value) * 0.030518;
+		//int tmp = (new_timer_value-old_timer_value) * 0.030518;
 
 		if(has_received_at_least_once)
 		::logging::log::emit()
 		//<< PROGMEMSTRING("time : ") << new_timer_value //<< (int) msg_measurement_object.global_sequence_number
 		//<< PROGMEMSTRING("jitter : ") 
 		<< (new_timer_value-old_timer_value) 
-		<< "," << tmp  //* 0.000030518 * 1000 // in ms
+		//<< "," << tmp  //* 0.000030518 * 1000 // in ms
 		//(new_timer_value-old_timer_value) * 0,000030518 = ((new_timer_value-old_timer_value) * 30518) / 10^9
         	<< ::logging::log::endl;
 
 //0,000030518 sekunden je Tick
 //die Timerwerte sind ticks
 //timerwert * 0,000030518 = zeit in ms -> jitter ticks in ms umrechnen!
+//wir haben einen 16 bit timer, der aber nur 15 bit nutzt -> 2^15 = 32768 -> einmal pro Sekunde soll der Interrupt ausgelöst werden, also: 1/32768=0,000030518 s
+//ticks * 0,030518 ms = Zeit in ms
 
 		//global_sequence_number++;
 		
@@ -132,7 +139,8 @@ int main() {
 
     sei();                              // enable interrupts
     ::logging::log::emit()
-        << PROGMEMSTRING("Starting sniffer!")
+        << PROGMEMSTRING("Starting sniffer!") << ::logging::log::endl
+        << "maxNumMicroTicks" << Clock<JitterMeasurementClockConfig>::config::microTickMax << ::logging::log::endl //=31250
 	<< "Jitter Values:"
         << ::logging::log::endl << ::logging::log::endl;
 

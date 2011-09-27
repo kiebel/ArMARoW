@@ -17,7 +17,6 @@
 
 #include "avr-halib/share/delay.h"      // delays and timings
 #include "avr-halib/share/delegate.h"   //Delegator for user defined interrupt service routines
-//TODO: include the global interruptlock when the new version of avr halib is available
 #include "avr-halib/share/interruptLock.h"  //Global Lock
 
 
