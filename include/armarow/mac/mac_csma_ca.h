@@ -252,43 +252,16 @@ namespace armarow{
 
 						current_number_of_retransmissions=0;
 
-						
-
-						
 					}
-
-					
-
-
 				} backoff_timing;
 
-
-
 					MAC_Message acknolagement_buffer; //for sending acknolagements
-
 					uint8_t sequence_number_of_last_transmitted_message;
-
 					uint8_t destination_id_of_last_transmitted_message;
-
 					uint8_t destination_panid_of_last_transmitted_message;
-
-					//uint8_t maximal_number_of_retransmissions;
-
-					//uint8_t current_number_of_retransmissions;
-
 					uint8_t timeout_counter_in_ms;
-
 					uint8_t timeout_duration_in_ms;
-
 					ACK_ERROR_CODE result_of_last_send_operation_errorcode;
-
-					//volatile bool& has_message_to_send;
-
-					//Send_Operation_Result& result_of_last_send_operation;
-
-					//MAC_CSMA_CA<MAC_Config,Radiocontroller,Mac_Evaluation_activation_state>& mac_instance;
-
-					//Acknolagement_Handler(Send_Operation_Result a_result_of_last_send_operation) : result_of_last_send_operation(a_result_of_last_send_operation){ //(MAC_CSMA_CA<MAC_Config,Radiocontroller,Mac_Evaluation_activation_state>& a_mac_instance) : mac_instance(a_mac_instance){
 
 					Acknolagement_Handler(){//(volatile bool& a_has_message_to_send) : has_message_to_send(a_has_message_to_send){
 						reset();
@@ -299,8 +272,6 @@ namespace armarow{
 						result_of_last_send_operation_errorcode=success;
 
 					}
-
-					
 					/*!
 					  \brief resets variables to default value
 					*/
@@ -316,7 +287,6 @@ namespace armarow{
 						ack_to_send=false;
 
 					}
-
 					/*!
 					  \brief This is an intern debugging method. 
 					*/
@@ -325,9 +295,7 @@ namespace armarow{
 						::logging::log::emit() << "waits_for_ack: " << (int)waits_for_ack << ::logging::log::endl;
 						::logging::log::emit() << "current_number_of_retransmissions: " << (int)backoff_timing.current_number_of_retransmissions << ::logging::log::endl;
 						::logging::log::emit() << "timeout_counter_in_ms: " << (int)timeout_counter_in_ms << ::logging::log::endl;
-
 						::logging::log::emit() << "timeout_counter_in_ms: " << (int) timeout_occured << ::logging::log::endl;
-
 					}
 
 					/*!
@@ -339,53 +307,32 @@ namespace armarow{
 					  \param mac_layer a reference to the Mac Layer, because we need some of its functionality
 					*/
 					void handle_received_ACK(MAC_Message& ack,volatile bool& has_message_to_send,Delegate<>& onSend_Operation_Completed_Delegtate,MAC_LAYER& mac_layer){
-					//void handle_received_ACK(MAC_Message& ack,Delegate<>& onSend_Operation_Completed_Delegtate){
-
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "ack was received, validating..." << ::logging::log::endl;
-
-						//if we are not waiting for an ACK, we just drop it
-						//if(waits_for_ack==false) return; 
-
-
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit()
 						<< "last message sequence number: " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl
 						<< "ack sequence number: " << (int) ack.header.sequencenumber << ::logging::log::endl;
-
-
-
-
 						if (sequence_number_of_last_transmitted_message == ack.header.sequencenumber)
 						//if(send_buffer.header.sequencenumber == ack.header.sequencenumber)
 						//&&  destination_id_of_last_transmitted_message == ack.header.dest_adress
 						//&& destination_panid_of_last_transmitted_message == ack.header.dest_pan)
 						{
-
 							mac_layer.reset_acknolagement_timer();
-
 							//this is the ACK for the last transmitted message
 							received_ack_for_last_transmitted_message=true;
-
 							//mechanism has to be initialized again by calling "init_waiting_mechanism_for_ACK_for_MAC_Message"
 							initialized_ack_mechanism=false;
-			
 							waits_for_ack=false;
-
 							has_message_to_send=false;
 
 							result_of_last_send_operation_errorcode=success;							
 
 							//if(MAC_LAYER_VERBOSE_OUTPUT) 
+
 							if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "received ACK for message " << (int) sequence_number_of_last_transmitted_message << ::logging::log::endl;
-							//if(MAC_LAYER_VERBOSE_OUTPUT) 
 							if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: " << (int) timeout_duration_in_ms << ::logging::log::endl;
-
 							if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
-
 						}
-
-
 					}
-
 					/*!
 					  \brief initializes the waiting mechanism to wait for an acknolagement message
 					  \param msg the transmitted Data message we want an acknolagement message for
@@ -396,29 +343,14 @@ namespace armarow{
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "wait for ACK..." << ::logging::log::endl;
 
-						//if(msg.header.controlfield.ackrequest==0) return success; //message header indicates, that the sender doesn't want an ACK
-
 						sequence_number_of_last_transmitted_message = msg.header.sequencenumber;
 						destination_id_of_last_transmitted_message = msg.header.dest_adress;
 						destination_panid_of_last_transmitted_message = msg.header.dest_pan;
-						
-						reset();
 
-						//timeout_counter_in_ms=0;
-						
+						reset();
 						//we wait for an ack, so we set the bit
 						waits_for_ack=true;
-
 						initialized_ack_mechanism=true;
-
-						//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "enter busy wait..." << ::logging::log::endl;
-
-						//while(waits_for_ack && !received_ack_for_last_transmitted_message){}
-
-						//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving busy wait..." << ::logging::log::endl;
-
-						//if(!received_ack_for_last_transmitted_message) return TIMEOUT;
-
 						mac_layer.acknolagement_timeout_timer.start(); //start ack timeout Timer 
 
 						return success;
@@ -426,9 +358,6 @@ namespace armarow{
 					}
 
 				} acknolagement_handler;
-				//Acknolagement_Handler acknolagement_handler(this);
-
-	
 					/*!
 					  \brief automatically evaluates all relevant information from the mac message, to avoid errors, and then creates equivalent ACK message, which the sender is expecting
 					  \param msg a valid MAC message (from IEEE type Data)
@@ -461,41 +390,27 @@ namespace armarow{
 							(char*)"ACK",4);//(char*) 0,0);   //ACK doesn't contain data, all relevant information are stored in the header
 						*/
 
-						acknolagement_handler.acknolagement_buffer.header.sequencenumber=msg.header.sequencenumber; //the ACK is for this data message, so we need the same seuqnce numbers
+						acknolagement_handler.acknolagement_buffer.header.sequencenumber=msg.header.sequencenumber; //the ACK is for this data message, so we need the same sequence numbers
 						acknolagement_handler.acknolagement_buffer.header.dest_pan = msg.header.source_pan; //destination_panid_of_last_transmitted_message;
 						acknolagement_handler.acknolagement_buffer.header.dest_adress = msg.header.source_adress;
 						acknolagement_handler.acknolagement_buffer.header.source_adress = MAC_Config::mac_adress_of_node;
 						acknolagement_handler.acknolagement_buffer.header.source_pan=MAC_Config::pan_id;
-
 						acknolagement_handler.acknolagement_buffer.header.controlfield.frametype = Acknowledgment;
-
 						acknolagement_handler.acknolagement_buffer.size=0; //we have no payload, so set size to zero
-
-						//ack_message.header.source_pan = 0; 
-
-						//sequence_number_of_last_transmitted_message = msg.header.sequencenumber;
-						//destination_id_of_last_transmitted_message = msg.header.dest_adress;
-						
-
 						acknolagement_handler.acknolagement_buffer.header.controlfield.ackrequest=0;
 
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=====> start ACK msg..." << ::logging::log::endl << ::logging::log::endl;
 						if(MAC_LAYER_VERBOSE_OUTPUT) acknolagement_handler.acknolagement_buffer.print();
 						if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "=====> end ACK msg..." << ::logging::log::endl << ::logging::log::endl;
-
-						
 						//set bit, that ack is to send, so the send function knows, that there is a valid Ack 
 						//frame waiting for transmission in the acknolagement_buffer
 						acknolagement_handler.ack_to_send=true;
-
 						//copy build message into mac layer ack buffer
 						//acknolagement_handler.acknolagement_buffer=ack_message;
-
 						send_async_intern();
 
-
-
 						return Acknolagement_Handler::success;
+
 					}
 
 
@@ -768,7 +683,8 @@ namespace armarow{
 				}
 
 				/*!
-				  \brief Run to completion Task of the Mac protocol, tries to send the message that is stored in the send_buffer buffer.
+				  \brief Run to completion Task of the Mac protocol, tries to send the message that is stored in the send_buffer buffer. Note, that tasks are not intended to be called directly by the user.
+				  Some general behaviour of this function:
 				  Acknolagement messages have priority over data messages. 
 				  The backoff timing behaviour is different for Ack and Data messages. 
 				  Data messages have the IEEE backoff timing implementation. 
@@ -779,7 +695,6 @@ namespace armarow{
 
 				    uint8_t ccaValue=0;
 				    armarow::PHY::State status;
-
 				    MAC_Message message_to_send=send_buffer;
 
 				    { //critial section start
@@ -789,21 +704,11 @@ namespace armarow{
 
 					if(acknolagement_handler.ack_to_send==true){
 						message_to_send=acknolagement_handler.acknolagement_buffer;
-					}//else{
-					//	message_to_send=send_buffer;
-					//}
-
-
+					}
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "enter send ISR" << ::logging::log::endl;
-
-					//uncomment this
 					one_shot_timer.stop();
-
-					//if(MAC_LAYER_VERBOSE_OUTPUT) 
-					::logging::log::emit() << "do CCA" << ::logging::log::endl;
-
+					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "do CCA" << ::logging::log::endl;
 					status=Radiocontroller::doCCA(ccaValue);
-
 					
 					//if(MAC_LAYER_VERBOSE_OUTPUT) 
 					::logging::log::emit() << "finished CCA" << ::logging::log::endl;
@@ -831,31 +736,23 @@ namespace armarow{
 					//we have transmitted our ack, we can now return to normal operation, where we send the data messages
 					if(acknolagement_handler.ack_to_send==true){
 						acknolagement_handler.ack_to_send=false;
-						//FIXME: TODO: send ISR have to call itself here again, because otherwise the data message currently in the buffer could never get transmitted
+						//send ISR have to call itself again, to deliver the data message in the buffer, if any
 						if(has_message_to_send) one_shot_timer.start(1);
 						return;
-					}
-
+					  }
 					if(message_to_send.header.controlfield.ackrequest==1){
-
 					//init variables of acknolagement_handler, so that it waits for the ACK message for the transmitted message (ONLY that one)
 					acknolagement_handler.init_waiting_mechanism_for_ACK_for_MAC_Message(message_to_send,*this);
-
-					//one_shot_timer.start(1); //minimal waiting time, we can make the one shot timer wait, the ACK needs some time anyway
-
 					}else{
 
 						acknolagement_handler.result_of_last_send_operation_errorcode = Acknolagement_Handler::success;
 
 						has_message_to_send=false;
-						//FIXME: TODO: this delegate should be called outside of the critical section
+						//consider calling this delegate outside of the critical section
 						 if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
 
 					}
 
-					//has_message_to_send=false;
-
-					
 					}else{
 						//for one shot timer test
 						one_shot_timer.stop();
@@ -883,41 +780,24 @@ namespace armarow{
 
 						if(acknolagement_handler.backoff_timing.number_of_backoffs_has_exeeded()){
 
-									//number of backoffs exceeded boundaries
 							has_message_to_send=false;
-
 							acknolagement_handler.result_of_last_send_operation_errorcode=Acknolagement_Handler::MEDIUM_BUSY;
-									//if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "Mediumk to BUSY..." << ::logging::log::endl;
 
-							::logging::log::emit() << "number of backoffs has exeeded..." << ::logging::log::endl;
-									
+							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "number of backoffs has exeeded..." << ::logging::log::endl;		
 							acknolagement_handler.backoff_timing.reset();
-
 							if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
-					
 						}else{
 							//start one shot timer
 							one_shot_timer.start(acknolagement_handler.backoff_timing.get_random_backoff_time_in_ms());
 						}
-
-
 					}
-
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave send ISR" << ::logging::log::endl;
-					
 				    } //critial section end
-
-				
-
 				} //end send_async_intern
-
-
-
 
 				//=============================================================================================================================
 				//============== END Interrupt Service Routines ===============================================================================
 				//=============================================================================================================================
-
 
 				/*!
 				  \brief resets the acknolagement timer, so that it starts counting from zero again, if you call the start function
@@ -928,9 +808,7 @@ namespace armarow{
 					acknolagement_timeout_timer.stop();
 					acknolagement_timeout_timer.setCounter(0); //reset clock
 
-
 				}
-
 				/*!
 				  \brief Initialises all relevant data needed for correct operation of the protocol.
 				  It binds special functions of the Mac Layer to delegates of the Physical Layer and Clocks to implement the event triggered system.
@@ -939,43 +817,30 @@ namespace armarow{
 
 					//mac specific callback for received messages 
 					this->onReceive.template bind<MAC_CSMA_CA, &MAC_CSMA_CA::callback_receive_message>(this);
-
 					//function for one shot timer
 					this->one_shot_timer.onTimerDelegate.template bind<MAC_CSMA_CA, &MAC_CSMA_CA::send_async_intern>(this);
-
 					//Basic initialization
 					MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::init();
-
-					
 					//typeof *this = MAC_CSMA_CA
 					acknolagement_timeout_timer.registerCallback<typeof *this, &MAC_CSMA_CA::callback_wait_for_ack_timeout>(*this);
-
 					reset_acknolagement_timer();//it doesn't count anymore and if you start it again, it begins from the beginning
-
 					//set the configured channel, use Physical Layer method
 					this->Radiocontroller::setAttribute(armarow::PHY::phyCurrentChannel,&this->channel); 
-
 					has_message_ready_for_delivery=false;
 					has_message_to_send=false;
-
 					int tmp = 2; //carrier sense only
 					this->Radiocontroller::setAttribute(armarow::PHY::phyCCAMode,&tmp); //carrier sense only  // with energy above threshold
-
 					return 0;
 				}
-
 				/*!
 				  \brief This method resets the Physical Layer and reinitializes the Mac Layer. It is intended to use in fatal error situations, where normal operation of the protocol is no longer possible.
 				*/
 				int reset(){
-
 					//here we need to call the radio controller directly, because a MAC_Base::init() wouldn't consider the extensions from this class
 					Radiocontroller::reset();
 					init();
-
 					return 0;
 				}
-
 				/*!
 				  \brief This Method is intended to be called in a user defined function, that is bound to the onSend_Operation_Completed_Delegtate, to get the errorcode for the last send operation.
 				  \return errorcode describing the result of the last send operation. \see Acknolagement_Handler for possible errorcodes.
@@ -983,7 +848,6 @@ namespace armarow{
 				int get_result_of_last_send_operation(){
 					return acknolagement_handler.result_of_last_send_operation_errorcode;
 				}
-
 				/*!
 				  \brief Writes the current value from the specified attribute into the second parameter value.
 				  \param attributes indicates the attribute that should be read
@@ -992,7 +856,6 @@ namespace armarow{
 				void get_MAC_Attribut(typename MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::mac_attributes attributes,  AttributType* value){
 					
 				}
-
 				/*!
 				  \brief Writes the content of the second parameter in the variable of the specified attribute.
 				  \param attributes indicates the attribute that should be written
@@ -1001,8 +864,6 @@ namespace armarow{
 				void set_MAC_Attribut(typename MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::mac_attributes attributes,  AttributType value){
 
 				}
-
-
 				/*!
 				  \brief This funtion is intended to be called, if the user wants to transmit data.
 				  It will send the message asynchron to the main application. It first initializes the neccessary data and then tries to send the message. Sequence number, mac source_adress and mac source_pan are set according to the MAC_Configuration, passed as template argument to the Main class. If it cannot transmit the message in the first attempt, it will try again later asynchron to the main program. (Task will be executed again after some time due to a one shot timer.)
@@ -1011,43 +872,25 @@ namespace armarow{
 				int send_async(MAC_Message& mac_message){
 
 				   avr_halib::locking::GlobalIntLock lock;
-
 				   if(!has_message_to_send){
 
 					has_message_to_send=true;
-
 					//init message header
 					mac_message.header.sequencenumber=this->get_global_sequence_number();
-
-					//TODO; in überladenen Konstruktor packen
-					//optional source adress pan und message type dürfen vom nutzen nicht geändert werden -> private machen und MAC ALyer als frind deklaieren
+					//optional: source adress pan und message type dürfen vom nutzen nicht geändert werden -> private machen und MAC Layer als friend deklarieren
 					mac_message.header.source_adress=MAC_Config::mac_adress_of_node;
 					mac_message.header.source_pan=MAC_Config::pan_id;
-					//mac_message.header.controlfield.frametype=Data;
-
 					acknolagement_handler.backoff_timing.reset(); //backoff timing includes retransmission related variables. Since we start a new transmission, they have to be set to default values
-
-					//vom nutzer setzbar
-					//mac_message.header.dest_adress=destination_adress;
-					//mac_message.header.dest_pan=0;
-					//mac_message.header.controlfield.ackrequest=MAC_Config::ack_request;
-
-	
 					//copy message into send message buffer
 					send_buffer=mac_message;
-
 					//sends the message that we copied in the send_buffer
 					send_async_intern();
-
 					return 0;
-
 				   }else{
 					return -1; //the Last Message we wanted to transmit wasn't send yet
 				   }
 
 				}
-
-
 				/*!
 				  \brief Just an alternativ name for send_async, since we don't need a synchron send method.
 				*/
@@ -1059,60 +902,32 @@ namespace armarow{
 
 				}
 
-/*!
+				/*!
+
 				  \brief receive blocks until a message is received (or it returns an already received, but not delivered message (delivered with respect to the application))
-				  Use this function only, if you want to explicitly wait for a received message. (You can do more meaningful things than busy wait you know, so you should consider binding a message handler on the onMessageReceive Delegate of the Mac Layer. That way, you receive asynchron and that is usually what you want.)
+				  Use this function only, if you want to explicitly wait for a received message. (You can do more meaningful things than busy wait you know, so you should consider binding a message handler on the onMessageReceive Delegate of the Mac Layer. That way, you receive asynchron and that is usually what you want. In this case receive returns immediatly, since the callback is only called if an undelivered message is ready and receive returns the last undelivered message, so it will not block.)
 				*/
 				int receive(MAC_Message& mac_message){
 
-					//::logging::log::emit() << "enter receive function: onreceive delegate empty: " << (int) this->onReceive.isEmpty() << ::logging::log::endl;
-
-
 					mac_message.setPayloadNULL();
-
 
 					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 					//Radiocontroller::receive_blocking(message);
 
 
 					//TODO: replace busy wait with something like sleep that wakes up if an interupt occures to avoid energy waste
+
 					while(has_message_ready_for_delivery==false){
 
-						//if(has_message_ready_for_delivery) 
-						//::logging::log::emit() << "has_message_ready_for_delivery=" << (int) has_message_ready_for_delivery << ::logging::log::endl;
-
-
-						//delay_ms(1);
-
 					}
-
 					//if we get here, an interrupt occoured in the meantime, and we can deliver a message
-					//the first thing we do is setting the value false again and returning then the message
-
+					//the first thing we do is setting the value false again and then returning the message
 					has_message_ready_for_delivery=false;
-
-
-					//Radiocontroller::receive(message);
-
-					//armarow::MAC::MAC_Message* mac_msg = armarow::MAC::MAC_Message::create_MAC_Message_from_Physical_Message(message);
 					mac_message = receive_buffer;
-					//evaluation.received_bytes_in_last_second+=receive_buffer.size;
-						/*::logging::log::emit()
-							<< PROGMEMSTRING("leaving receive method...")
-							<< ::logging::log::endl << ::logging::log::endl;
-						*/
 					return mac_message.size;
 				}
-
-			};
-
-
+			}; //end class CSMA/CA
 		} //end namespace mac
-
 	} //end namespace armarow
-
-
-
 #endif
-
 
