@@ -487,7 +487,9 @@ struct MAC_Message{
 
 
 	
-
+/*! If the Type of the passed object is to large to fit into the payload, then the compiler will terminate with a compile time static assertion error. 
+  \brief Stores an arbitrary type with size less than the maximal payload size in the message payload.
+*/
 	template <class T>
 	int store_object_in_payload(T& obj){
 
@@ -504,7 +506,9 @@ struct MAC_Message{
 
 	return 0;
 	}
-
+/*!
+  \brief Loads an object of arbitrary type from the message payload.
+*/
 	template <class T>
 	int get_object_from_payload(T& obj){
 

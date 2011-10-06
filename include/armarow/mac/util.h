@@ -1,7 +1,6 @@
 
 #include <stdlib.h>
 
-
 template <int number_of_fillbytes>
 struct MessageLossMeasurement{
 
@@ -9,6 +8,4 @@ struct MessageLossMeasurement{
 	char fillbytes[number_of_fillbytes];   //intended for measurement with different messages sizes
 
 };
-
-//#error hi
 
