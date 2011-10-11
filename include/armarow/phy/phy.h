@@ -115,8 +115,8 @@ namespace armarow {
              */
             phySymbolsPerOctet      = 0x07,
             /*!< number of symbols per octet for the current layer*/
-			phyCCAThres				= 0x08,
-			/*!< clear channel assessment energy detection treshold*/
+            phyCCAThres             = 0x08,
+            /*!< clear channel assessment energy detection treshold*/
         };
         /*! \brief  Constants specific to the physical layer as defined in
          *          IEEE 802.15.4.
@@ -156,7 +156,7 @@ namespace armarow {
             /*!< specified attribute is not supported or defined*/
             read_only               = 0x0B,
             /*!< specified attribute is read-only*/
-            error					= 0x0C
+            error                   = 0x0C
             /*!< error during last operation */
         };
         /*! \brief Modes for Clear Channel Assesment (%CCA) */

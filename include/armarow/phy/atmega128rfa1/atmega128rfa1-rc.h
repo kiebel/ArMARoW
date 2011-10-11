@@ -51,9 +51,9 @@ namespace armarow {
         /*! \brief  Default configuration of the ATmega128RFA1 radio controller.
          *  \ingroup RcConf
          */
-				using namespace avr_halib::regmaps::local::atmega128rfa1;
-				
-				struct ATmega128RfA1CFG {
+        using namespace avr_halib::regmaps::local::atmega128rfa1;
+        
+        struct ATmega128RfA1CFG {
             enum {
                 enabledCCA           = false,
                 /*!< indicates whether a CCA is performed before transmitting*/
@@ -67,11 +67,11 @@ namespace armarow {
                 /*!< indicates whether interrupts can be used concurrently*/
                 rxOnIdle             = true,
                 /*!< indicates whether the TX mode is turned off after transmits*/
-				autoCRC				 = true
-				/*!< inicated whether autmatic crc generation for send frames will be used*/
+                autoCRC              = true
+                /*!< inicated whether autmatic crc generation for send frames will be used*/
             };
 
-			typedef common::CRC::Polynomials::ITU_T CRCPolynomial;
+            typedef common::CRC::Polynomials::ITU_T CRCPolynomial;
         };
         /*! \class  ATmega128RfA1 atmega128rfa1-rc.h "armarow/phy/atmega128rfa1/atmega128rfa1-rc.h"
          *  \brief  Class %ATmega128RfA1 represents the interface for the ATmega128RFA1
@@ -474,7 +474,7 @@ namespace armarow {
                  */
                 armarow::PHY::State doCCA(uint8_t& value) { //FIXME still untested
                     TRACE_FUNCTION;
-    
+                    
                     armarow::PHY::State cState = (armarow::PHY::State)getStateTRX();
                     if ( cState == armarow::PHY::trx_off ) return cState;
                     if ( cState != armarow::PHY::rx_on ) return armarow::PHY::busy;
@@ -690,10 +690,10 @@ namespace armarow {
                  *              <code>TX_ON</code>)
                  */
                 void setStateTRX(const armarow::PHY::State pState) {
-     
+                    
                     UseRegMap(rm, registers);
                     SyncRegMap(rm);
- 
+                    
                     switch(pState) {
                         case armarow::PHY::rx_on:
                             if ( (rm.trx_status == spec_t::defaultValue::trx_off) ||
