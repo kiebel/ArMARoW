@@ -287,10 +287,10 @@ namespace armarow {
                  */
                 bool ready() {
                     switch ( getStateTRX() ) {
-                        case armarow::PHY::BUSY_TX:
-                        case armarow::PHY::TX_ON:
-                            setStateTRX( ((CFG::rxOnIdle) ? armarow::PHY::RX_ON : armarow::PHY::TRX_OFF) );
-                        case armarow::PHY::RX_ON:
+                        case armarow::PHY::busy_tx:
+                        case armarow::PHY::tx_on:
+                            setStateTRX( ((CFG::rxOnIdle) ? armarow::PHY::rx_on : armarow::PHY::trx_off) );
+                        case armarow::PHY::rx_on:
                             return true;
                         default:
                             return false;
@@ -316,7 +316,7 @@ namespace armarow {
                     //TODO UseRegmap(rm, HW);
                     //TODO hardware initialization
                     //TODO SyncRegmap(rm);
-                    delay_us( spec_t::Duration::TRX_CHIP_RESET_TIME_US );
+                    delay_us( spec_t::Duration::trx_chip_reset_time_us );
                     // map interrupt to method onIRQ()
                     //TODO HW::irq_t::template init<type,&type::onIRQ>(this);
                     //------------------------------------------------------
@@ -325,7 +325,7 @@ namespace armarow {
                     rc.ccaMode       = 0;
                     rc.frame.size    = 0;
                     //------------------------------------------------------
-                    rc.state = armarow::PHY::TRX_OFF;
+                    rc.state = armarow::PHY::trx_off;
                 }
                 ~RadioController() {}
 
@@ -337,16 +337,16 @@ namespace armarow {
                     // transceiver initialization
                     // disable IRQ and clear any pending IRQs
                     // check current state
-                    rc.state = armarow::PHY::TRX_OFF;
+                    rc.state = armarow::PHY::trx_off;
                 }
 
                 /*! \brief  Resets the radio controller.
                  *  \note   After reset was called the radio controller is
-                 *          in state <code>TRX_OFF</code>.
+                 *          in state <code>trx_off</code>.
                  */
                 void reset() {
                     //TODO do a chip reset
-                    rc.state = armarow::PHY::TRX_OFF;
+                    rc.state = armarow::PHY::trx_off;
                 }
 
                 /*! \brief  Transmits provided data via the radio connection.
@@ -365,30 +365,30 @@ namespace armarow {
                     TRACE_FUNCTION;
                     // check if TX is enabled and no transmission is taking place
                     armarow::PHY::State cState = getStateTRX();
-                    if ( cState != armarow::PHY::TX_ON ) return cState;
+                    if ( cState != armarow::PHY::tx_on ) return cState;
                     // do nothing if size equals zero
                     if ( pData.size == 0) {
-                        setStateTRX( ((CFG::rxOnIdle) ? armarow::PHY::RX_ON : armarow::PHY::TRX_OFF) );
-                        return armarow::PHY::SUCCESS;
+                        setStateTRX( ((CFG::rxOnIdle) ? armarow::PHY::rx_on : armarow::PHY::trx_off) );
+                        return armarow::PHY::success;
                     }
 
                     // alter size if CRC is enabled
                     uint8_t size = pData.size + info::overhead;
                     // check if size is within allowed range
                     if ( size > armarow::PHY::aMaxPHYPacketSize )
-                        return armarow::PHY::INVALID_PARAMETER;
+                        return armarow::PHY::invalid_parameter;
 
                     rc.writeTxFifo(size, pData.payload);
 
                     // if CCA is enabled wait for idle medium
                     if (CFG::enabledCCA) {
-                        while ( doCCA() != armarow::PHY::IDLE);
+                        while ( doCCA() != armarow::PHY::idle);
                     }
 
                     //TODO send data
-                    rc.state = armarow::PHY::BUSY_TX;
+                    rc.state = armarow::PHY::busy_tx;
 
-                    return armarow::PHY::SUCCESS;
+                    return armarow::PHY::success;
                 }
 
                 /*! \brief  Transmits provided data via the radio connection and
@@ -408,7 +408,7 @@ namespace armarow {
                 armarow::PHY::State send_blocking(mob_t& pData) {
                     TRACE_FUNCTION;
                     armarow::PHY::State result = send(pData);
-                    while( ( result == armarow::PHY::SUCCESS ) && !ready() );
+                    while( ( result == armarow::PHY::success ) && !ready() );
                     return result;
                 }
 
@@ -451,18 +451,18 @@ namespace armarow {
                  *            invocation of the
                  *            <code>PLME-CCA.confirm-primitive</code>
                  *            as defined in IEEE 802.15.4 (possible values
-                 *            are <code>TRX_OFF</code>,
-                 *            <code>BUSY, IDLE</code>)
+                 *            are <code>trx_off</code>,
+                 *            <code>busy, idle</code>)
                  */
                 armarow::PHY::State doCCA() {
                     TRACE_FUNCTION;
                     // a CCA check is possible only if we are in RX state
-                    if ( getStateTRX() == armarow::PHY::TRX_OFF )
-                        return armarow::PHY::TRX_OFF;
-                    if ( getStateTRX() != armarow::PHY::RX_ON )
-                        return armarow::PHY::BUSY;
+                    if ( getStateTRX() == armarow::PHY::trx_off )
+                        return armarow::PHY::trx_off;
+                    if ( getStateTRX() != armarow::PHY::rx_on )
+                        return armarow::PHY::busy;
                     //TODO do actual check
-                    return armarow::PHY::IDLE;
+                    return armarow::PHY::idle;
                 }
 
                 /*! \brief  Performs an energy detection on the medium without
@@ -476,15 +476,15 @@ namespace armarow {
                  *            similar to an invocation of the
                  *            <code>PLME-ED.confirm-primitive</code> as
                  *            defined in IEEE 802.15.4 (possible values are
-                 *            <code>SUCCESS</code>, <code>TRX_OFF</code>,
-                 *            <code>TX_ON</code>)
+                 *            <code>success</code>, <code>trx_off</code>,
+                 *            <code>tx_on</code>)
                  */
                 armarow::PHY::State doED(uint8_t& pEnergyLevel) {
                     TRACE_FUNCTION;
-                    if ( (getStateTRX() == armarow::PHY::RX_ON) ||
-                            (getStateTRX() == armarow::PHY::BUSY_RX) ) {
+                    if ( (getStateTRX() == armarow::PHY::rx_on) ||
+                            (getStateTRX() == armarow::PHY::busy_rx) ) {
                         pEnergyLevel = spec_t::dBmToPaLevel(0);
-                        return armarow::PHY::SUCCESS;
+                        return armarow::PHY::success;
                     }
                     return getStateTRX();
                 }
@@ -506,8 +506,8 @@ namespace armarow {
                  *            invocation of the
                  *            <code>PLME-GET.confirm-primitive</code> as
                  *            defined in IEEE 802.15.4 (possible values are
-                 *            <code>SUCCESS</code>,
-                 *            <code>UNSUPPORTED_ATTRIBUTE</code>)
+                 *            <code>success</code>,
+                 *            <code>unsupported_attribute</code>)
                  *  \todo add phyMaxFrameDuration, phySHRDuration, phySymbolsPerOctet
                  */
                 armarow::PHY::State getAttribute(armarow::PHY::PIBAttribute pAttribute, void* pAttrValue) {
@@ -533,9 +533,9 @@ namespace armarow {
                         case armarow::PHY::phySymbolsPerOctet:              //FIXME
                             break;
                         default:
-                            return armarow::PHY::UNSUPPORTED_ATTRIBUTE;
+                            return armarow::PHY::unsupported_attribute;
                     }
-                    return armarow::PHY::SUCCESS;
+                    return armarow::PHY::success;
                 }
 
                 /*! \brief  Sets the value of a PAN Information Attribute.
@@ -553,10 +553,10 @@ namespace armarow {
                  *            invocation of the
                  *            <code>PLME-SET.confirm-primitive</code> as
                  *            defined in IEEE 802.15.4 (possible values are
-                 *            <code>SUCCESS</code>,
-                 *            <code>UNSUPPORTED_ATTRIBUTE</code>,
-                 *            <code>INVALID_PARAMETER</code>,
-                 *            <code>READ_ONLY</code>)
+                 *            <code>success</code>,
+                 *            <code>unsupported_attribute</code>,
+                 *            <code>invalid_parameter</code>,
+                 *            <code>read_only</code>)
                  */
                 armarow::PHY::State setAttribute(armarow::PHY::PIBAttribute pAttribute, void* pAttrValue) {
                     switch (pAttribute) {
@@ -565,36 +565,36 @@ namespace armarow {
                                     ( *((uint8_t*)pAttrValue) <= spec_t::Channel::maxChannel) ) {
                                 rc.channel = *((uint8_t*)pAttrValue);       //TODO
                             } else {
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             }
                             break;
                         case armarow::PHY::phyTransmitPower:
                             if ( *((uint8_t*)pAttrValue) <= 15 ) {
                                 rc.transmitPower = *((uint8_t*)pAttrValue); //TODO
                             } else {
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             }
                             break;
                         case armarow::PHY::phyCCAMode:
                             if ( *((uint8_t*)pAttrValue) <= 3 ) {
                                 rc.ccaMode = *((uint8_t*)pAttrValue);       //TODO
                             } else {
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             }
                             break;
                         case armarow::PHY::phyCurrentPage:
                             if ( *((uint8_t*)pAttrValue) != 0x00)
-                                return armarow::PHY::INVALID_PARAMETER;
+                                return armarow::PHY::invalid_parameter;
                             break;
                         case armarow::PHY::phyChannelsSupported:
                         case armarow::PHY::phyMaxFrameDuration:
                         case armarow::PHY::phySHRDuration:
                         case armarow::PHY::phySymbolsPerOctet:
-                            return armarow::PHY::READ_ONLY;
+                            return armarow::PHY::read_only;
                         default:
-                            return armarow::PHY::UNSUPPORTED_ATTRIBUTE;
+                            return armarow::PHY::unsupported_attribute;
                     }
-                    return  armarow::PHY::SUCCESS;
+                    return  armarow::PHY::success;
                 }
 
                 /*! \brief  Gets the state (<em>working mode</em>) of the
@@ -605,9 +605,9 @@ namespace armarow {
                  *          <code>PLME-GET-TRX-STATE.request-primitive</code>
                  *          as defined in IEEE 802.15.4.
                  *  \return Returns current state of the radio controller
-                 *          (available modes are <code>RX_ON</code>,
-                 *          <code>TRX_OFF</code>, <code>BUSY_RX</code>,
-                 *          <code>BUSY_TX</code>, <code>TX_ON</code>).
+                 *          (available modes are <code>rx_on</code>,
+                 *          <code>trx_off</code>, <code>busy_rx</code>,
+                 *          <code>busy_tx</code>, <code>tx_on</code>).
                  */
                 armarow::PHY::State getStateTRX() {
                     return rc.state;
@@ -621,22 +621,22 @@ namespace armarow {
                  *          <code>PLME-SET-TRX-STATE.request-primitive</code>
                  *          as defined in IEEE 802.15.4.
                  *  \param[in]  pState new working mode (available modes are
-                 *              <code>RX_ON,</code> <code>TRX_OFF</code>,
-                 *              <code>FORCE_TRX_OFF</code>,
-                 *              <code>TX_ON</code>)
+                 *              <code>rx_on,</code> <code>trx_off</code>,
+                 *              <code>force_trx_off</code>,
+                 *              <code>tx_on</code>)
                  */
                 void setStateTRX(const armarow::PHY::State pState) {
                     switch (pState) {
-                        case armarow::PHY::RX_ON:
-                            rc.state = armarow::PHY::RX_ON;
+                        case armarow::PHY::rx_on:
+                            rc.state = armarow::PHY::rx_on;
                             break;
-                        case armarow::PHY::TRX_OFF:
-                            rc.state = armarow::PHY::TRX_OFF;
+                        case armarow::PHY::trx_off:
+                            rc.state = armarow::PHY::trx_off;
                             break;
-                        case armarow::PHY::TX_ON:
-                            rc.state = armarow::PHY::TX_ON;
+                        case armarow::PHY::tx_on:
+                            rc.state = armarow::PHY::tx_on;
                             break;
-                        case armarow::PHY::FORCE_TRX_OFF:
+                        case armarow::PHY::force_trx_off:
                             reset();
                             break;
                         default:

@@ -136,7 +136,7 @@ namespace armarow {
                  */
                 struct Duration {
                     enum {
-                        TRX_CHIP_RESET_TIME_US = 625
+                        trx_chip_reset_time_us = 625
                         /*!< duration for transceiver reset */
                     };
                 };
@@ -147,8 +147,8 @@ namespace armarow {
                  *  Defines sizes and numbers of available memory and queues.
                  */
                 enum chipSize {
-                    SIZE_FIFO    = 128,
-                    SIZE_RAM     = 512
+                    size_fifo    = 128,
+                    size_ram     = 512
                 };
                 // --- supported PIB Attributes for Medium Access Control -----
                 //TODO struct PIBAttributeMAC {enum {};};

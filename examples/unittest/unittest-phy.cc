@@ -71,34 +71,34 @@ void case_attribute() {
     uint8_t value = 0;
 
     // read_only attributes -------------------------------
-    assert(rc.setAttribute(armarow::PHY::phyMaxFrameDuration, &value) == armarow::PHY::READ_ONLY);
-    assert(rc.setAttribute(armarow::PHY::phySHRDuration, &value)      == armarow::PHY::READ_ONLY);
-    assert(rc.setAttribute(armarow::PHY::phySymbolsPerOctet, &value)  == armarow::PHY::READ_ONLY);
+    assert(rc.setAttribute(armarow::PHY::phyMaxFrameDuration, &value) == armarow::PHY::read_only);
+    assert(rc.setAttribute(armarow::PHY::phySHRDuration, &value)      == armarow::PHY::read_only);
+    assert(rc.setAttribute(armarow::PHY::phySymbolsPerOctet, &value)  == armarow::PHY::read_only);
 
     // channel & channel support --------------------------
     //FIXME Dynamic channel testing configured by the specfile!!!
     for (uint8_t channel = 0; channel <= 26; channel++) {
         if ( (channel >= platform::config::spec_t::Channel::minChannel) &&
                 (channel <= platform::config::spec_t::Channel::maxChannel) ) {
-            assert(rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel) == armarow::PHY::SUCCESS);
-            assert(rc.getAttribute(armarow::PHY::phyCurrentChannel, &value)   == armarow::PHY::SUCCESS);
+            assert(rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel) == armarow::PHY::success);
+            assert(rc.getAttribute(armarow::PHY::phyCurrentChannel, &value)   == armarow::PHY::success);
             assert(channel == value);
         } else {
-            assert(rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel) == armarow::PHY::INVALID_PARAMETER);
+            assert(rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel) == armarow::PHY::invalid_parameter);
         }
     }
     uint32_t channels = 0;
-    assert(rc.setAttribute(armarow::PHY::phyChannelsSupported, &channels) == armarow::PHY::READ_ONLY);
-    assert(rc.getAttribute(armarow::PHY::phyChannelsSupported, &channels) == armarow::PHY::SUCCESS);
+    assert(rc.setAttribute(armarow::PHY::phyChannelsSupported, &channels) == armarow::PHY::read_only);
+    assert(rc.getAttribute(armarow::PHY::phyChannelsSupported, &channels) == armarow::PHY::success);
     assert(channels == platform::config::spec_t::Channel::supportedChannel());
 
     // transmit power -------------------------------------
     for (uint8_t index = 0; index <= 16; index++) {
         if ( index == 16) {
-            assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &index) == armarow::PHY::INVALID_PARAMETER);
+            assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &index) == armarow::PHY::invalid_parameter);
         } else {
-            assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &index) == armarow::PHY::SUCCESS);
-            assert(rc.getAttribute(armarow::PHY::phyTransmitPower, &value) == armarow::PHY::SUCCESS);
+            assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &index) == armarow::PHY::success);
+            assert(rc.getAttribute(armarow::PHY::phyTransmitPower, &value) == armarow::PHY::success);
             assert(index == value);
         }
     }
@@ -106,18 +106,18 @@ void case_attribute() {
     // cca mode -------------------------------------------
     param = armarow::PHY::threshold;
     value = 0;
-    assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &param) == armarow::PHY::SUCCESS);
-    assert(rc.getAttribute(armarow::PHY::phyTransmitPower, &value) == armarow::PHY::SUCCESS);
+    assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &param) == armarow::PHY::success);
+    assert(rc.getAttribute(armarow::PHY::phyTransmitPower, &value) == armarow::PHY::success);
     assert(param == value);
     param = armarow::PHY::carrierSense;
     value = 0;
-    assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &param) == armarow::PHY::SUCCESS);
-    assert(rc.getAttribute(armarow::PHY::phyTransmitPower, &value) == armarow::PHY::SUCCESS);
+    assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &param) == armarow::PHY::success);
+    assert(rc.getAttribute(armarow::PHY::phyTransmitPower, &value) == armarow::PHY::success);
     assert(param == value);
     param = armarow::PHY::carrierSenseThreshold;
     value = 0;
-    assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &param) == armarow::PHY::SUCCESS);
-    assert(rc.getAttribute(armarow::PHY::phyTransmitPower, &value) == armarow::PHY::SUCCESS);
+    assert(rc.setAttribute(armarow::PHY::phyTransmitPower, &param) == armarow::PHY::success);
+    assert(rc.getAttribute(armarow::PHY::phyTransmitPower, &value) == armarow::PHY::success);
     assert(param == value);
 
     // page -----------------------------------------------
@@ -144,9 +144,9 @@ void case_recv() {
 
     uint8_t channel = 11;
 
-    assert(rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel) == armarow::PHY::SUCCESS);
+    assert(rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel) == armarow::PHY::success);
     //FIXME test if recv works without correct state
-    rc.setStateTRX(armarow::PHY::RX_ON);
+    rc.setStateTRX(armarow::PHY::rx_on);
 
     // receive blocking
     uint8_t size = rc.receive_blocking(des);
@@ -171,7 +171,7 @@ void case_reset() {
     ::logging::log::emit() << "UnitTest Case[reset] " << ::logging::log::endl;
 
     rc.reset();
-    assert(rc.getStateTRX() == armarow::PHY::TRX_OFF);
+    assert(rc.getStateTRX() == armarow::PHY::trx_off);
 }
 /*! \brief  Unit case testing the radio controller send.*/
 void case_send() {
@@ -181,28 +181,28 @@ void case_send() {
 
     uint8_t channel = 11;
 
-    assert(rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel) == armarow::PHY::SUCCESS);
+    assert(rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel) == armarow::PHY::success);
 
     // use of states --------------------------------------
-    assert(rc.send_blocking(src) ==  armarow::PHY::TRX_OFF);
-    assert(rc.send(src) ==  armarow::PHY::TRX_OFF);
+    assert(rc.send_blocking(src) ==  armarow::PHY::trx_off);
+    assert(rc.send(src) ==  armarow::PHY::trx_off);
     // use of sizes ---------------------------------------
     src.size = 0x00;
-    rc.setStateTRX(armarow::PHY::TX_ON);
-    assert(rc.send_blocking(src) == armarow::PHY::SUCCESS);
-    rc.setStateTRX(armarow::PHY::TX_ON);
-    assert(rc.send(src) == armarow::PHY::SUCCESS);
+    rc.setStateTRX(armarow::PHY::tx_on);
+    assert(rc.send_blocking(src) == armarow::PHY::success);
+    rc.setStateTRX(armarow::PHY::tx_on);
+    assert(rc.send(src) == armarow::PHY::success);
     src.size = 0x80;
-    rc.setStateTRX(armarow::PHY::TX_ON);
-    assert(rc.send_blocking(src) == armarow::PHY::INVALID_PARAMETER);
-    rc.setStateTRX(armarow::PHY::TX_ON);
-    assert(rc.send(src) == armarow::PHY::INVALID_PARAMETER);
+    rc.setStateTRX(armarow::PHY::tx_on);
+    assert(rc.send_blocking(src) == armarow::PHY::invalid_parameter);
+    rc.setStateTRX(armarow::PHY::tx_on);
+	assert(rc.send(src) == armarow::PHY::invalid_parameter);
     // send message ----------------------------------------
     src.size = 10;
-    rc.setStateTRX(armarow::PHY::TX_ON);
-    assert(rc.send_blocking(src) == armarow::PHY::SUCCESS);
-    rc.setStateTRX(armarow::PHY::TX_ON);
-    assert(rc.send(src) == armarow::PHY::SUCCESS);
+    rc.setStateTRX(armarow::PHY::tx_on);
+    assert(rc.send_blocking(src) == armarow::PHY::success);
+    rc.setStateTRX(armarow::PHY::tx_on);
+    assert(rc.send(src) == armarow::PHY::success);
     // necessary to avoid abording transmission, by the reset of the next
     // testsuit
     delay_ms(1000);
@@ -213,15 +213,15 @@ void case_state() {
     //---------------------------------------------------------------
     ::logging::log::emit() << "UnitTest Case[state] " << ::logging::log::endl;
 
-    assert(rc.getStateTRX() == armarow::PHY::TRX_OFF);
-    rc.setStateTRX(armarow::PHY::RX_ON);
-    assert(rc.getStateTRX() == armarow::PHY::RX_ON);
-    rc.setStateTRX(armarow::PHY::TRX_OFF);
-    assert(rc.getStateTRX() == armarow::PHY::TRX_OFF);
-    rc.setStateTRX(armarow::PHY::TX_ON);
-    assert(rc.getStateTRX() == armarow::PHY::TX_ON);
-    rc.setStateTRX(armarow::PHY::FORCE_TRX_OFF);
-    assert(rc.getStateTRX() == armarow::PHY::TRX_OFF);
+    assert(rc.getStateTRX() == armarow::PHY::trx_off);
+    rc.setStateTRX(armarow::PHY::rx_on);
+    assert(rc.getStateTRX() == armarow::PHY::rx_on);
+    rc.setStateTRX(armarow::PHY::trx_off);
+    assert(rc.getStateTRX() == armarow::PHY::trx_off);
+    rc.setStateTRX(armarow::PHY::tx_on);
+    assert(rc.getStateTRX() == armarow::PHY::tx_on);
+    rc.setStateTRX(armarow::PHY::force_trx_off);
+    assert(rc.getStateTRX() == armarow::PHY::trx_off);
 }
 /* === main ================================================================= */
 int main() {
