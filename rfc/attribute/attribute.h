@@ -73,5 +73,30 @@ namespace style0p2
 		
 		return ttl:Info:Returns:success;
 	}
+	
+	struct call
+	{
+		typedef void(*valuetype)();
+		
+		valuetype value;
+		
+		ttl(valuetype parm)
+		{
+			value = parm;
+		}
+		
+		struct Info
+		{
+			enum Returns
+			{
+				success = 0,//standard
+				badvalue = 1
+			};
+			static const bool writeable = true;
+			static const bool readable  = true;
+			Parameter min(){return 0;}
+			Parameter max(){return 255;}
+		}
+	}
 }
 
