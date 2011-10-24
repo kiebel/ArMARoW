@@ -38,7 +38,7 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
   while(1){
      {
-        ret=mac.send_async(msg);
+	ret=mac.send(msg);
 	if(ret==0){
 		//delay_ms(1000);
 	}

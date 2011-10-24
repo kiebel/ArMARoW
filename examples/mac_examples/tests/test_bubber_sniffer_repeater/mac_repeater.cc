@@ -32,15 +32,15 @@ void callback_recv() {
 
 	int ret=0;
 
- 	if(mac.receive(messageobject)!=0){
+	if(mac.receive(messageobject)!=0){
 		
 		::logging::log::emit()
-        	//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
+		//<< PROGMEMSTRING("[Content:] ") << messageobject.payload << ::logging::log::endl
 		<< PROGMEMSTRING("Node ID: ") << (int) messageobject.header.source_adress << ::logging::log::endl
 		<< PROGMEMSTRING("msnr: ") << (int) messageobject.header.sequencenumber << ::logging::log::endl
 		<< "ED:" << (int) messageobject.minfo.ed << log::endl
-	   	<< "LQI:" << (int) messageobject.minfo.lqi
-        	<< ::logging::log::endl; // << ::logging::log::endl;
+		<< "LQI:" << (int) messageobject.minfo.lqi
+		<< ::logging::log::endl; // << ::logging::log::endl;
 
 
 		messageobject.get_object_from_payload(a);
@@ -67,17 +67,17 @@ void callback_recv() {
 		messageobject.store_object_in_payload(a);
 
 
-        	ret=mac.send_async(messageobject);
-     
-     		//we send the previous message header with this message 
+		ret=mac.send(messageobject);
+
+		//we send the previous message header with this message 
 		a.header=messageobject.header;
 
 
 	}else{
 
 		::logging::log::emit()
-        	<< PROGMEMSTRING("Failed receiving message!") 
-        	<< ::logging::log::endl << ::logging::log::endl;
+		<< PROGMEMSTRING("Failed receiving message!") 
+		<< ::logging::log::endl << ::logging::log::endl;
 
 	}
 
@@ -133,7 +133,7 @@ void async_sending_test(){
 
 	messageobject.store_object_in_payload(a);
 
-        ret=mac.send_async(messageobject);
+        ret=mac.send(messageobject);
      
      	//we send the previous message header with this message 
 	a.header=messageobject.header;

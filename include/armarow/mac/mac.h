@@ -108,7 +108,6 @@ namespace armarow{
 
 				typename Radiocontroller::mob_t message; //= {0,{0}};				
 				//Radiocontroller  rc;
-				uint8_t channel;                   // channel number the node is sending and receiving data
 				uint16_t nav; //network allocation vector -> Zeitdauer, die das Medium voraussichtlich belegt sein wird
 
 				uint16_t clocktick_counter; 
@@ -118,18 +117,14 @@ namespace armarow{
 
 				DeviceAddress mac_adress_of_node;
 
-				enum mac_attributes{TA,C,S};
-
-
-
-
 			//public:
 
+				/*! \brief This delegate contains function, that is called if a valid MAC_Message was received. In the function you bind to this Delegate, you should use receive(MAC_Message& msg) to get the received message.*/
+				Delegate<> onMessageReceiveDelegate;
+				/*! \brief This delegate contains a functionpointer to a function, that is called if a send operation is completed. To get the errorcode  use get_result_of_last_send_operation() in the function to bind to this delegate*/
+				Delegate<> onSend_Operation_Completed_Delegtate;
 
-
-
-				MAC_Base(){   // : channel(11), mac_adress(0){
-					channel=11;
+				MAC_Base(){//mac_adress(0){
 					mac_adress_of_node=28;          //this parameter can be configured 
 
 					//maximal_waiting_time_in_milliseconds=100;
@@ -146,7 +141,7 @@ namespace armarow{
 
 				uint8_t get_global_sequence_number(){
 
-        				static uint8_t global_sequencenumber=0; //will overflow all 256 MAC Frames
+					static uint8_t global_sequencenumber=0; //will overflow all 256 MAC Frames
 
 					return global_sequencenumber++;
 
@@ -155,6 +150,7 @@ namespace armarow{
 				int init(){
 					//message={0,{0}};
 					Radiocontroller::init();
+					uint8_t channel = 11;                   // channel number the node is sending and receiving data
 					Radiocontroller::setAttribute(armarow::PHY::phyCurrentChannel, &channel);
 					Radiocontroller::setStateTRX(armarow::PHY::rx_on);
 					
@@ -181,27 +177,9 @@ namespace armarow{
 				}
 
 
-
-				//void set_MAC_Attribut(MAC_Attribut attribute, MAC_Attribute_Value value);  
-				//void set_MAC_Attribut(mac_attributes attributes, MAC_Attribute_Value<int> value);
-				//template <class AttributType>
-
-				void get_MAC_Attribut(mac_attributes attributes,  AttributType value){
-
-				}
-
-				void set_MAC_Attribut(mac_attributes attributes,  AttributType value){
-
-				}
-
-
-				int send_async(MAC_Message& mac_message){
-					return 0;
-				}
-
 				int send(MAC_Message mac_message){
 
-				        mac_message.header.sequencenumber=get_global_sequence_number();
+					mac_message.header.sequencenumber=get_global_sequence_number();
 
 					//random waiting time (from 0 to 100 ms) -> should be adjusted for real usage
 					int randomnumber = rand();
