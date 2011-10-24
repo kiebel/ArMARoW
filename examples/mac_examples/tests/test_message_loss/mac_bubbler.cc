@@ -61,8 +61,8 @@ void async_sending_test(armarow::MAC::mob_t msg){
 
 	msg.store_object_in_payload(msg_measurement_object);
 
-        ret=mac.send_async(msg);
-     
+	ret=mac.send(msg);
+
 	if(ret==0){
 	   ::logging::log::emit()
             << msg_measurement_object.global_sequence_number

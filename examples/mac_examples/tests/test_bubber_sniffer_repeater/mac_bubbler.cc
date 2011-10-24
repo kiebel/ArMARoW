@@ -66,12 +66,12 @@ void async_sending_test(){
 
 	messageobject.store_object_in_payload(a);
 
-        ret=mac.send_async(messageobject);
-     
-     	//we send the previous message header with this message 
+	ret=mac.send(messageobject);
+
+	//we send the previous message header with this message 
 	a.header=messageobject.header;
 
-	
+
 	a.messwert1=123;
 
 

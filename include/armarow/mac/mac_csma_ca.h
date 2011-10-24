@@ -27,7 +27,6 @@
 #endif
 
 #include "mac.h"
-#include "atmega1281_timer3_regmap.h"
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 
@@ -352,15 +351,11 @@ namespace armarow{
 
 
 			public:
-				/*! \brief This delegate contains function, that is called if a valid MAC_Message was received. In the function you bind to this Delegate, you should use receive(MAC_Message& msg) to get the received message.*/
-				Delegate<> onMessageReceiveDelegate;
-				/*! \brief This delegate contains a functionpointer to a function, that is called if a send operation is completed. To get the errorcode  use get_result_of_last_send_operation() in the function to bind to this delegate*/
-				Delegate<> onSend_Operation_Completed_Delegtate;
 				/*!
 				  \brief Constructor of the Mac Layer. Initializes the protocol and makes a compile time verification, whether the configuration is correct or not. 
 				  If the configuration class (first template parameter) doesn't inherit from MAC_Configuration, then it causes an compile time error, notifying the user about the error. 
 				*/
-				MAC_CSMA_CA() : send_buffer(receive_buffer){   // : channel(11), mac_adress(0){
+				MAC_CSMA_CA() : send_buffer(receive_buffer){   // mac_adress(0){
 
 
 				//compile time verification, whether MAC_Configuration is the baseclass of the parameter MAC_Config, just to be shure we get a valid configuration
@@ -368,7 +363,6 @@ namespace armarow{
 
 				 ARMAROW_STATIC_ASSERT_ERROR(k,INVALID_MAC_CONFIGURATION__TYPE_DOESNT_INHERIT_FROM_CLASS__MAC_CONFIGURATION,(MAC_Config));
 
-					this->channel=MAC_Config::channel; //11;
 					this->mac_adress_of_node=MAC_Config::mac_adress_of_node;      //28;          //this parameter can be configured 
 					init();	
 				}
@@ -413,7 +407,7 @@ namespace armarow{
 
 									if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT)::logging::log::emit() << "number of retries has exeeded..." << ::logging::log::endl;
 
-									 if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
+									 if(!this->onSend_Operation_Completed_Delegtate.isEmpty()) this->onSend_Operation_Completed_Delegtate();
 
 								}								
 							}
@@ -508,7 +502,7 @@ namespace armarow{
 						if(receive_buffer.header.controlfield.frametype==Acknowledgment){
 
 							//set bit to 1
-							acknolagement_handler.handle_received_ACK(receive_buffer,has_message_to_send,onSend_Operation_Completed_Delegtate,*this); //this bit has to be set to false if neccessary, so we have to provide it via reference
+							acknolagement_handler.handle_received_ACK(receive_buffer,has_message_to_send,this->onSend_Operation_Completed_Delegtate,*this); //this bit has to be set to false if neccessary, so we have to provide it via reference
 						}
 						return;
 					}
@@ -519,7 +513,7 @@ namespace armarow{
 					this->add_number_of_received_bytes(receive_buffer.size);
 					has_message_ready_for_delivery=true;
 					if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leaving receive message interrupt, calling delegate" << ::logging::log::endl;
-					if(!onMessageReceiveDelegate.isEmpty()) onMessageReceiveDelegate();
+					if(!this->onMessageReceiveDelegate.isEmpty()) this->onMessageReceiveDelegate();
 					} //critial section end 
 					//if we reach this instruction, everything went well and we can call a user defined interrupt service routine
 				if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
@@ -591,7 +585,7 @@ namespace armarow{
 
 						has_message_to_send=false;
 						//consider calling this delegate outside of the critical section
-						 if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
+						 if(!this->onSend_Operation_Completed_Delegtate.isEmpty()) this->onSend_Operation_Completed_Delegtate();
 					}
 					}else{
 						//for one shot timer test
@@ -619,7 +613,7 @@ namespace armarow{
 							acknolagement_handler.result_of_last_send_operation_errorcode=Acknolagement_Handler::MEDIUM_BUSY;
 							if(MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "number of backoffs has exeeded..." << ::logging::log::endl;		
 							acknolagement_handler.backoff_timing.reset();
-							if(!onSend_Operation_Completed_Delegtate.isEmpty()) onSend_Operation_Completed_Delegtate();
+							if(!this->onSend_Operation_Completed_Delegtate.isEmpty()) this->onSend_Operation_Completed_Delegtate();
 						}else{
 							//start one shot timer
 							one_shot_timer.start(acknolagement_handler.backoff_timing.get_random_backoff_time_in_ms());
@@ -659,7 +653,8 @@ namespace armarow{
 					acknolagement_timeout_timer.registerCallback<typeof *this, &MAC_CSMA_CA::callback_wait_for_ack_timeout>(*this);
 					reset_acknolagement_timer();//it doesn't count anymore and if you start it again, it begins from the beginning
 					//set the configured channel, use Physical Layer method
-					this->Radiocontroller::setAttribute(armarow::PHY::phyCurrentChannel,&this->channel); 
+					uint8_t channel = MAC_Config::channel;
+					this->Radiocontroller::setAttribute(armarow::PHY::phyCurrentChannel,&channel); 
 					has_message_ready_for_delivery=false;
 					has_message_to_send=false;
 					int tmp = 2; //carrier sense only
@@ -683,27 +678,11 @@ namespace armarow{
 					return acknolagement_handler.result_of_last_send_operation_errorcode;
 				}
 				/*!
-				  \brief Writes the current value from the specified attribute into the second parameter value.
-				  \param attributes indicates the attribute that should be read
-				  \param value contains the value of the specified attribute after execution of this function
-				*/
-				void get_MAC_Attribut(typename MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::mac_attributes attributes,  AttributType* value){
-					
-				}
-				/*!
-				  \brief Writes the content of the second parameter in the variable of the specified attribute.
-				  \param attributes indicates the attribute that should be written
-				  \param value contains the value that should be assigned to the specified attribute
-				*/
-				void set_MAC_Attribut(typename MAC_Base<Radiocontroller,Mac_Evaluation_activation_state>::mac_attributes attributes,  AttributType value){
-
-				}
-				/*!
 				  \brief This funtion is intended to be called, if the user wants to transmit data.
 				  It will send the message asynchron to the main application. It first initializes the neccessary data and then tries to send the message. Sequence number, mac source_adress and mac source_pan are set according to the MAC_Configuration, passed as template argument to the Main class. If it cannot transmit the message in the first attempt, it will try again later asynchron to the main program. (Task will be executed again after some time due to a one shot timer.)
 				  \param mac_message a reference to the message that has to be transmitted
 				*/		
-				int send_async(MAC_Message& mac_message){
+				int send(MAC_Message& mac_message){
 
 				   avr_halib::locking::GlobalIntLock lock;
 				   if(!has_message_to_send){
@@ -723,16 +702,6 @@ namespace armarow{
 				   }else{
 					return -1; //the Last Message we wanted to transmit wasn't send yet
 				   }
-
-				}
-				/*!
-				  \brief Just an alternativ name for send_async, since we don't need a synchron send method.
-				*/
-				int send(MAC_Message mac_message){
-
-					//call asynchron send routine
-					return this->send_async(mac_message);
-
 
 				}
 
