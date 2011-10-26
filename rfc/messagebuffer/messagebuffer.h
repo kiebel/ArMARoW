@@ -60,6 +60,7 @@ namespace common
 	{
 		uint8_t payload[size];
 	};
+	typedef boost::mpl::vector<>::type HeaderList;
 }
 
 namespace phy
@@ -70,9 +71,11 @@ namespace phy
 	{
 		uint8_t size;
 	};
+	
+	typedef boost::mpl::push_back<common::HeaderList, PhyHeader>::type  HeaderList;
 
 	typedef meta::assembleMessage< 
-				boost::mpl::vector< PhyHeader >::type,
+				HeaderList,
 				common::Payload,
 				phy::maxPayload
 			>::type Message;
@@ -86,9 +89,10 @@ namespace mac
 		uint8_t dest;
 	};
 
-
+	typedef boost::mpl::push_back<phy::HeaderList, MacHeader>::type HeaderList;
+	
 	typedef meta::assembleMessage< 
-				boost::mpl::vector< phy::PhyHeader, MacHeader	>::type,
+				HeaderList,
 				common::Payload,
 				phy::maxPayload
 			>::type Message;
@@ -102,12 +106,10 @@ namespace routing
 		uint8_t ttl;
 	};
 
-
+	typedef boost::mpl::push_back<mac::HeaderList, RoutingHeader>::type HeaderList;
+	
 	typedef meta::assembleMessage< 
-				boost::mpl::vector< phy::PhyHeader, 
-							 	    mac::MacHeader,
-							 	    RoutingHeader 
-				>::type,
+				HeaderList,
 				common::Payload,
 				phy::maxPayload
 			>::type Message;
