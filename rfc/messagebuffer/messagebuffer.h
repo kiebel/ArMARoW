@@ -1,57 +1,4 @@
-#include <boost/mpl/vector.hpp>
-#include <boost/mpl/fold.hpp>
-#include <boost/mpl/push_back.hpp>
 #include <stdint.h>
-
-namespace meta
-{
-	template<typename types>
-	struct orderedMerge
-	{
-		private:
-			struct empty {};
-
-			struct merge
-			{
-				template<typename folded, typename next>
-				struct apply
-				{
-					struct type : public folded, public next {};
-				};
-			};
-		public:
-			typedef typename boost::mpl::fold< types, 
-											   empty,
-											   merge 
-							 >::type type;
-	};
-
-	template<typename Headers, template<uint8_t> class PayloadType, uint8_t maxPayload>
-	struct assembleMessage
-	{
-		private:
-			struct sum
-			{
-				template<typename folded, typename next>
-				struct apply
-				{
-					typedef typename boost::mpl::int_< folded::value + sizeof(next) 
-						    >::type type;
-				};
-			};
-
-			static const uint8_t partPayload = boost::mpl::fold< Headers, 
-																 boost::mpl::int_<0>::type,
-																 sum
-											   >::type::value;
-
-			typedef PayloadType< maxPayload - partPayload > Payload;
-
-			typedef typename boost::mpl::push_back< Headers, Payload >::type MessageParts;
-		public:
-			typedef typename orderedMerge< MessageParts >::type type;
-	};
-}
 
 namespace common
 {
@@ -60,57 +7,58 @@ namespace common
 	{
 		uint8_t payload[size];
 	};
-	typedef boost::mpl::vector<>::type HeaderList;
+
+	struct Empty{};
+	struct Empty_c{};
+	
+	template<typename Header,int Size,typename Attribute>
+	class Message:
+		public Header,
+		public Payload<Size-sizeof(Header)>,
+		public Attribute
+	{};
+	
+	
 }
 
 namespace phy
 {
 	static const uint8_t maxPayload=128;
 
-	struct PhyHeader
+	template<typename prev> struct PhyHeader : public prev
 	{
 		uint8_t size;
 	};
 	
-	typedef boost::mpl::push_back<common::HeaderList, PhyHeader>::type  HeaderList;
-
-	typedef meta::assembleMessage< 
-				HeaderList,
-				common::Payload,
-				phy::maxPayload
-			>::type Message;
+	typedef PhyHeader<common::Empty> Header;
+	typedef common::Message<Header,phy::maxPayload,common::Empty_c> Message;
+	
 }
 
 namespace mac
 {
-	struct MacHeader
+	template<typename prev> struct MacHeader: public prev
 	{
 		uint8_t src;
 		uint8_t dest;
 	};
-
-	typedef boost::mpl::push_back<phy::HeaderList, MacHeader>::type HeaderList;
 	
-	typedef meta::assembleMessage< 
-				HeaderList,
-				common::Payload,
-				phy::maxPayload
-			>::type Message;
+	typedef MacHeader<phy::Header> Header;
+	typedef common::Message<Header,phy::maxPayload,common::Empty_c> Message;
 }
 
 namespace routing
 {
-	struct RoutingHeader
+	template<typename prev> struct RoutingHeader: public prev
 	{
 		uint8_t nextHop;
 		uint8_t ttl;
+		uint8_t getdst(){return this->dest;}
 	};
 
-	typedef boost::mpl::push_back<mac::HeaderList, RoutingHeader>::type HeaderList;
+	typedef RoutingHeader<mac::Header> Header;
+	typedef common::Message<Header,phy::maxPayload,common::Empty_c> Message;
 	
-	typedef meta::assembleMessage< 
-				HeaderList,
-				common::Payload,
-				phy::maxPayload
-			>::type Message;
 }
+
+

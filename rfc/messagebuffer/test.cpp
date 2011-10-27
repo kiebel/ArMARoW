@@ -15,5 +15,7 @@ int main()
 	cout << "macPayload: " << sizeof(macMsg.payload) << endl;
 	cout << "routingMsg: " << sizeof(routingMsg) << endl;
 	cout << "routingPayload: " << sizeof(routingMsg.payload) << endl;
+	cout << "tt: " << &(routingMsg.src) << endl;
+	cout << "tt: " << &routingMsg << endl;
 	return 0;
 }
