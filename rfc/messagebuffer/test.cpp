@@ -1,5 +1,6 @@
 #include <iostream>
 #include "messagebuffer.h"
+#include <stddef.h>
 
 using namespace std;
 
@@ -15,7 +16,6 @@ int main()
 	cout << "macPayload: " << sizeof(macMsg.payload) << endl;
 	cout << "routingMsg: " << sizeof(routingMsg) << endl;
 	cout << "routingPayload: " << sizeof(routingMsg.payload) << endl;
-	cout << "tt: " << &(routingMsg.src) << endl;
-	cout << "tt: " << &routingMsg << endl;
+	cout << "tt: " << offsetof(routing::Message,src) << endl;
 	return 0;
 }
