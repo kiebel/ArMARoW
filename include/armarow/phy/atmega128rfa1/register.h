@@ -215,7 +215,6 @@ public:
 					bool pll_unlock :1;
 					bool rx_start :1;
 					bool rx_end :1;
-
 					bool cca_ed_done :1;
 					bool ami :1;
 					bool tx_end :1;

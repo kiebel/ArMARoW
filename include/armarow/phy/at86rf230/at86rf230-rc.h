@@ -66,11 +66,11 @@ namespace armarow {
                 /*!< indicates whether interrupts can be used concurrently*/
                 rxOnIdle             = true,
                 /*!< indicates whether the TX mode is turned off after transmits*/
-				autoCRC				 = true
-				/*!< inicated whether autmatic crc generation for send frames will be used*/
+                autoCRC              = true
+                /*!< inicated whether autmatic crc generation for send frames will be used*/
             };
 
-			typedef common::CRC::Polynomials::ITU_T CRCPolynomial;
+            typedef common::CRC::Polynomials::ITU_T CRCPolynomial;
         };
         /*! \class  At86Rf230 at86rf230-rc.h "armarow/phy/at86rf230/at86rf230-rc.h"
          *  \brief  Class %At86Rf230 represents the interface for the AT86RF230
@@ -85,8 +85,8 @@ namespace armarow {
         template < class Hal, class CFG = struct At86Rf230CFG >
         class At86Rf230 {
             public:
-				template<class NewCFG>
-				struct reconfigure{typedef At86Rf230<Hal, NewCFG> type;};
+                template<class NewCFG>
+                struct reconfigure{typedef At86Rf230<Hal, NewCFG> type;};
                 /*! \brief  definition of the class type*/
                 typedef At86Rf230< Hal, CFG > type;
                 /*! \brief  definition of the radio controller %specification*/
@@ -107,16 +107,16 @@ namespace armarow {
                         /*!< available payload considering frame size and overhead */
                     };
                 };
-				
+                
                 /*! \brief  definition of a layer specific message object*/
                 struct mob_t{
                     uint8_t size;                   /*!< number of bytes*/
                     uint8_t payload[info::frame];   /*!< frame data     */
-					struct {
-                    	uint8_t lqi;  /*!< last measured LQI value*/
-						uint8_t ed;
-						bool    crc  : 1;
-                	} minfo;
+                    struct {
+                        uint8_t lqi;  /*!< last measured LQI value*/
+                        uint8_t ed;
+                        bool    crc  : 1;
+                    } minfo;
                 };
                 /*! \brief  definition of layer specific message information
                  *  \todo add information such as RSSI, CRC validity aso.
@@ -170,16 +170,18 @@ namespace armarow {
                     if ( pCause.irq.trx_end ) {
                         armarow::PHY::State cState = (armarow::PHY::State)this->getStateTRX();
                         switch(cState)
-						{
-							case(armarow::PHY::rx_on ): this->onReceive();
-														break;
-
-                            case(armarow::PHY::tx_on ): if(CFG::rxOnIdle)
-															this->setStateTRX( armarow::PHY::rx_on );
-														break;
-							default:					break;
+                        {
+                            case(armarow::PHY::rx_on ): 
+                                this->onReceive();
+                                break;
+                            case(armarow::PHY::tx_on ):
+                                if(CFG::rxOnIdle)
+                                    this->setStateTRX( armarow::PHY::rx_on );
+                                break;
+                            default:
+                                break;
                         }
-					}
+                    }
                 }
 
                 /*! \brief  Checks the radio controller for pending operations.
@@ -266,7 +268,7 @@ namespace armarow {
                     rc.readRegister(  spec_t::registerDefault::phyTxPwr,  registerValue );
                     registerValue.phyTxPwr.tx_auto_crc_on = CFG::autoCRC;
                     rc.writeRegister( spec_t::registerDefault::phyTxPwr,  registerValue );
-					rc.readRegister( spec_t::registerDefault::phyTxPwr, registerValue);
+                    rc.readRegister( spec_t::registerDefault::phyTxPwr, registerValue);
                     registerValue.value = 0x00;
                     registerValue.irq.trx_end  = true;
                     registerValue.irq.rx_start = true;
@@ -311,14 +313,14 @@ namespace armarow {
                     }
 
                     // alter size if CRC is enabled
-					
+                    
                     uint8_t size = pData.size+info::overhead;
-					
-					if ( size > armarow::PHY::aMaxPHYPacketSize )
+                    
+                    if ( size > armarow::PHY::aMaxPHYPacketSize )
                         return armarow::PHY::invalid_parameter;
 
-					if(CFG::enabledCRC && !CFG::autoCRC)
-						*((uint16_t*)(pData.payload+pData.size))=common::CRC::calculateCRC<typename CFG::CRCPolynomial>(pData.payload, size);
+                    if(CFG::enabledCRC && !CFG::autoCRC)
+                        *((uint16_t*)(pData.payload+pData.size))=common::CRC::calculateCRC<typename CFG::CRCPolynomial>(pData.payload, size);
 
                     rc.writeTxFifo(size, pData.payload, CFG::autoCRC);
 
@@ -363,24 +365,24 @@ namespace armarow {
                     TRACE_FUNCTION;
                     // read data from RXFIXO and set lqi value
                     pData.size  = rc.readRxFifo(info::frame, pData.payload, &(pData.minfo.lqi)) - info::overhead;
-					typename ControllerInterface_t::regval_t registerValue;
-					rc.readRegister(spec_t::registerDefault::phyEd, registerValue);
-					pData.minfo.ed=registerValue.value;
-					registerValue.value=0;
-					if(CFG::autoCRC)
-					{
-						rc.readRegister(spec_t::registerDefault::phyRssi, registerValue);
-						pData.minfo.crc=registerValue.phyRssi.rx_crc_valid;
-					}
-					else
-					{
-						uint16_t recvCrc[2]={pData.payload[pData.size], pData.payload[pData.size+1]};
-						common::CRC::calculateCRC<typename CFG::CRCPolynomial>(pData.payload, pData.size+2);
-						if(recvCrc[0]==pData.payload[pData.size] && recvCrc[1]==pData.payload[pData.size+1])
-							pData.minfo.crc=true;
-						else
-							pData.minfo.crc=false;
-					}
+                    typename ControllerInterface_t::regval_t registerValue;
+                    rc.readRegister(spec_t::registerDefault::phyEd, registerValue);
+                    pData.minfo.ed=registerValue.value;
+                    registerValue.value=0;
+                    if(CFG::autoCRC)
+                    {
+                        rc.readRegister(spec_t::registerDefault::phyRssi, registerValue);
+                        pData.minfo.crc=registerValue.phyRssi.rx_crc_valid;
+                    }
+                    else
+                    {
+                        uint16_t recvCrc[2]={pData.payload[pData.size], pData.payload[pData.size+1]};
+                        common::CRC::calculateCRC<typename CFG::CRCPolynomial>(pData.payload, pData.size+2);
+                        if(recvCrc[0]==pData.payload[pData.size] && recvCrc[1]==pData.payload[pData.size+1])
+                            pData.minfo.crc=true;
+                        else
+                            pData.minfo.crc=false;
+                    }
                     return pData.size;
                 }
 
@@ -423,10 +425,10 @@ namespace armarow {
                     rc.readRegister(spec_t::registerDefault::phyCccca, registerValue);
                     registerValue.phyCccca.cca_request = true;
                     rc.writeRegister(spec_t::registerDefault::phyCccca,registerValue);
-					
+
                     // cca_done and cca_status are valid only for one read
                     //delay_us( spec_t::Duration::trx_cca_time_us );
-		            delay_us(140);
+                    delay_us(140);
                     rc.readRegister(spec_t::registerDefault::trxStatus, registerValue);
                     if(registerValue.trxStatus.cca_done)
                     {
@@ -576,7 +578,7 @@ namespace armarow {
                                 return armarow::PHY::invalid_parameter;
                             }
                             break;
-						case armarow::PHY::phyCCAThres:
+                        case armarow::PHY::phyCCAThres:
                             if ( *((uint8_t*)pAttrValue) <= 15 )
                             {
                                 registerValue.ccaThres.cca_ed_thres = *((uint8_t*)pAttrValue);
@@ -585,7 +587,6 @@ namespace armarow {
                                 return armarow::PHY::invalid_parameter;
                             }
                             break;
-
                         case armarow::PHY::phyCurrentPage:
                             if ( *((uint8_t*)pAttrValue) != 0x00)
                                 return armarow::PHY::invalid_parameter;
@@ -673,21 +674,21 @@ namespace armarow {
                             break;
                     }
                 }
-
-				void sleep()
-				{
-					setStateTRX(PHY::trx_off);
-					UseRegmap(rm, Portmap);
-					rm.sleep.port=true;
-					SyncRegmap(rm);
-				}
-
-				void wakeup()
-				{
-					UseRegmap(rm, Portmap);
-					rm.sleep.port=true;
-					SyncRegmap(rm);
-				}
+                
+                void sleep()
+                {
+                    setStateTRX(PHY::trx_off);
+                    UseRegmap(rm, Portmap);
+                    rm.sleep.port=true;
+                    SyncRegmap(rm);
+                }
+                
+                void wakeup()
+                {
+                    UseRegmap(rm, Portmap);
+                    rm.sleep.port=true;
+                    SyncRegmap(rm);
+                }
         };
     }; // end namespace phy
 }; // end namespace armarow

@@ -156,7 +156,7 @@ namespace armarow {
             /*!< specified attribute is not supported or defined*/
             read_only               = 0x0B,
             /*!< specified attribute is read-only*/
-            error					= 0x0C
+            error                   = 0x0C
             /*!< error during last operation */
         };
         /*! \brief Modes for Clear Channel Assesment (%CCA) */

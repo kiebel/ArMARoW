@@ -61,7 +61,7 @@ typedef avr_halib::drivers::Clock<ClockConfig> TimeTriggeredEventSource;
 
 struct AT86RF230_Hal
 {
-	typedef Portmap portmap_t;
+    typedef Portmap portmap_t;
     typedef InterruptRC irq_t;
     typedef SpiMaster<SpiCfg> spi_t;
 };
