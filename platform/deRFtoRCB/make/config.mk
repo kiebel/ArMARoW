@@ -1,8 +1,8 @@
 ################################################################################
 ##
-## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-##               2010 Thomas Kiebel   <kiebel@ivs.cs.uni-magdeburg.de>
-##               2010 Christoph Steup <steup@ivs.cs.uni-magdeburg.de>
+## Copyright (c) 2010-2011 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
+##               2010-2011 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
+##               2010-2011 Christoph Steup <christoph.steup@student.ovgu.de>
 ## All rights reserved.
 ##
 ##    Redistribution and use in source and binary forms, with or without
@@ -38,19 +38,12 @@
 ## $Id$
 ##
 ################################################################################
-ARMAROWDIR=../../
-
-#PLATFORM = default
-
-CXXFLAGS+=-Wall -Os
-
-BIN=./bin
-SRC=.
-BUILD=./build
-INCLUDE=.
-
-.PHONY: default
-
-default: help
-
-include ${ARMAROWDIR}/make/example.mk
+# -----------------------------------------------------------------------------
+#                             CONFIGURATION
+# -----------------------------------------------------------------------------
+ARCH		= avr
+MCU		= atmega128rfa1
+CLOCK		= 16000000
+#CLOCK		= 8000000
+PROGRAMMER	?= avr911
+# -----------------------------------------------------------------------------

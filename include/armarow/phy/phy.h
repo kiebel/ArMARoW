@@ -115,8 +115,8 @@ namespace armarow {
              */
             phySymbolsPerOctet      = 0x07,
             /*!< number of symbols per octet for the current layer*/
-			phyCCAThres				= 0x08,
-			/*!< clear channel assessment energy detection treshold*/
+            phyCCAThres             = 0x08,
+            /*!< clear channel assessment energy detection treshold*/
         };
         /*! \brief  Constants specific to the physical layer as defined in
          *          IEEE 802.15.4.
