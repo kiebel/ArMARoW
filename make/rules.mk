@@ -22,19 +22,19 @@ ${BUILD}/%.d: ${SRC}/%.c |${EXTERNAL_TARGETS} ${BUILD}
 ${BUILD}/%.d: ${SRC}/%.S |${EXTERNAL_TARGETS} ${BUILD}
 	@${AS} -MT $@ -MG -MM ${ASMFLAGS} $< -MF $@
 
-${BUILD}/%.o: ${SRC}/%.cpp ${BUILD}/%.d | ${EXTERNAL_DEPS} ${EXTERNAL_TARGETS} ${BUILD}
+${BUILD}/%.o: ${SRC}/%.cpp ${BUILD}/%.d ${ADDITIONAL_DEPS}| ${EXTERNAL_DEPS} ${EXTERNAL_TARGETS} ${BUILD}
 	@echo "(CXX   ) $(notdir $<) -> $(notdir $@)"
 	@${CXX} -c ${CXXFLAGS} $< -o $@
 
-${BUILD}/%.o: ${SRC}/%.cc ${BUILD}/%.d | ${EXTERNAL_DEPS} ${EXTERNAL_TARGETS} ${BUILD}
+${BUILD}/%.o: ${SRC}/%.cc ${BUILD}/%.d ${ADDITIONAL_DEPS}| ${EXTERNAL_DEPS} ${EXTERNAL_TARGETS} ${BUILD}
 	@echo "(CXX   ) $(notdir $<) -> $(notdir $@)"
 	@${CXX} -c ${CXXFLAGS} $< -o $@
 
-${BUILD}/%.o: ${SRC}/%.c ${BUILD}/%.d | ${EXTERNAL_DEPS} ${EXTERNAL_TARGETS} ${BUILD}
+${BUILD}/%.o: ${SRC}/%.c ${BUILD}/%.d ${ADDITIONAL_DEPS}| ${EXTERNAL_DEPS} ${EXTERNAL_TARGETS} ${BUILD}
 	@echo "(CC    ) $(notdir $<) -> $(notdir $@)"
 	@${CC} -c ${CFLAGS} $< -o $@
 
-${BUILD}/%.o: ${SRC}/%.S ${BUILD}/%.d | ${EXTERNAL_DEPS} ${EXTERNAL_TARGETS} ${BUILD}
+${BUILD}/%.o: ${SRC}/%.S ${BUILD}/%.d ${ADDITIONAL_DEPS}| ${EXTERNAL_DEPS} ${EXTERNAL_TARGETS} ${BUILD}
 	@echo "(AS    ) $(notdir $<) -> $(notdir $@)"
 	@${AS} -c ${ASMFLAGS} $< -o $@
 
