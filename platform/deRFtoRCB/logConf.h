@@ -1,10 +1,10 @@
 #pragma once
 
+#include <boost/mpl/list.hpp>
 #include <avr-halib/ext/loggingDevice.h>
 #include <avr-halib/ext/uartLogging.h>
 #include <avr-halib/avr/uartSync.h>
 #include <avr-halib/avr/regmaps.h>
-#include <boost/mpl/list.hpp>
 #include <avr-halib/avr/sleep.h>
 
 typedef Uart0<CPUClock,19200> logConf;

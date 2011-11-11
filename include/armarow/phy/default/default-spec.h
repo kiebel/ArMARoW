@@ -36,10 +36,9 @@
  * $Id$
  *
  ******************************************************************************/
-#ifndef __ARMAROW_RADIO_CONTROLLER_SPEC_h__
-#define __ARMAROW_RADIO_CONTROLLER_SPEC_h__
+#pragma once
 
-#include "armarow/phy/phy.h"
+#include <armarow/phy/phy.h>
 
 namespace armarow {
     namespace phy {
@@ -206,5 +205,3 @@ namespace armarow {
         } // namespace specification
     } // namespace phy
 } // namespace armarow
-
-#endif  //__ARMAROW_RADIO_CONTROLLER_SPEC_h__

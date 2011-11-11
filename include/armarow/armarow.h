@@ -36,8 +36,7 @@
  * $Id$
  *
  ******************************************************************************/
-#ifndef __ARMAROW_h__
-#define __ARMAROW_h__
+#pragma once
 
 /*! \defgroup ArMARoW ArMARoW
  *  Architecture for Medium Access Control and Routing Protocols in
@@ -46,5 +45,3 @@
 #ifndef NULL
 #   define NULL (void*)0
 #endif
-
-#endif  //__ARMAROW_h__

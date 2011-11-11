@@ -1,7 +1,7 @@
 #pragma once
 
-#include <avr-halib/regmaps/base/localRegMap.h>
 #include <stdint.h>
+#include <avr-halib/regmaps/base/localRegMap.h>
 
 namespace avr_halib
 {

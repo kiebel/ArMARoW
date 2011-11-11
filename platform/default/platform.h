@@ -39,8 +39,7 @@
 #pragma once
 #include <stdint.h>
 
-#define CPU_FREQUENCY F_CPU
-#include "avr-halib/share/freq.h"
+#include <avr-halib/share/freq.h>
 
 using avr_halib::config::Frequency;
 typedef Frequency< F_CPU > CPUClock;

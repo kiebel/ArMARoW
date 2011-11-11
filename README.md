@@ -26,7 +26,7 @@ that is used for bug tracking, feature requests, wiki and version control.
     - Main Developer: Thomas Kiebel (kiebel@ivs.cs.uni-magdeburg.de)
     - Developer: Christoph Steup (christoph.steup@student.ovgu.de)
     - Developer: Marcus Foerster (marcus.foerster@student.ovgu.de)
-    - Bug Reporter Karl Fessel (karl.fessel@student.ovgu.de)
+    - Developer: Karl Fessel (karl.fessel@student.ovgu.de)
 
 You can obtain the sources of the project by downloading the provided tarball or
 ZIP archive, or by checking out the project repository using either GIT or SVN.

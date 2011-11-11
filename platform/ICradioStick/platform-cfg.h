@@ -38,7 +38,7 @@
 /*! \brief  Configuration for the AT86RF230 radio controller.                 */
 /* === includes ============================================================= */
 #include "platform.h"
-#include "armarow/phy/at86rf230/at86rf230-rc.h"     // radio controller
+#include <armarow/phy/at86rf230/at86rf230-rc.h>     // radio controller
 /* === types ================================================================ */
 namespace platform {
     class config {

@@ -38,8 +38,7 @@
  * $Id$
  *
  ******************************************************************************/
-#ifndef __ARMAROW_DEBUG_h__
-#define __ARMAROW_DEBUG_h__
+#pragma once
 
 /*! \defgroup UnitTest Logging and Debugging
  *  \todo documentation of the Group Logging and Debugging
@@ -50,7 +49,8 @@
 #define FUNCTION_SIGNATURE  __FUNCSIG__
 #endif
 
-#include "logging/logging.h"
+#include <stdlib.h>
+#include <logging/logging.h>
 
 #ifdef ARMAROW_DEBUG_DISABLE
 LOGGING_DISABLE_LEVEL(::logging::Trace);
@@ -65,7 +65,6 @@ LOGGING_DISABLE_LEVEL(::logging::Info);
 } while(0)
 
 #if !defined(ASSERT_FAILED_HANDLER)
-#include <stdlib.h>
 
 /*!
  * \brief Default FAMOUSO_ASSERT handler
@@ -91,7 +90,7 @@ void __assert_failed_handler(ExprT expr, FileT file, LineT line) {
  *  debug.h to overwrite the default assert handler function.
  */
 #define ASSERT_FAILED_HANDLER ::__assert_failed_handler
-#endif
+#endif //not ASSERT_FAILED_HANDLER
 
 #undef assert
 #undef assert_only_def
@@ -136,6 +135,5 @@ void __assert_failed_handler(ExprT expr, FileT file, LineT line) {
  *  Evaluates to nothing if NDEBUG is defined.
  */
 #define assert_only_def(var_def) var_def
-#endif
+#endif // if NDEBUG else
 
-#endif  //__ARMAROW_DEBUG_h__

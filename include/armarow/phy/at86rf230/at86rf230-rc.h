@@ -36,16 +36,14 @@
  * $Id$
  *
  ******************************************************************************/
-#ifndef __ARMAROW_AT86RF230_h__
-#define __ARMAROW_AT86RF230_h__
-#define ARMAROW_DEBUG_DISABLE
+#pragma once
 
-#include "armarow/common/crc.h"
-#include "armarow/phy/at86rf230/at86rf230-spec.h"
-#include "armarow/phy/at86rf230/at86rf230-controllerInterface.h"
-#include "armarow/debug.h"
-#include "avr-halib/share/delay.h"
-#include "avr-halib/share/delegate.h"
+#include <avr-halib/share/delay.h>
+#include <avr-halib/share/delegate.h>
+#include <armarow/common/crc.h>
+#include <armarow/debug.h>
+#include "at86rf230-spec.h"
+#include "at86rf230-controllerInterface.h"
 
 namespace armarow {
     namespace phy {
@@ -692,5 +690,3 @@ namespace armarow {
         };
     }; // end namespace phy
 }; // end namespace armarow
-
-#endif  //__ARMAROW_AT86RF230_h__

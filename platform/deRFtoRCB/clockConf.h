@@ -1,8 +1,8 @@
 #pragma once
 
-#include "avr-halib/regmaps/local.h"
-#include "avr-halib/share/freq.h"
-#include "avr-halib/avr/clock.h"
+#include <avr-halib/regmaps/local.h>
+#include <avr-halib/share/freq.h>
+#include <avr-halib/avr/clock.h>
 
 
 struct ClockConfigShallowSleep{

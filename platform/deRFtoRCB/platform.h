@@ -41,7 +41,7 @@
 /* === globale defines ====================================================== */
 
 #include <avr-halib/share/freq.h>
-#include "avr-halib/regmaps/local.h"
+#include <avr-halib/regmaps/local.h>
 using avr_halib::config::Frequency;
 
 typedef Frequency<F_CPU> CPUClock;

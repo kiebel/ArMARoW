@@ -38,7 +38,7 @@
 /*! \brief  Configuration for the default radio controller.                   */
 /* === includes ============================================================= */
 #include "platform.h"
-#include "armarow/phy/default/default-rc.h" // radio controller specification
+#include <armarow/phy/default/default-rc.h> // radio controller specification
 /* === types ================================================================ */
 namespace platform {
     class config {

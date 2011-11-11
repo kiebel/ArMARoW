@@ -38,7 +38,7 @@
  ******************************************************************************/
 #pragma once
 
-#include "armarow/phy/phy.h"
+#include <armarow/phy/phy.h>
 
 namespace armarow {
     namespace phy {

@@ -42,12 +42,12 @@
  *  This file is part of the ArMARoW library. See copyright for details for using.
  */
 /* === includes ============================================================= */
-#include "platform-cfg.h"               // platform dependent software config
-#include "avr-halib/share/delay.h"      // delays and timings
+#include <platform-cfg.h>               // platform dependent software config
+#include <avr-halib/share/delay.h>      // delays and timings
 
-#include "armarow/armarow.h"            // main ArMARoW include
-#include "armarow/debug.h"              // ArMARoW logging and debugging
-#include "armarow/phy/phy.h"            // physical layer
+#include <armarow/armarow.h>            // main ArMARoW include
+#include <armarow/debug.h>              // ArMARoW logging and debugging
+#include <armarow/phy/phy.h>            // physical layer
 /* === globals ============================================================== */
 bool rcIRQ = false;
 platform::config::mob_t des  = {0,{0}};

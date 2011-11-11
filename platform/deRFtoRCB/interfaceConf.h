@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdint.h"
+#include <stdint.h>
 #if 0
 UseInterrupt(SIG_INPUT_CAPTURE1);
 

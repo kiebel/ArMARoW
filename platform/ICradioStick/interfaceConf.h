@@ -1,7 +1,7 @@
 #pragma once
 
-#include "avr-halib/avr/spi.h"
-#include "stdint.h"
+#include <stdint.h>
+#include <avr-halib/avr/spi.h>
 
 UseInterrupt(SIG_INPUT_CAPTURE1);
 

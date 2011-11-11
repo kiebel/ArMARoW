@@ -41,12 +41,12 @@
  *  \brief  Example implementation sending the same message over and over again.
  */
 /* === includes ============================================================= */
-#include "platform-cfg.h"               // platform dependent software config
+#include <platform-cfg.h>               // platform dependent software config
 
-#include "armarow/armarow.h"            // main ArMARoW include
-#include "armarow/debug.h"              // ArMARoW logging and debugging
-#include "armarow/phy/phy.h"            // physical layer
-#include "idler.h"
+#include <armarow/armarow.h>            // main ArMARoW include
+#include <armarow/debug.h>              // ArMARoW logging and debugging
+#include <armarow/phy/phy.h>            // physical layer
+#include <idler.h>
 /* === globals ============================================================== */
 platform::config::mob_t message;
 platform::config::rc_t  rc;             // radio controller

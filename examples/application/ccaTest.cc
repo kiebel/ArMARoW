@@ -37,17 +37,17 @@
  * $Id$
  *
  ******************************************************************************/
-/*! \file   examples/applixation/sniffer.cc
+/*! \file   examples/application/sniffer.cc
  *  \brief  Example implementation of a sniffer on the physical layer.
  */
 /* === includes ============================================================= */
-#include "platform-cfg.h"               // platform dependent software config
-#include "avr-halib/share/delay.h"      // delays and timings
+#include <platform-cfg.h>               // platform dependent software config
+#include <avr-halib/share/delay.h>      // delays and timings
 
-#include "armarow/armarow.h"            // main ArMARoW include
-#include "armarow/debug.h"              // ArMARoW logging and debugging
-#include "armarow/phy/phy.h"            // physical layer
-#include "idler.h"
+#include <armarow/armarow.h>            // main ArMARoW include
+#include <armarow/debug.h>              // ArMARoW logging and debugging
+#include <armarow/phy/phy.h>            // physical layer
+#include <idler.h>
 #include <avr-halib/regmaps/local.h>
 #include <avr-halib/avr/clock.h>
 /* === globals ============================================================== */

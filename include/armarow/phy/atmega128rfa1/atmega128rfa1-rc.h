@@ -38,13 +38,15 @@
  ******************************************************************************/
 #pragma once
 
-#include "armarow/common/crc.h"
-#include "armarow/phy/atmega128rfa1/atmega128rfa1-spec.h"
-#include "armarow/phy/atmega128rfa1/register.h"
-#include "armarow/phy/atmega128rfa1/framebuffer.h"
-#include "armarow/debug.h"
-#include "avr-halib/share/delay.h"
-#include "avr-halib/share/delegate.h"
+#include <avr-halib/share/delay.h>
+#include <avr-halib/share/delegate.h>
+
+#include <armarow/common/crc.h>
+#include <armarow/debug.h>
+
+#include "atmega128rfa1-spec.h"
+#include "register.h"
+#include "framebuffer.h"
 
 namespace armarow {
     namespace phy {

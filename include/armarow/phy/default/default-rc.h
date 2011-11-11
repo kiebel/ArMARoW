@@ -36,14 +36,12 @@
  * $Id$
  *
  ******************************************************************************/
-#ifndef __ARMAROW_RADIO_CONTROLLER_h__
-#define __ARMAROW_RADIO_CONTROLLER_h__
-#define ARMAROW_DEBUG_DISABLE
+#pragma once
 
-#include "armarow/phy/default/default-spec.h"
-#include "armarow/debug.h"
-#include "avr-halib/share/delay.h"
-#include "avr-halib/share/delegate.h"
+#include <avr-halib/share/delay.h>
+#include <avr-halib/share/delegate.h>
+#include <armarow/debug.h>
+#include "default-spec.h"
 
 namespace armarow {
     namespace phy {
@@ -646,5 +644,3 @@ namespace armarow {
         };
     }; // end namespace phy
 }; // end namespace armarow
-
-#endif  //__ARMAROW_RADIO_CONTROLLER_h__

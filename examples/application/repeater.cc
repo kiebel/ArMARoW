@@ -42,13 +42,13 @@
  *          regard any MAC protocol.
  */
 /* === includes ============================================================= */
-#include "platform-cfg.h"               // platform dependent software config
-#include "avr-halib/share/delay.h"      // delays and timings
+#include <platform-cfg.h>               // platform dependent software config
+#include <avr-halib/share/delay.h>      // delays and timings
 
-#include "armarow/armarow.h"            // main ArMARoW include
-#include "armarow/debug.h"              // ArMARoW logging and debugging
-#include "armarow/phy/phy.h"            // physical layer
-#include "idler.h"
+#include <armarow/armarow.h>            // main ArMARoW include
+#include <armarow/debug.h>              // ArMARoW logging and debugging
+#include <armarow/phy/phy.h>            // physical layer
+#include <idler.h>
 /* === globals ============================================================== */
 platform::config::mob_t message = {0,{0}};
 platform::config::rc_t  rc;             // radio controller
@@ -90,5 +90,5 @@ int main() {
 
     init();                             // initialize radio controller
 
-	Idler::idle();
+    Idler::idle();
 }
