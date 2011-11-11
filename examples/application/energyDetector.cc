@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * Copyright (c) 2010 Thomas    Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
- * 				 2011 Christoph Steup  <steup@ivs.cs.uni-magdeburg.de>
+ *               2011 Christoph Steup  <steup@ivs.cs.uni-magdeburg.de>
  * All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -59,10 +59,10 @@ UseInterrupt(SIG_OUTPUT_COMPARE1A);
 
 struct MyClockConfig
 {
-	typedef uint16_t TickValueType;
-	typedef Frequency<1> TargetFrequency;
-	typedef CPUClock TimerFrequency;
-	typedef avr_halib::regmaps::local::Timer1 Timer;
+    typedef uint16_t TickValueType;
+    typedef Frequency<1> TargetFrequency;
+    typedef CPUClock TimerFrequency;
+    typedef avr_halib::regmaps::local::Timer1 Timer;
 };
 
 typedef avr_halib::drivers::Clock<MyClockConfig> Clock;
@@ -80,10 +80,11 @@ void callback_recv() {
         << PROGMEMSTRING(", [DATA: [LENGTH: ") << (int32_t)message.size
         << PROGMEMSTRING("], [CONTENT: \"");
 
-	log::emit() << ((uint32_t*)message.payload)[0];
+    log::emit()
+        << ((uint32_t*)message.payload)[0]
     log::emit()
         << PROGMEMSTRING("\"]]]")
-		<< log::endl;*/
+        << log::endl;*/
 }
 /*! \brief  Initializes the physical layer.*/
 void init() {
@@ -99,16 +100,16 @@ int main() {
         << PROGMEMSTRING("Starting EnergyDetector!")
         << log::endl << log::endl;
 
-    init();                             // initialize famouso
+    init();                             // initialize
 
-	uint8_t energyLevel=0;
-	while(true){
-		rc.doED(energyLevel);
-		Clock::Time t;
-		clock.getTime(t);
-		if(energyLevel)
-			log::emit() << t.ticks << " " << t.microTicks << " " << (uint16_t)energyLevel << log::endl;
-	}
+    uint8_t energyLevel=0;
+    while(true){
+        rc.doED(energyLevel);
+        Clock::Time t;
+        clock.getTime(t);
+        if(energyLevel)
+            log::emit() << t.ticks << " " << t.microTicks << " " << (uint16_t)energyLevel << log::endl;
+    }
 
-	return 0;
+    return 0;
 }

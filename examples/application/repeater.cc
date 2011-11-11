@@ -63,14 +63,14 @@ void callback_recv() {
 }
 
 void send(){
-	if ( counter ) {
-		rc.setStateTRX(armarow::PHY::tx_on);
+    if ( counter ) {
+        rc.setStateTRX(armarow::PHY::tx_on);
         rc.send(message);
         ::logging::log::emit()
-			<< PROGMEMSTRING("Send message ") << (int32_t)counter
+            << PROGMEMSTRING("Send message ") << (int32_t)counter
             << ::logging::log::endl;
         counter--;
-	}
+    }
 }
 
 /*! \brief  Initializes the physical layer.*/
@@ -79,7 +79,7 @@ void init() {
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
     rc.setStateTRX(armarow::PHY::rx_on);
     rc.onReceive.bind<callback_recv>();
-	eventSource.registerCallback<send>();
+    eventSource.registerCallback<send>();
 }
 /* === main ================================================================= */
 int main() {

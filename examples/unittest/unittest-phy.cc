@@ -196,7 +196,7 @@ void case_send() {
     rc.setStateTRX(armarow::PHY::tx_on);
     assert(rc.send_blocking(src) == armarow::PHY::invalid_parameter);
     rc.setStateTRX(armarow::PHY::tx_on);
-	assert(rc.send(src) == armarow::PHY::invalid_parameter);
+    assert(rc.send(src) == armarow::PHY::invalid_parameter);
     // send message ----------------------------------------
     src.size = 10;
     rc.setStateTRX(armarow::PHY::tx_on);

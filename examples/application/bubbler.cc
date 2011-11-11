@@ -55,30 +55,28 @@ TimeTriggeredEventSource eventSource;
 /* === functions ============================================================ */
 /*! \brief  Initializes the physical layer.*/
 void send(){
-	rc.setStateTRX(armarow::PHY::tx_on);
+    rc.setStateTRX(armarow::PHY::tx_on);
     rc.send(message);
-	::logging::log::emit() << PROGMEMSTRING("Sending message ") 
-		<< ((uint32_t*)message.payload)[0]++ << ::logging::log::endl;
+    ::logging::log::emit() << PROGMEMSTRING("Sending message ") 
+        << ((uint32_t*)message.payload)[0]++ << ::logging::log::endl;
 }
 
 void init() {
-	message.size=sizeof(uint32_t);
-	((uint32_t*)message.payload)[0]=0;
+    message.size=sizeof(uint32_t);
+    ((uint32_t*)message.payload)[0]=0;
     rc.init();
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
 }
 /* === main ================================================================= */
 int main() {
-	eventSource.registerCallback<send>();
+    eventSource.registerCallback<send>();
     sei();                              // enable interrupts
     ::logging::log::emit()
         << PROGMEMSTRING("Starting bubbler (repeated send of the same message)!")
         << ::logging::log::endl << ::logging::log::endl;
+    init();                            // initialize
 
-    init();                            // initialize famouso
-	
-	
-	Idler::idle();
+    Idler::idle();
 
-	return 0;
+    return 0;
 }

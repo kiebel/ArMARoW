@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * Copyright (c) 2010 Thomas    Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
- * 				 2011 Christoph Steup  <steup@ivs.cs.uni-magdeburg.de>
+ *               2011 Christoph Steup  <steup@ivs.cs.uni-magdeburg.de>
  * All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -55,10 +55,10 @@ UseInterrupt(SIG_OUTPUT_COMPARE3A);
 
 struct MyClockConfig
 {
-	typedef uint16_t TickValueType;
-	typedef Frequency<1> TargetFrequency;
-	typedef CPUClock TimerFrequency;
-	typedef avr_halib::regmaps::local::Timer3 Timer;
+    typedef uint16_t TickValueType;
+    typedef Frequency<1> TargetFrequency;
+    typedef CPUClock TimerFrequency;
+    typedef avr_halib::regmaps::local::Timer3 Timer;
 };
 
 typedef avr_halib::drivers::Clock<MyClockConfig> Clock;
@@ -81,25 +81,25 @@ void init() {
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
     rc.setStateTRX(armarow::PHY::rx_on);
     rc.onReceive.bind<callback_recv>();
-	uint8_t value=3;
-	rc.setAttribute(armarow::PHY::phyCCAMode, &value);
-	value=15;
-	rc.setAttribute(armarow::PHY::phyCCAThres, &value);
+    uint8_t value=3;
+    rc.setAttribute(armarow::PHY::phyCCAMode, &value);
+    value=15;
+    rc.setAttribute(armarow::PHY::phyCCAThres, &value);
 }
 
 Clock::Time operator-(const Clock::Time& t1, const Clock::Time& t2)
 {
-	Clock::Time t;
-	t.ticks=t1.ticks-t2.ticks;
-	if(t1.microTicks<t2.microTicks)
-	{
-		t.ticks--;
-		t.microTicks=Clock::config::microTickMax-t2.microTicks+t1.microTicks;
-	}
-	else
-		t.microTicks=t1.microTicks-t2.microTicks;
+    Clock::Time t;
+    t.ticks=t1.ticks-t2.ticks;
+    if(t1.microTicks<t2.microTicks)
+    {
+        t.ticks--;
+        t.microTicks=Clock::config::microTickMax-t2.microTicks+t1.microTicks;
+    }
+    else
+        t.microTicks=t1.microTicks-t2.microTicks;
 
-	return t;
+    return t;
 }
 
 /* === main ================================================================= */
@@ -107,30 +107,29 @@ int main() {
     sei();                              // enable interrupts
     log::emit()
         << PROGMEMSTRING("Starting CCATest!")
-		<< " ps: " << Clock::config::selectedPrescaler::value
+        << " ps: " << Clock::config::selectedPrescaler::value
         << log::endl << log::endl;
 
-    init();                             // initialize famouso
+    init();                             // initialize
 
-	while(true){
-		Clock::Time t2;
-		clock.getTime(t);
-		uint8_t ccaValue;
-		armarow::PHY::State state=rc.doCCA(ccaValue);
-		clock.getTime(t2);
-		if(state==armarow::PHY::success)
-		{
-			if(!ccaValue)
-			{
-				log::emit() << t.ticks << ", " << t.microTicks << ": " << "busy" << log::endl;
-				log::emit() << "cca duration: " << (t2-t).ticks << ", " << (t2-t).microTicks << log::endl;
-			}
-		}
-		else
-			log::emit() << "error" << log::endl;
+    while(true){
+        Clock::Time t2;
+        clock.getTime(t);
+        uint8_t ccaValue;
+        armarow::PHY::State state=rc.doCCA(ccaValue);
+        clock.getTime(t2);
+        if(state==armarow::PHY::success)
+        {
+            if(!ccaValue)
+            {
+                log::emit() << t.ticks << ", " << t.microTicks << ": " << "busy" << log::endl;
+                log::emit() << "cca duration: " << (t2-t).ticks << ", " << (t2-t).microTicks << log::endl;
+            }
+        }
+        else
+            log::emit() << "error" << log::endl;
+        }
 
-	}
-
-	return 0;
+    return 0;
 }
 
