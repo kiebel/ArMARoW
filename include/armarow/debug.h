@@ -40,6 +40,9 @@
  ******************************************************************************/
 #pragma once
 
+#include <platform-cfg.h> //this should deliver a configure log
+#include <stdlib.h>
+
 /*! \defgroup UnitTest Logging and Debugging
  *  \todo documentation of the Group Logging and Debugging
  */
@@ -49,19 +52,16 @@
 #define FUNCTION_SIGNATURE  __FUNCSIG__
 #endif
 
-#include <stdlib.h>
-#include <logging/logging.h>
-
 #ifdef ARMAROW_DEBUG_DISABLE
-LOGGING_DISABLE_LEVEL(::logging::Trace);
-LOGGING_DISABLE_LEVEL(::logging::Info);
+LOGGING_DISABLE_LEVEL(::log::Trace);
+LOGGING_DISABLE_LEVEL(::log::Info);
 #endif
 
 #define TRACE_FUNCTION do {                                         \
-    ::logging::log::emit< ::logging::Trace>()                       \
+    log::emit< log::Trace >()                                       \
        << '"' << FUNCTION_SIGNATURE << '"'                          \
        << PROGMEMSTRING(" -> "__FILE__":" __TOSTR__(__LINE__)" ")   \
-       << ::logging::log::endl;                                     \
+       << log::endl;                                                \
 } while(0)
 
 #if !defined(ASSERT_FAILED_HANDLER)
@@ -72,11 +72,10 @@ LOGGING_DISABLE_LEVEL(::logging::Info);
  * \param file File which contains assert
  * \param line Line which contains assert
  *
- * Writes error message to ::logging::log
+ * Writes error message to log
  */
 template<typename ExprT, typename FileT, typename LineT> static inline
 void __assert_failed_handler(ExprT expr, FileT file, LineT line) {
-    using ::logging::log;
     log::emit() << file << ':' << line
         << PROGMEMSTRING(": Assertion '") << expr
         << PROGMEMSTRING("' failed.") << log::endl;

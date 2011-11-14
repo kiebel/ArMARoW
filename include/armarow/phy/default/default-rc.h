@@ -196,13 +196,13 @@ namespace armarow {
                          *  \param[in] pData pointer to the buffer
                          */
                         void writeTxFifo(uint8_t pSize, const uint8_t *pData) {
-                            ::logging::log::emit() << "\t[[" << (uint16_t)pSize << "] ['";
+                            log::emit() << "\t[[" << (uint16_t)pSize << "] ['";
                             this->frame.size = pSize;
                             for (uint8_t index = 0; index < pSize; index++) {
                                 this->frame.payload[index] = pData[index];
-                                ::logging::log::emit() << (char)pData[index];
+                                log::emit() << (char)pData[index];
                             }
-                            ::logging::log::emit() << "']]" << ::logging::log::endl;
+                            log::emit() << "']]" << log::endl;
                         }
                         /*! \brief  Writes data into the TXFIFO and calculate
                          *          CRC (if not supported by the radio

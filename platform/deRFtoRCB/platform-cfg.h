@@ -36,8 +36,9 @@
  *    $Id$
  *
  ******************************************************************************/
-/*! \brief  Configuration for the AT86RF230 radio controller.                 */
+/*! \brief  Configuration for the ATMEGA128RFA1 integrated radio controller.  */
 /* === includes ============================================================= */
+#pragma once
 #include "platform.h"
 #include <armarow/phy/atmega128rfa1/atmega128rfa1-rc.h>     // radio controller
 /* === types ================================================================ */

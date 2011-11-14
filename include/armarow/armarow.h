@@ -42,6 +42,3 @@
  *  Architecture for Medium Access Control and Routing Protocols in
  *  Wireless Sensor Networks
  */
-#ifndef NULL
-#   define NULL (void*)0
-#endif

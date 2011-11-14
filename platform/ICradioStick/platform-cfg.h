@@ -37,6 +37,7 @@
  ******************************************************************************/
 /*! \brief  Configuration for the AT86RF230 radio controller.                 */
 /* === includes ============================================================= */
+#pragma once
 #include "platform.h"
 #include <armarow/phy/at86rf230/at86rf230-rc.h>     // radio controller
 /* === types ================================================================ */
