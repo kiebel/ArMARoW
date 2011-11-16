@@ -51,7 +51,7 @@ namespace mac {
             }
 
             void print() {
-                ::logging::log::emit() 
+                ::logging::log::emit()
                     << "receivedACK: " << (int)receivedACK << ::logging::log::endl
                     << "handlerWaiting: " << (int)handlerWaiting << ::logging::log::endl
                     << "RetransmissonCount: " << (int)BackoffTiming.RetransmissonCount << ::logging::log::endl
@@ -85,7 +85,7 @@ namespace mac {
                     lastErrorCode      = success;
 
                     if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) {
-                        ::logging::log::emit() 
+                        ::logging::log::emit()
                             << "received ACK for message " << (int) expectedSequenceNumber << ::logging::log::endl
                             << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: "
                             << (int) timeout_duration_in_ms << ::logging::log::endl;

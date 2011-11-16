@@ -30,7 +30,7 @@ namespace mac {
     typedef MessageFrameMAC mob_t;
     typedef Clock<ClockConfig> MAC_Clock; //FIXME use appropriated name
     typedef void* AttributType;
-    typedef uint16_t DeviceAddress; 
+    typedef uint16_t DeviceAddress;
 
     /*! \brief Configuration of the acknowledgment timeout timer.
      *

@@ -2,8 +2,8 @@
 
 namespace armarow {
 namespace mac {
-    typedef uint16_t DeviceAddress; 
-    typedef uint16_t PANAddress; 
+    typedef uint16_t DeviceAddress;
+    typedef uint16_t PANAddress;
 
     enum FrameTypeIEEE {
         beacon         = 0,
@@ -11,7 +11,7 @@ namespace mac {
         acknowledgment = 2,
         command        = 3
     };
-    enum MessageType{ rts, cts, data, ack }; 
+    enum MessageType{ rts, cts, data, ack };
     struct FrameControlFieldIEEE {
         uint16_t frametype            : 3;
         uint16_t securityenabled      : 1;
@@ -55,7 +55,7 @@ namespace mac {
 
         /*! \brief Prints out the format of the frame header using the logging framework.*/
         void printFormat() {
-            ::logging::log::emit() 
+            ::logging::log::emit()
                 << "SIZE OF FrameHeaderMAC:" << sizeof(FrameHeaderMAC) << ::logging::log::endl
                 << "SIZE OF FrameControlFieldIEEE: " <<  sizeof(FrameControlFieldIEEE) << ::logging::log::endl
                 << "SIZE OF sequencenumber: " << sizeof(sequencenumber) << ::logging::log::endl << ::logging::log::endl
@@ -67,7 +67,7 @@ namespace mac {
 
         /*! \brief Prints out the content of a frame header using the logging framework.*/
         void printContent() {
-            ::logging::log::emit() 
+            ::logging::log::emit()
                 << "FrameHeaderMAC:" << ::logging::log::endl
                 << "message_type: " << (int) controlfield.frametype << ::logging::log::endl << ::logging::log::endl
                 << "ackrequest: " << (int) controlfield.ackrequest << ::logging::log::endl << ::logging::log::endl
@@ -99,15 +99,15 @@ namespace mac {
                 new (&header) FrameHeaderMAC( MessageType::data, source, destination); //FIXME what is happening here?
 
                 header.sequencenumber = 0;
-                header.dest_pan       = 0; 
+                header.dest_pan       = 0;
                 header.source_pan     = 0;
                 header.controlfield.init();
                 setDefaultPayload();
                 size                  = 0;
-	        }
+            }
             explicit MessageFrameMAC(FrameTypeIEEE msgtyp, DeviceAddress source, DeviceAddress destination, uint8_t* dataBuffer, uint8_t dataSize) {
                 if ( dataSize > (platform::config::rc_t::info::frame - sizeof(FrameHeaderMAC)) ) { //FIXME move to appropriate enum payloadSize
-                    ::logging::log::emit() 
+                    ::logging::log::emit()
                         << "FATAL ERROR: FAILED to create MessageFrameMAC object, since payload is to small"
                         << ::logging::log::endl;
                     return;
@@ -217,7 +217,7 @@ namespace mac {
                     size = sizeof(T);
                 return 0; //FIXME what is a return value needed for?
             }
-    
+
             /*! \brief Loads an object of arbitrary type from the message payload.*/
             template <class T>
             int readObject(T& object) {
@@ -228,14 +228,14 @@ namespace mac {
                     objectData[index] = payload[index];
                 return 0; //FIXME what is a return value needed for?
             }
-    	
+
             platform::config::mob_t* getPhysicalLayerMessage() {
                 size += sizeof(FrameHeaderMAC);
                 return (platform::config::mob_t*)this; //FIXME use appropriated cast
             }
-            
+
             /*! \brief Converts a message from the Physical Lyaer into a message of the Medium Access Layer (MAC).
-             * 
+             *
              *  \param message Physical Layer message
              *  \return a valid MessageFrameMAC upon successful decoding, otherwise NULL.
              */
@@ -248,7 +248,7 @@ namespace mac {
             explicit MessageFrameMAC(platform::config::mob_t& physical_layer_message, bool& decoding_was_successful) {
                 if ( physical_layer_message.size < sizeof(header) ) {
                     decoding_was_successful = false;
-                    ::logging::log::emit() 
+                    ::logging::log::emit()
                         << "ERROR: MessageFrameMAC constructor: physical Message to short, to contain a FrameHeaderMAC!"
                         << ::logging::log::endl; << "Minimal Size: " << sizeof(header) << " size of current MAC_Frame: "
                         << (int) physical_layer_message.size << ::logging::log::endl << ::logging::log::endl;

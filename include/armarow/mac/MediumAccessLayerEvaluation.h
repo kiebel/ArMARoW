@@ -20,20 +20,20 @@ namespace armarow {
 namespace mac {
 
     /*! \brief Don't know.*/
-	enum MAC_EVALUATION_ACTIVATION_STATE {
+        enum MAC_EVALUATION_ACTIVATION_STATE {
         Enable  = 0, /*!< Don't know*/
         Disable = 1  /*!< Don't know*/
     };
-	/*! \brief Clock configuration for the evaluation feature.
+    /*! \brief Clock configuration for the evaluation feature.
      *
      *  Will configure a clock that causes an interrupt every second calling a run to completion Task.
      */
-	struct EvaluationClockConfig {
-		typedef uint16_t TickValueType;
-		typedef Frequency<1> TargetFrequency;
-		typedef CPUClock TimerFrequency;
-		typedef local::Timer4 Timer;
-	};
+    struct EvaluationClockConfig {
+        typedef uint16_t TickValueType;
+        typedef Frequency<1> TargetFrequency;
+        typedef CPUClock TimerFrequency;
+        typedef local::Timer4 Timer;
+    };
 
     struct MACEvaluationInterface {
         /*! \brief Increases the internal byte count by a given amount (e.g. to measuere netto bandwith).*/
