@@ -29,8 +29,8 @@ namespace mac {
                 BackoffExponend++;
 
                 if(MAC_LAYER_VERBOSE_OUTPUT) {
-                    ::logging::log::emit()
-                        << "random waiting time in ms: " << (int) random_waitingtime << ::logging::log::endl;
+                    log::emit()
+                        << "random waiting time in ms: " << (int) random_waitingtime << log::endl;
                 }
 
                 return (uint16_t)backoffTime;

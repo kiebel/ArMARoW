@@ -10,12 +10,11 @@
 #include <avr-halib/share/interruptLock.h>
 #include <stdlib.h>
 
-#include "../common.h" //FIXME use appropriated path
 #include "platform-cfg.h"  //FIXME what is that include needed for
-#include "armarow/armarow.h"
-#include "armarow/debug.h"
-#include "armarow/phy/phy.h"
-#include "mac_evaluation.h"
+#include <armarow/armarow.h>
+#include <armarow/debug.h>
+#include <armarow/phy/phy.h>
+#include "MediumAccessLayerEvaluation.h"
 #include "MediumAccessLayerMessage.h"
 
 UseInterrupt(SIG_OUTPUT_COMPARE1A);
@@ -101,29 +100,28 @@ namespace mac {
 
             messageObject.header.sequencenumber = getGlobalSequenceNumber();
             delay_ms(waitingtime); //FIXME why are we waiting? waiting time seems influenced by the logging!!
-            ::logging::log::emit()
-                << ::logging::log::endl << ::logging::log::endl << "Sending MessageFrameMAC... " << ::logging::log::endl;
+            log::emit() << log::endl << log::endl << "Sending MessageFrameMAC... " << log::endl;
             messageObject.print();
 
             PHYL::setStateTRX(armarow::PHY::rx_on);
             armarow::PHY::State status = PHYL::doCCA(ccaValue);
             //FIXME Most of this IF construct seems to be for logging purposes only, do we need it that way?
             if ( status == armarow::PHY::idle ) {
-                ::logging::log::emit()
-                    << PROGMEMSTRING("Medium frei!!!") << ::logging::log::endl << ::logging::log::endl;
+                log::emit()
+                    << PROGMEMSTRING("Medium frei!!!") << log::endl << log::endl;
             } else if (status==armarow::PHY::busy) {
-                ::logging::log::emit()
-                    << PROGMEMSTRING("Medium belegt!!!") << ::logging::log::endl << ::logging::log::endl;
+                log::emit()
+                    << PROGMEMSTRING("Medium belegt!!!") << log::endl << log::endl;
                 return -1; //FIXME do we have named error states for send
             } else if (status==armarow::PHY::trx_off) {
-                ::logging::log::emit()
-                    << PROGMEMSTRING("Controller nicht im Receive State!!!") << ::logging::log::endl
-                    << ::logging::log::endl;
+                log::emit()
+                    << PROGMEMSTRING("Controller nicht im Receive State!!!") << log::endl
+                    << log::endl;
                 return -1; //FIXME do we have named error states for send
             } else {
-                ::logging::log::emit()
+                log::emit()
                     << PROGMEMSTRING("armarow::PHY::State return Value of Clear channel Assessment not in {busy,idle,trx_off}!!!")
-                    << ::logging::log::endl << ::logging::log::endl;
+                    << log::endl << log::endl;
                 return -1; //FIXME do we have named error states for send
             }
             PHYL::setStateTRX(armarow::PHY::tx_on);

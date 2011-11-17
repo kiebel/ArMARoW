@@ -2,7 +2,7 @@
 
 #include "armarow/mac/mac_csma_ca.h"
 
-#include "armarow/mac/util.h"
+#include "../util.h"
 
 //#include <avr-halib/avr/basicADC.h>
 

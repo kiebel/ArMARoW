@@ -73,12 +73,12 @@ namespace mac {
                 handlerACK.bufferACK.header.controlfield.ackrequest = 0;
 
                 if ( MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT ) {
-                    ::logging::log::emit()
-                        << "sending ACK..." << ::logging::log::endl
-                        << "====> start ACK msg..." << ::logging::log::endl << ::logging::log::endl;
+                    log::emit()
+                        << "sending ACK..." << log::endl
+                        << "====> start ACK msg..." << log::endl << log::endl;
                     handlerACK.bufferACK.print();
-                    ::logging::log::emit()
-                        << "====> end ACK msg..." << ::logging::log::endl << ::logging::log::endl;
+                    log::emit()
+                        << "====> end ACK msg..." << log::endl << log::endl;
                 }
 
                 handlerACK.handlerReady = true;
@@ -99,17 +99,17 @@ namespace mac {
                     if ( handlerACK.handlerWaiting == true ) {
                         messageObject = handlerACK.bufferACK; //FIXME yet another copy
                     }
-                    if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "enter send ISR" << ::logging::log::endl;
+                    if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "enter send ISR" << log::endl;
 
                     one_shot_timer.stop(); //FIXME whats the purpose of this timer?
 
-                    if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "do CCA" << ::logging::log::endl;
+                    if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "do CCA" << log::endl;
 
                     status = PHYL::doCCA(ccaValue);
 
-                    ::logging::log::emit() << "finished CCA" << ::logging::log::endl;
+                    log::emit() << "finished CCA" << log::endl;
                     if ( status == armarow::PHY::success && ccaValue ) {
-                        if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "sending..." << ::logging::log::endl;
+                        if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "sending..." << log::endl;
                         if ( MAC_LAYER_VERBOSE_OUTPUT ) messageObject.print();
 
                         PHYL::setStateTRX( armarow::PHY::tx_on );
@@ -130,7 +130,7 @@ namespace mac {
                         }
                     } else {
                         one_shot_timer.stop();
-                        if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << PROGMEMSTRING("Medium busy...") << ::logging::log::endl;
+                        if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << PROGMEMSTRING("Medium busy...") << log::endl;
                         if ( handlerACK.handlerWaiting == true ) {
                             uint32_t waitingtime = (((uint32_t)rand() * 20) / (0x8000)); //FIXME should be a method
                             one_shot_timer.start((uint16_t)waitingtime);
@@ -139,14 +139,14 @@ namespace mac {
                         if ( handlerACK.BackoffTiming.exceededBackofCount() ) {
                             messageReadyFlag = false;
                             handlerACK.lastErrorCode = handlerACK::MEDIUM_BUSY;
-                            if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "number of backoffs has exeeded..." << ::logging::log::endl;
+                            if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "number of backoffs has exeeded..." << log::endl;
                             handlerACK.BackoffTiming.reset();
                             if ( !onSendCompleted.isEmpty() ) onSendCompleted();
                         } else {
                             one_shot_timer.start(handlerACK.BackoffTiming.getBackoffTimeMS());
                         }
                     }
-                    if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "leave send ISR" << ::logging::log::endl;
+                    if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "leave send ISR" << log::endl;
                 }
             }
  
@@ -174,10 +174,10 @@ namespace mac {
 
                     if ( handlerACK.BackoffTiming.RetransmissionsCount <= handlerACK.BackoffTiming.MaxRetransmissionCount ) {
                         if ( MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT ) {
-                            ::logging::log::emit()
+                            log::emit()
                                 << "retry transmitting... attempt number "
                                 << (int) handlerACK.BackoffTiming.RetransmissionCount
-                                << ::logging::log::endl;
+                                << log::endl;
                         }
                         handlerACK.BackoffTiming.BackoffExponend = MACCFG::MinBackoffExponend;
                         sendMessage();
@@ -185,9 +185,9 @@ namespace mac {
                         handlerACK.lastErrorCode = handlerACK::timeout;
                         messageReadyFlag = false;
                         if ( MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT ) {
-                            ::logging::log::emit()
-                                << "TIMEOUT..." << ::logging::log::endl
-                                << "number of retries has exeeded..." << ::logging::log::endl;
+                            log::emit()
+                                << "TIMEOUT..." << log::endl
+                                << "number of retries has exeeded..." << log::endl;
                         }
                         if ( !onSendCompleted.isEmpty() ) onSendCompleted();
                     }
@@ -198,13 +198,13 @@ namespace mac {
             void receiveMessage() {
                 avr_halib::locking::GlobalIntLock lock;
 
-                if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "entered receive message interupt" << ::logging::log::endl;
+                if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "entered receive message interupt" << log::endl;
 
                 PHYL::receive(bufferPhyRECV);
                 messageWaitingFlag = true;
                 MessageFrameMAC* messageObject = MessageFrameMAC::create_MAC_Message_from_Physical_Message(bufferPhyRECV);
                 if ( messageObject == NULL ) {
-                    if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
+                    if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "leave receive ISR" << log::endl;
                     messageWaitingFlag = false;
                     return;
                 }
@@ -213,14 +213,14 @@ namespace mac {
                 //FIXME move filtering related functionality into MessageFilter
                 if ( MACCFG::modePromiscuous == 0 ) {
                     if ( messageFLT.isBroadcast(bufferRECV) || messageFLT.isDestination(bufferRECV) ) {
-                        if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "accepted message..." << ::logging::log::endl;
+                        if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "accepted message..." << log::endl;
                     } else {
                         if ( MAC_LAYER_VERBOSE_OUTPUT) {
-                            ::logging::log::emit() << "dropped message...("
+                            log::emit() << "dropped message...("
                                 << (int) bufferRECV.header.controlfield.frametype << ","
                                 << (int) bufferRECV.header.sequencenumber << ","
-                                << (int) bufferRECV.header.source_adress << ")" << ::logging::log::endl
-                                << "leave receive ISR" << ::logging::log::endl;
+                                << (int) bufferRECV.header.source_adress << ")" << log::endl
+                                << "leave receive ISR" << log::endl;
                         }
                         messageWaitingFlag = false;
                         return;
@@ -228,11 +228,11 @@ namespace mac {
                     if ( ENABLE_FILTERING_OF_DUPLICATES ) { //FIXME maybe this could be a template feature of MessageFilter
                         if ( messageFLT.isDuplicate(bufferRECV) ) {
                             if ( MAC_LAYER_VERBOSE_OUTPUT ) {
-                                ::logging::log::emit()
+                                log::emit()
                                     << "filtered out duplicate message...(" << (int) messageFLT.lastSequenceNumber
                                     << "," << (int) messageFLT.lastSourceID << ","
-                                    << (int) messageFLT.lastSourcePANId << ")" << ::logging::log::endl
-                                    << "leave receive ISR" << ::logging::log::endl;
+                                    << (int) messageFLT.lastSourcePANId << ")" << log::endl
+                                    << "leave receive ISR" << log::endl;
                             }
 
                             messageWaitingFlag = false;
@@ -244,9 +244,9 @@ namespace mac {
 
                     if(bufferRECV.header.controlfield.frametype != Data) {
                         if ( MAC_LAYER_VERBOSE_OUTPUT ) {
-                            ::logging::log::emit() << "===> got meta msg..." << ::logging::log::endl;
+                            log::emit() << "===> got meta msg..." << log::endl;
                             bufferRECV.print();
-                            ::logging::log::emit() << "===> end meta msg..." << ::logging::log::endl;
+                            log::emit() << "===> end meta msg..." << log::endl;
                         }
                         messageWaitingFlag = false;
                         if ( bufferRECV.header.controlfield.frametype == Acknowledgment ) {
@@ -265,12 +265,12 @@ namespace mac {
                     messageWaitingFlag = true;
 
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) {
-                        ::logging::log::emit()
-                            << "leaving receive message interrupt, calling delegate" << ::logging::log::endl;
+                        log::emit()
+                            << "leaving receive message interrupt, calling delegate" << log::endl;
                     }
                     if ( !onMessageReceive.isEmpty() ) onMessageReceive();
                 }
-                if ( MAC_LAYER_VERBOSE_OUTPUT ) ::logging::log::emit() << "leave receive ISR" << ::logging::log::endl;
+                if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "leave receive ISR" << log::endl;
             }
            //============== END Interrupt Service Routines ===============================================================================
 

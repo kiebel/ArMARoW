@@ -2,7 +2,7 @@
 
 #include "armarow/mac/mac_csma_ca.h"
 
-#include "armarow/mac/util.h"
+#include "../util.h"
 
 //using avr_halib::drivers::Clock;
 

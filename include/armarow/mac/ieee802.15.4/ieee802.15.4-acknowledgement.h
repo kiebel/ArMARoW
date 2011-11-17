@@ -51,12 +51,12 @@ namespace mac {
             }
 
             void print() {
-                ::logging::log::emit()
-                    << "receivedACK: " << (int)receivedACK << ::logging::log::endl
-                    << "handlerWaiting: " << (int)handlerWaiting << ::logging::log::endl
-                    << "RetransmissonCount: " << (int)BackoffTiming.RetransmissonCount << ::logging::log::endl
-                    << "timeout_counter_in_ms: " << (int)timeout_counter_in_ms << ::logging::log::endl
-                    << "timeout_counter_in_ms: " << (int)receivedTimeout << ::logging::log::endl;
+                log::emit()
+                    << "receivedACK: " << (int)receivedACK << log::endl
+                    << "handlerWaiting: " << (int)handlerWaiting << log::endl
+                    << "RetransmissonCount: " << (int)BackoffTiming.RetransmissonCount << log::endl
+                    << "timeout_counter_in_ms: " << (int)timeout_counter_in_ms << log::endl
+                    << "timeout_counter_in_ms: " << (int)receivedTimeout << log::endl;
             }
 
             /*! \brief  Handles received acknowledgements by calling onSendCompleted for expected acknowledgements.
@@ -70,10 +70,10 @@ namespace mac {
              */
             void receivedACK(MessageFrameMAC& acknowledgement, volatile bool& messageReadyFlag, Delegate<>& onSendCompleted, layer& alayer) {
                 if(MAC_LAYER_VERBOSE_OUTPUT) {
-                    ::logging::log::emit()
-                        << "ack was received, validating..." << ::logging::log::endl
-                        << "last message sequence number: " << (int) expectedSequenceNumber << ::logging::log::endl
-                        << "ack sequence number: " << (int) acknowledgement.header.sequencenumber << ::logging::log::endl;
+                    log::emit()
+                        << "ack was received, validating..." << log::endl
+                        << "last message sequence number: " << (int) expectedSequenceNumber << log::endl
+                        << "ack sequence number: " << (int) acknowledgement.header.sequencenumber << log::endl;
                 }
                 if ( expectedSequenceNumber == acknowledgement.header.sequencenumber ) {
                     alayer.reset_acknowlegement_timer(); //FIXME why is acknowledgement handling separated from the acknowledgement timer
@@ -85,10 +85,10 @@ namespace mac {
                     lastErrorCode      = success;
 
                     if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) {
-                        ::logging::log::emit()
-                            << "received ACK for message " << (int) expectedSequenceNumber << ::logging::log::endl
+                        log::emit()
+                            << "received ACK for message " << (int) expectedSequenceNumber << log::endl
                             << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: "
-                            << (int) timeout_duration_in_ms << ::logging::log::endl;
+                            << (int) timeout_duration_in_ms << log::endl;
                     }
 
                     if ( !onSendCompleted.isEmpty() ) onSendCompleted();
@@ -103,7 +103,7 @@ namespace mac {
              *  \todo remove the unnecessary return value
              */
             ack_error_code initializeAcknowledgementTimeout(MessageFrameMAC& messageObject, layer& aLayer) {
-                if (MAC_LAYER_VERBOSE_OUTPUT) ::logging::log::emit() << "wait for ACK..." << ::logging::log::endl;
+                if (MAC_LAYER_VERBOSE_OUTPUT) log::emit() << "wait for ACK..." << log::endl;
 
                 expectedSequenceNumber   = messageObject.header.sequencenumber;
                 destination_id_of_last_transmitted_message    = messageObject.header.dest_adress;

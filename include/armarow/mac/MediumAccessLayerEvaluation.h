@@ -8,10 +8,9 @@
 #include <avr-halib/share/delay.h>          //FIXME is this include used
 #include <avr-halib/share/interruptLock.h>  //FIXME is this include used
 #include <stdlib.h>                         //FIXME is this include used
-#include "../common.h"                      //FIXME use correct include if used at all?
-#include "armarow/armarow.h"                //FIXME are parts of ArMARoW used?
-#include "armarow/debug.h"                  //FIXME are debugging features used?
-#include "armarow/phy/phy.h"                //FIXME are parts of the physical layer used?
+#include <armarow/armarow.h>                //FIXME are parts of ArMARoW used?
+#include <armarow/debug.h>                  //FIXME are debugging features used?
+#include <armarow/phy/phy.h>                //FIXME are parts of the physical layer used?
 
 using avr_halib::drivers::Clock;
 using namespace avr_halib::regmaps;
@@ -54,7 +53,6 @@ namespace mac {
     template <>
     struct MACEvaluation<Enable> : public MACEvaluationInterface {
         Clock<EvaluationClockConfig> evaluationClock;
-        Led<Led0> led; //FIXME do we have a hardware independent way to use this feature?
         uint16_t bytesReceived;
         int uptimeSec;
 
@@ -71,8 +69,7 @@ namespace mac {
         }
         void flushByteCount() {
             avr_halib::locking::GlobalIntLock lock;
-            led.toggle();
-            ::logging::log::emit() << "uptime:\t" << uptimeSec << " sec" << ::logging::log::endl;
+            log::emit() << "uptime:\t" << uptimeSec << " sec" << log::endl;
             bytesReceived = 0; //FIXME should not the byte count be printed somewere, or be left out completely?
             uptimeSec++;
         }

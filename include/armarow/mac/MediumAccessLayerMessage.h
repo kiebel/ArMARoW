@@ -1,5 +1,7 @@
 #pragma once
 
+#include <armarow/common.h>
+
 namespace armarow {
 namespace mac {
     typedef uint16_t DeviceAddress;
@@ -55,27 +57,27 @@ namespace mac {
 
         /*! \brief Prints out the format of the frame header using the logging framework.*/
         void printFormat() {
-            ::logging::log::emit()
-                << "SIZE OF FrameHeaderMAC:" << sizeof(FrameHeaderMAC) << ::logging::log::endl
-                << "SIZE OF FrameControlFieldIEEE: " <<  sizeof(FrameControlFieldIEEE) << ::logging::log::endl
-                << "SIZE OF sequencenumber: " << sizeof(sequencenumber) << ::logging::log::endl << ::logging::log::endl
-                << "SIZE OF dest_pan: " << sizeof(dest_pan) << ::logging::log::endl
-                << "SIZE OF dest_adress: " << sizeof(dest_adress) << ::logging::log::endl
-                << "SIZE OF source_pan: " << sizeof(source_pan) << ::logging::log::endl
-                << "SIZE OF source_adress: " <<  sizeof(source_adress) << ::logging::log::endl;
+            log::emit()
+                << "SIZE OF FrameHeaderMAC:" << sizeof(FrameHeaderMAC) << log::endl
+                << "SIZE OF FrameControlFieldIEEE: " <<  sizeof(FrameControlFieldIEEE) << log::endl
+                << "SIZE OF sequencenumber: " << sizeof(sequencenumber) << log::endl << log::endl
+                << "SIZE OF dest_pan: " << sizeof(dest_pan) << log::endl
+                << "SIZE OF dest_adress: " << sizeof(dest_adress) << log::endl
+                << "SIZE OF source_pan: " << sizeof(source_pan) << log::endl
+                << "SIZE OF source_adress: " <<  sizeof(source_adress) << log::endl;
         }
 
         /*! \brief Prints out the content of a frame header using the logging framework.*/
         void printContent() {
-            ::logging::log::emit()
-                << "FrameHeaderMAC:" << ::logging::log::endl
-                << "message_type: " << (int) controlfield.frametype << ::logging::log::endl << ::logging::log::endl
-                << "ackrequest: " << (int) controlfield.ackrequest << ::logging::log::endl << ::logging::log::endl
-                << "sequencenumber: " << (int) sequencenumber << ::logging::log::endl << ::logging::log::endl
-                << "dest_pan: " << (int) dest_pan << ::logging::log::endl
-                << "dest_adress: " << (int) dest_adress << ::logging::log::endl
-                << "source_pan: " << (int) source_pan << ::logging::log::endl
-                << "source_adress: " <<  (int) source_adress << ::logging::log::endl;
+            log::emit()
+                << "FrameHeaderMAC:" << log::endl
+                << "message_type: " << (int) controlfield.frametype << log::endl << log::endl
+                << "ackrequest: " << (int) controlfield.ackrequest << log::endl << log::endl
+                << "sequencenumber: " << (int) sequencenumber << log::endl << log::endl
+                << "dest_pan: " << (int) dest_pan << log::endl
+                << "dest_adress: " << (int) dest_adress << log::endl
+                << "source_pan: " << (int) source_pan << log::endl
+                << "source_adress: " <<  (int) source_adress << log::endl;
         }
 
         explicit FrameHeaderMAC(platform::config::mob_t physical_layer_message) {} //FIXME
@@ -107,16 +109,16 @@ namespace mac {
             }
             explicit MessageFrameMAC(FrameTypeIEEE msgtyp, DeviceAddress source, DeviceAddress destination, uint8_t* dataBuffer, uint8_t dataSize) {
                 if ( dataSize > (platform::config::rc_t::info::frame - sizeof(FrameHeaderMAC)) ) { //FIXME move to appropriate enum payloadSize
-                    ::logging::log::emit()
+                    log::emit()
                         << "FATAL ERROR: FAILED to create MessageFrameMAC object, since payload is to small"
-                        << ::logging::log::endl;
+                        << log::endl;
                     return;
                 }
                 new (&header) FrameHeaderMAC( msgtyp, source, destination);
                 if ( (platform::config::rc_t::info::frame - sizeof(FrameHeaderMAC)) < dataSize ) { //FIXME seems unnecessary since already checked
-                    ::logging::log::emit()
+                    log::emit()
                         << "ERROR: MAC_Payload: number of bytes in databuffer does not fit in MAC_Payload! -> decrease size of databuffer or transmit multiple MessageFrameMACs!"
-                        << ::logging::log::endl;
+                        << log::endl;
                     return;
                 }
 
@@ -131,76 +133,76 @@ namespace mac {
                 }
             }
             void print() {
-                ::logging::log::emit() 
-                    << "FrameHeaderMAC:" << ::logging::log::endl
-                    << "message_type: " << (int) header.controlfield.frametype << ::logging::log::endl << ::logging::log::endl
-                    << "ackrequest: " << (int) header.controlfield.ackrequest << ::logging::log::endl << ::logging::log::endl
-                    << "sequencenumber: " << (int) header.sequencenumber << ::logging::log::endl << ::logging::log::endl
-                    << "dest_pan: " << (int) header.dest_pan << ::logging::log::endl
-                    << "dest_adress: " << (int) header.dest_adress << ::logging::log::endl
-                    << "source_pan: " << (int) header.source_pan << ::logging::log::endl
-                    << "source_adress: " <<  (int) header.source_adress << ::logging::log::endl;
+                log::emit()
+                    << "FrameHeaderMAC:" << log::endl
+                    << "message_type: " << (int) header.controlfield.frametype << log::endl << log::endl
+                    << "ackrequest: " << (int) header.controlfield.ackrequest << log::endl << log::endl
+                    << "sequencenumber: " << (int) header.sequencenumber << log::endl << log::endl
+                    << "dest_pan: " << (int) header.dest_pan << log::endl
+                    << "dest_adress: " << (int) header.dest_adress << log::endl
+                    << "source_pan: " << (int) header.source_pan << log::endl
+                    << "source_adress: " <<  (int) header.source_adress << log::endl;
             }
             void hexdump() { //FIXME is this method necessary
                 uint8_t loopcounter = 0;
                 uint8_t* pointer = (uint8_t*) this;
 
-                ::logging::log::emit() 
-                    << ::logging::log::endl << "=== BEGIN HEX DUMP ===" << ::logging::log::endl << ::logging::log::endl
-                    << ::logging::log::hex;
+                log::emit()
+                    << log::endl << "=== BEGIN HEX DUMP ===" << log::endl << log::endl
+                    << log::hex;
                 for (uint8_t index=0; index < sizeof(MessageFrameMAC); index++) { //FIXME this loop is used twice, maybe it should be moved to another method
-                    ::logging::log::emit() << (uint16_t) pointer[index] << ","; //FIXME use correct cast
+                    log::emit() << (uint16_t) pointer[index] << ","; //FIXME use correct cast
                     if ( loopcounter >= 20 ) {
                         loopcounter=0;
-                        ::logging::log::emit() << ::logging::log::endl;
-                    }	
+                        log::emit() << log::endl;
+                    }
                 }
-                ::logging::log::emit() << ::logging::log::endl << ::logging::log::endl << ::logging::log::dec;
+                log::emit() << log::endl << log::endl << log::dec;
                 loopcounter = 0;
                 for (uint8_t index=0; index < sizeof(MessageFrameMAC); index++) { //FIXME do we need both hex and dec printout?
-                    ::logging::log::emit() << (uint16_t) pointer[i] << ","; //FIXME use correct cast
+                    log::emit() << (uint16_t) pointer[i] << ","; //FIXME use correct cast
                     if ( loopcounter >= 20 ) {
                         loopcounter = 0;
-                        ::logging::log::emit() << ::logging::log::endl;
-                    }	
+                        log::emit() << log::endl;
+                    }
                 }
-                ::logging::log::emit() << ::logging::log::endl << "=== END HEX DUMP ===" << ::logging::log::endl 
-                    << ::logging::log::endl;
+                log::emit() << log::endl << "=== END HEX DUMP ===" << log::endl 
+                    << log::endl;
             }
             bool isValid() {
                 if ( MAC_LAYER_VERBOSE_OUTPUT ) {
-                    ::logging::log::emit() << "Validate MAC Frame..." << ::logging::log::endl;
+                    log::emit() << "Validate MAC Frame..." << log::endl;
                 }
                 if ( size > MAX_NUMBER_OF_DATABYTES ) {
-                    ::logging::log::emit() 
+                    log::emit() 
                         << "FATAL ERROR: Size of Payload to large! MAX Value: " << MAX_NUMBER_OF_DATABYTES
-                        << " Value of Frame: " << (int) size << ::logging::log::endl;
+                        << " Value of Frame: " << (int) size << log::endl;
                     return false;
                 }
                 //FIXME unnecessary functionality, should be moved to a method
                 if ( header.controlfield.frametype == FrameTypeIEEE::beacon ) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT) {
-                        ::logging::log::emit() << "Beacon Message" << ::logging::log::endl;
+                        log::emit() << "Beacon Message" << log::endl;
                     }
                 } else if(header.controlfield.frametype == FrameTypeIEEE::command) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) {
-                        ::logging::log::emit() << "MAC_command Message" << ::logging::log::endl;
+                        log::emit() << "MAC_command Message" << log::endl;
                     }
                 } else if(header.controlfield.frametype == FrameType::data) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) {
-                        ::logging::log::emit() << "Data Message" << ::logging::log::endl;
+                        log::emit() << "Data Message" << log::endl;
                     }
                 } else if ( header.controlfield.frametype == FrameType::acknowledgment ) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) {
-                        ::logging::log::emit() << "Acknowledgment Message" << ::logging::log::endl;
+                        log::emit() << "Acknowledgment Message" << log::endl;
                     }
                 } else {
-                    ::logging::log::emit() << "FATAL ERROR: failed decoding MAC Message" << ::logging::log::endl;
+                    log::emit() << "FATAL ERROR: failed decoding MAC Message" << log::endl;
                     print();
                     return false;
                 }
                 if ( MAC_LAYER_VERBOSE_OUTPUT ) { //FIXME do we need this output at all?
-                    ::logging::log::emit() << "Success..." << ::logging::log::endl;
+                    log::emit() << "Success..." << log::endl;
                 }
                 return true;
             }
@@ -248,12 +250,12 @@ namespace mac {
             explicit MessageFrameMAC(platform::config::mob_t& physical_layer_message, bool& decoding_was_successful) {
                 if ( physical_layer_message.size < sizeof(header) ) {
                     decoding_was_successful = false;
-                    ::logging::log::emit()
+                    log::emit()
                         << "ERROR: MessageFrameMAC constructor: physical Message to short, to contain a FrameHeaderMAC!"
-                        << ::logging::log::endl; << "Minimal Size: " << sizeof(header) << " size of current MAC_Frame: "
-                        << (int) physical_layer_message.size << ::logging::log::endl << ::logging::log::endl;
+                        << log::endl; << "Minimal Size: " << sizeof(header) << " size of current MAC_Frame: "
+                        << (int) physical_layer_message.size << log::endl << log::endl;
                     print();
-                    ::logging::log::emit() << ::logging::log::endl << ::logging::log::endl << ::logging::log::endl; //FIXME is this needed???
+                    log::emit() << log::endl << log::endl << log::endl; //FIXME is this needed???
                     return;
                 }
 
