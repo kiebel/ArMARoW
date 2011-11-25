@@ -19,8 +19,6 @@
 
 UseInterrupt(SIG_OUTPUT_COMPARE1A);
 
-void* operator new (size_t , void* buffer) { return buffer; } //FIXME a placement new should be imported by the halib, if not the should be moved to common/util
-
 using avr_halib::drivers::Clock;
 using namespace avr_halib::regmaps;
 
@@ -51,7 +49,7 @@ namespace mac {
      *  \tparam MAC_EVALUATION_CATIVATION_STAT stupid name don't know what it is used for maybe not needed (evaluation framework)
      */
     template<class PHYL, MAC_EVALUATION_ACTIVATION_STATE state>
-    struct MediumAccessLayerInterface : public PHYL, Mac_Evaluation<state> {
+    struct MediumAccessLayerInterface : public PHYL, MACEvaluation<state> {
         typename PHYL::mob_t message;
         DeviceAddress nodeAddress;
 
@@ -77,7 +75,7 @@ namespace mac {
             uint8_t channel = 11; //FIXME what does that value stand for?
             PHYL::setAttribute(armarow::PHY::phyCurrentChannel, &channel);
             PHYL::setStateTRX(armarow::PHY::rx_on);
-            Mac_Evaluation<state>::init();
+            MACEvaluation<state>::init();
             srandom(nodeAddress);
             clocktick_counter = 0; //FIXME what does that value stand for?
             nav = 0; //FIXME what does that value stand for?
@@ -136,8 +134,8 @@ namespace mac {
             //FIXME not sure if i understand what's happening here, i think the content of message needs to be transformed into messageObject?
             armarow::mac::MessageFrameMAC* messageMAC = armarow::mac::MessageFrameMAC::transformPhysicalLayerMessageIntoMediumAccessLayerMessage(message);
 
-            if ( messageMAC == NULL || messageMAC->header.controlfield.frametype != FrameTypeIEEE::data ) {
-                MessageFrameMAC.print();
+            if ( messageMAC == NULL || messageMAC->header.controlfield.frametype != data ) {
+                messageMAC->print();
                 return 0;
             }
             messageObject = *messageMAC;

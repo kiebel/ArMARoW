@@ -1,3 +1,4 @@
+#include "ieee802.15.4-BackoffTimingImpl.h"
 namespace armarow {
 namespace mac {
     namespace ieee802_15_4 {
@@ -27,17 +28,19 @@ namespace mac {
             };
 
             MessageFrameMAC bufferACK; //FIXME do we realy need to store another comlete message (maybe preconfigured smaler payload)
+            MAC_Clock timer;
+            BackoffTiming backoff_timing;
+
             uint8_t expectedSequenceNumber;
             uint8_t destination_id_of_last_transmitted_message;
             uint8_t destination_panid_of_last_transmitted_message;
             uint8_t timeout_counter_in_ms; //FIXME how can a counter use milli secounds
 
             uint8_t timeoutDuration;
-            ack_error_code lastErrorCode;
+            ErrorCode lastErrorCode;
 
             AcknowledgementHandler() {
                 reset();
-                timeoutDuration    = MACCFG::timeoutDurationACK;
                 handlerInitialized = false;
                 lastErrorCode      = success;
             }
@@ -50,14 +53,6 @@ namespace mac {
                 handlerReady    = false;
             }
 
-            void print() {
-                log::emit()
-                    << "receivedACK: " << (int)receivedACK << log::endl
-                    << "handlerWaiting: " << (int)handlerWaiting << log::endl
-                    << "RetransmissonCount: " << (int)BackoffTiming.RetransmissonCount << log::endl
-                    << "timeout_counter_in_ms: " << (int)timeout_counter_in_ms << log::endl
-                    << "timeout_counter_in_ms: " << (int)receivedTimeout << log::endl;
-            }
 
             /*! \brief  Handles received acknowledgements by calling onSendCompleted for expected acknowledgements.
              *  \note   Acknowledgements that where not expected are ignored!
@@ -68,7 +63,7 @@ namespace mac {
              *  \todo   move reset_acknowledgement_timer into the AcknowledgementHandler
              *  \todo   provide the delegate for onSendComplete as template parameter
              */
-            void receivedACK(MessageFrameMAC& acknowledgement, volatile bool& messageReadyFlag, Delegate<>& onSendCompleted, layer& alayer) {
+            void handleACK(MessageFrameMAC& acknowledgement, volatile bool& messageReadyFlag, Delegate<>& onSendCompleted) {
                 if(MAC_LAYER_VERBOSE_OUTPUT) {
                     log::emit()
                         << "ack was received, validating..." << log::endl
@@ -76,7 +71,7 @@ namespace mac {
                         << "ack sequence number: " << (int) acknowledgement.header.sequencenumber << log::endl;
                 }
                 if ( expectedSequenceNumber == acknowledgement.header.sequencenumber ) {
-                    alayer.reset_acknowlegement_timer(); //FIXME why is acknowledgement handling separated from the acknowledgement timer
+                    resetTimeout();
 
                     receivedACK        = true;
                     handlerInitialized = false;
@@ -88,7 +83,7 @@ namespace mac {
                         log::emit()
                             << "received ACK for message " << (int) expectedSequenceNumber << log::endl
                             << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: "
-                            << (int) timeout_duration_in_ms << log::endl;
+                            << (int) timeoutDuration << log::endl;
                     }
 
                     if ( !onSendCompleted.isEmpty() ) onSendCompleted();
@@ -102,7 +97,7 @@ namespace mac {
              *  \todo move the acknowledge timeout timer into the acknowledge handler
              *  \todo remove the unnecessary return value
              */
-            ack_error_code initializeAcknowledgementTimeout(MessageFrameMAC& messageObject, layer& aLayer) {
+            ErrorCode initializeAcknowledgementTimeout(MessageFrameMAC& messageObject) {
                 if (MAC_LAYER_VERBOSE_OUTPUT) log::emit() << "wait for ACK..." << log::endl;
 
                 expectedSequenceNumber   = messageObject.header.sequencenumber;
@@ -112,12 +107,16 @@ namespace mac {
 
                 handlerWaiting     = true;
                 handlerInitialized = true;
-                aLayer.acknowlegement_timeout_timer.start(); //FIXME why is acknowledgement handling separated from the acknowledgement timer
+                timer.start(); //FIXME why is acknowledgement handling separated from the acknowledgement timer
 
                 return success; //FIXME why does the method has a fixed return value
             }
+            /*! \brief  Resets the timer for the acknowledgement timeout.*/
+            void resetTimeout() { //FIXME should be moved into the AcknowledgementHandler
+                timer.stop();
+                timer.setCounter(0);
+            }
         };
-
     }
 }
 }

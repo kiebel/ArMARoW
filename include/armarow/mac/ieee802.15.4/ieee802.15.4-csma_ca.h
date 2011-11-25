@@ -14,10 +14,13 @@
 #endif
 
 #include <boost/static_assert.hpp>
-#include <boost/type_traits/is_base_of.hpp>
-#include "armarow/mac/MediumAccessLayer.h"
-#include "armarow/mac/MediumAccessLayerAddress.h"
-#include "armarow/mac/MediumAccessLayerConfiguration.h"
+#include <armarow/mac/MediumAccessLayer.h>
+#include <armarow/mac/MediumAccessLayerAddress.h>
+#include <armarow/mac/MediumAccessLayerConfiguration.h>
+
+#include "ieee802.15.4-acknowledgement.h"
+#include "ieee802.15.4-MessageFilter.h"
+
 
 UseInterrupt(SIG_OUTPUT_COMPARE3A);
 
@@ -27,23 +30,20 @@ namespace mac {
     typedef uint16_t DeviceAddress; //FIXME should be provided by "armarow/mac/MediumAccessLayer.h"
     typedef MessageFrameMAC mob_t;
 
-    /*! \brief ERROR Message neccessary for STATIC ASSERT ERROR MESSAGE to report invalid Configuration at compile time*/
-    class INVALID_MACCFGURATION__TYPE_DOESNT_INHERIT_FROM_CLASS__MACCFGURATION;
-
     /*! \brief  Implementation of the IEEE 802.15.4 Medium Access Layer protocol using non beacon and CSMA/CA.
      *
      *  \tparam MACCFG configuration for the Medium Access Layer
      *  \tparam PHYL Physical Layer implementation used for this layer
      *  \tparam MAC_EVALUATION_ACTIVATION_STATE indicates whether the evaluation is activated or not
      */
-    template<class MACCFG, class PHYL, MAC_EVALUATION_ACTIVATION_STATE EvaluationState>
-    struct MacCsmaCa : public MediumAccessLayerInterface<PHYL, EvaluationState> {
-            typedef MacCsmaCA<MACCFG, PHYL, EvaluationState> layer;
-        protected:
-            MAC_Clock AcknowledgementTimeoutTimer; //FIXME should be moved into the AcknowledgementHandler
-            ExactEggTimer<Timer3> one_shot_timer;
+    template<class MACCFG, class PHYL, MAC_EVALUATION_ACTIVATION_STATE EvaluationState> struct MacCsmaCa:
+        public MediumAccessLayerInterface<PHYL, EvaluationState>
+    {
+        typedef MacCsmaCa<MACCFG, PHYL, EvaluationState> layer;
+    protected:
+        ExactEggTimer<Timer3> one_shot_timer;
 
-            MessageFrameMAC bufferRECV;
+        MessageFrameMAC bufferRECV;
             MessageFrameMAC bufferSEND;
             typename PHYL::mob_t bufferPhyRECV; //FIXME why do we need a both bufferRECV and bufferPhyRECV?
 
@@ -53,6 +53,9 @@ namespace mac {
             volatile bool messageReadyFlag;   //FIXME can we use a bitfield here?
             //FIXME datafield for AcknowledgementHandler handlerACK and MessageFilter messageFLT
 
+            ieee802_15_4::AcknowledgementHandler handlerACK;
+            ieee802_15_4::MessageFilter messageFLT;
+
             /*! \brief  Acknowledges a given message.
              *
              *  \param messageObjec a valid message (IEEE data message)
@@ -60,7 +63,7 @@ namespace mac {
              */
             int acknowledgeMessage(MessageFrameMAC& messageObject) {
                 if ( messageObject.header.controlfield.ackrequest == 0 ) {
-                    return handlerACK::success; //FIXME is it realy a success if we do nothing
+                    return handlerACK.success; //FIXME is it realy a success if we do nothing
                 }
 
                 handlerACK.bufferACK.header.sequencenumber = messageObject.header.sequencenumber;
@@ -68,7 +71,7 @@ namespace mac {
                 handlerACK.bufferACK.header.dest_adress    = messageObject.header.source_adress;
                 handlerACK.bufferACK.header.source_adress  = MACCFG::nodeAddress;
                 handlerACK.bufferACK.header.source_pan     = MACCFG::PANId;
-                handlerACK.bufferACK.header.controlfield.frametype = Acknowledgment;//FIXME scope mit angeben
+                handlerACK.bufferACK.header.controlfield.frametype = acknowledgment;//FIXME scope mit angeben
                 handlerACK.bufferACK.size = 0;
                 handlerACK.bufferACK.header.controlfield.ackrequest = 0;
 
@@ -84,7 +87,7 @@ namespace mac {
                 handlerACK.handlerReady = true;
                 sendMessage();
 
-                return handlerACK::success;
+                return handlerACK.success;
             }
 
             /*! \brief Run to completion Task of the Mac protocol, tries to send the message that is stored in the bufferSEND buffer. Note, that tasks are not intended to be called directly by the user. Some general behaviour of this function: Acknolagement messages have priority over data messages. The backoff timing behaviour is different for Ack and Data messages. Data messages have the IEEE backoff timing implementation. Ack messages have a constant backoff time, because they are time critical. If the medium is busy, then a oneshot timer is started, that calls this Task again after the specified timing behaviour. */
@@ -121,10 +124,10 @@ namespace mac {
                             if ( messageReadyFlag ) one_shot_timer.start(1);
                             return;
                         }
-                        if ( messageObject.controlfield.ackrequest == 1 ) {
+                        if ( messageObject.header.controlfield.ackrequest == 1 ) {
                             //FIXME handlerACK.init_waiting_mechanism_for_ACK_for_MAC_Message(messageObject, *this);
                         } else {
-                            handlerACK.lastErrorCode = handlerACK::success;
+                            handlerACK.lastErrorCode = handlerACK.success;
                             messageReadyFlag = false;
                             if ( !this->onSendCompleted.isEmpty() ) onSendCompleted();
                         }
@@ -136,14 +139,14 @@ namespace mac {
                             one_shot_timer.start((uint16_t)waitingtime);
                             return;
                         }
-                        if ( handlerACK.BackoffTiming.exceededBackofCount() ) {
+                        if ( handlerACK.backoff_timing.exceededBackofCount() ) {
                             messageReadyFlag = false;
-                            handlerACK.lastErrorCode = handlerACK::MEDIUM_BUSY;
+                            handlerACK.lastErrorCode = handlerACK.medium_busy;
                             if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "number of backoffs has exeeded..." << log::endl;
-                            handlerACK.BackoffTiming.reset();
+                            handlerACK.backoff_timing.reset();
                             if ( !onSendCompleted.isEmpty() ) onSendCompleted();
                         } else {
-                            one_shot_timer.start(handlerACK.BackoffTiming.getBackoffTimeMS());
+                            one_shot_timer.start(handlerACK.backoff_timing.getBackoffTimeMS());
                         }
                     }
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "leave send ISR" << log::endl;
@@ -152,10 +155,11 @@ namespace mac {
  
 
         public:
+        using MediumAccessLayerInterface<PHYL, EvaluationState>::onSendCompleted;
+        using MediumAccessLayerInterface<PHYL, EvaluationState>::onMessageReceive;
+        using MediumAccessLayerInterface<PHYL, EvaluationState>::onReceive;
+        using MediumAccessLayerInterface<PHYL, EvaluationState>::getGlobalSequenceNumber;
             MacCsmaCa() {
-                static const bool k = boost::is_base_of<DefaultMACConfiguration,MACCFG>::value;
-                ARMAROW_STATIC_ASSERT_ERROR(k,INVALID_MACCONFIGURATION__TYPE_DOESNT_INHERIT_FROM_CLASS__DEFAULTMACCONFIGURATION,(MACCFG));
-                nodeAddress = MACCFG::nodeAddress;
                 init();
             }
 
@@ -172,17 +176,17 @@ namespace mac {
                     handlerACK.handlerInitialized = false;
                     handlerACK.receivedTimeout    = true;
 
-                    if ( handlerACK.BackoffTiming.RetransmissionsCount <= handlerACK.BackoffTiming.MaxRetransmissionCount ) {
+                    if ( handlerACK.backoff_timing.RetransmissionCount <= handlerACK.backoff_timing.MaxRetransmissionCount ) {
                         if ( MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT ) {
                             log::emit()
                                 << "retry transmitting... attempt number "
-                                << (int) handlerACK.BackoffTiming.RetransmissionCount
+                                << (int) handlerACK.backoff_timing.RetransmissionCount
                                 << log::endl;
                         }
-                        handlerACK.BackoffTiming.BackoffExponend = MACCFG::MinBackoffExponend;
+                        handlerACK.backoff_timing.BackoffExponend = MACCFG::MinBackoffExponend;
                         sendMessage();
                     } else {
-                        handlerACK.lastErrorCode = handlerACK::timeout;
+                        handlerACK.lastErrorCode = handlerACK.timeout;
                         messageReadyFlag = false;
                         if ( MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT ) {
                             log::emit()
@@ -202,7 +206,7 @@ namespace mac {
 
                 PHYL::receive(bufferPhyRECV);
                 messageWaitingFlag = true;
-                MessageFrameMAC* messageObject = MessageFrameMAC::create_MAC_Message_from_Physical_Message(bufferPhyRECV);
+                MessageFrameMAC* messageObject = MessageFrameMAC::transformPhysicalLayerMessageIntoMediumAccessLayerMessage(bufferPhyRECV);
                 if ( messageObject == NULL ) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "leave receive ISR" << log::endl;
                     messageWaitingFlag = false;
@@ -242,14 +246,14 @@ namespace mac {
                     }
                     //================= MESSAGE FILTERING END ==================
 
-                    if(bufferRECV.header.controlfield.frametype != Data) {
+                    if(bufferRECV.header.controlfield.frametype != data) {
                         if ( MAC_LAYER_VERBOSE_OUTPUT ) {
                             log::emit() << "===> got meta msg..." << log::endl;
                             bufferRECV.print();
                             log::emit() << "===> end meta msg..." << log::endl;
                         }
                         messageWaitingFlag = false;
-                        if ( bufferRECV.header.controlfield.frametype == Acknowledgment ) {
+                        if ( bufferRECV.header.controlfield.frametype == acknowledgment ) {
                             handlerACK.receivedACK(bufferRECV, messageReadyFlag, onSendCompleted, *this);
                         }
                         return;
@@ -274,20 +278,14 @@ namespace mac {
             }
            //============== END Interrupt Service Routines ===============================================================================
 
-            /*! \brief  Resets the timer for the acknowledgement timeout.*/
-            void resetAcknowledgementTimeout() { //FIXME should be moved into the AcknowledgementHandler
-                acknowledgementTimeoutTimer.stop();
-                acknowledgementTimeoutTimer.setCounter(0);
-            }
-
-            /*! \brief  ReInitializes the Medium Access Layer protocol.*/
+           /*! \brief  ReInitializes the Medium Access Layer protocol.*/
             void init() {
                 uint8_t channel    = MACCFG::channel;
                 uint8_t phyCCAMode = 2; //FIXME use correct enumeration value
 
                 onReceive.template bind<layer, &MacCsmaCa::receiveMessage>(this);
                 one_shot_timer.onTimerDelegate.template bind<layer, &MacCsmaCa::sendMessage>(this);
-                AcknowledgementTimeoutTimer.registerCallback<typeof *this, &MacCsmaCa::callback_wait_for_ack_timeout>(*this);
+                handlerACK.timer.registerCallback<typeof *this, &MacCsmaCa::callback_wait_for_ack_timeout>(*this);
 
                 MediumAccessLayerInterface<PHYL, EvaluationState>::init();
                 PHYL::setAttribute(armarow::PHY::phyCurrentChannel, &channel); 
@@ -296,7 +294,8 @@ namespace mac {
                 messageWaitingFlag = false;
                 messageReadyFlag   = false;
 
-                reset_acknolagement_timer();
+                handlerACK.timeoutDuration    = MACCFG::timeoutDurationACK;
+                handlerACK.resetTimeout();
             }
 
             /*! \brief Reinitializes both Physical and Medium Access Layer.*/
@@ -323,7 +322,7 @@ namespace mac {
                     messageObject.header.sequencenumber = getGlobalSequenceNumber();
                     messageObject.header.source_adress  = MACCFG::nodeAdress;
                     messageObject.header.source_pan     = MACCFG::PANId;
-                    handlerACK.BackoffTiming.reset();
+                    handlerACK.backoff_timing.reset();
                     bufferSEND = messageObject; //FIXME why does the message needs to be copied here?
                     sendMessage();
                     return 0;
@@ -341,6 +340,7 @@ namespace mac {
                 messageObject = bufferRECV; //TODO the message has been copied at least twice if not more at this point
                 return messageObject.size;
             }
+
     };
 }
 }

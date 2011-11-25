@@ -7,7 +7,7 @@ namespace mac {
             uint8_t lastSourceID;
             uint8_t lastSourcePANId;
 
-            messageFilter() {
+            MessageFilter() {
                 lastSequenceNumber = 0;
                 lastSourceID       = 255; //FIXME what does the value stand for (broadcast)?
                 lastSourcePANId    = 255; //FIXME what does the value stand for (broadcast)?
@@ -35,13 +35,13 @@ namespace mac {
              *  \todo check and refactor logic for duplicat checking
              */
             bool isDuplicate(MessageFrameMAC& messageObject) {
-                bool result = false;
+                bool result = true;
 
                 //FIXME quick fix don't think that will do!!!
-                result = (messageObject.header.controlfield.frametype == Data) true : result;
-                result = (lastSequenceNumber == messageObject.header.sequencenumber) true : result;
-                result = (lastSourceID == messageObject.header.source_adress) true : result;
-                result = (lastSourcePANId == messageObject.header.source_pan) true : result;
+                result = (messageObject.header.controlfield.frametype == data) ? result : false;
+                result = (lastSequenceNumber == messageObject.header.sequencenumber) ? result : false;
+                result = (lastSourceID == messageObject.header.source_adress) ? result : false;
+                result = (lastSourcePANId == messageObject.header.source_pan) ? result : false;
                 return result;
             }
 

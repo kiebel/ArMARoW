@@ -2,9 +2,7 @@
 
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_base_of.hpp>
-
-
-#include "boost/mpl/assert.hpp"
+#include <boost/mpl/assert.hpp>
 
 
 

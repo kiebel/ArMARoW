@@ -7,26 +7,26 @@ namespace mac {
     typedef uint16_t DeviceAddress;
     typedef uint16_t PANAddress;
 
-    enum FrameTypeIEEE {
+    enum FrameTypeIEEE{
         beacon         = 0,
         data           = 1,
         acknowledgment = 2,
         command        = 3
     };
-    enum MessageType{ rts, cts, data, ack };
+
     struct FrameControlFieldIEEE {
-        uint16_t frametype            : 3;
-        uint16_t securityenabled      : 1;
-        uint16_t framepending         : 1;
-        uint16_t ackrequest           : 1;
-        uint16_t intraPAN             : 1;
-        uint16_t                      : 2;
-        uint16_t destaddressingmode   : 2;
-        uint16_t                      : 2;
-        uint16_t sourceaddressingmode : 2;
+        uint8_t frametype            : 3;
+        bool    securityenabled      : 1;
+        bool    framepending         : 1;
+        bool    ackrequest           : 1;
+        bool    intraPAN             : 1;
+        uint8_t                      : 2; //reserved may need zeros
+        uint8_t destaddressingmode   : 2;
+        uint8_t                      : 2;
+        uint8_t sourceaddressingmode : 2;
 
         void init() {
-            frametype            = armarow::mac::MessageType::data;
+            frametype            = data;
             securityenabled      = 0;
             framepending         = 0;
             ackrequest           = 0;
@@ -45,12 +45,11 @@ namespace mac {
         PANAddress source_pan;
         DeviceAddress source_adress;
 
-        FrameHeaderMAC(FrameTypeIEEE messageType, DeviceAddress source, DeviceAddress destination) {
+        FrameHeaderMAC() {
             controlfield.init();
-            controlfield.frametype = messageType;
-            source_adress = source;
-            dest_adress   = destination;
             sequencenumber = 0;
+            source_adress  = 0;
+            dest_adress    = 0;
             dest_pan       = 0; 
             source_pan     = 0;
         }
@@ -96,42 +95,31 @@ namespace mac {
             } minfo; //FIXME create a typedef and move
 
             explicit MessageFrameMAC() {
-                DeviceAddress source      = 25; //FIXME what does 25 mean?
-                DeviceAddress destination = 38; //FIXME what does 38 mean?
-                new (&header) FrameHeaderMAC( MessageType::data, source, destination); //FIXME what is happening here?
+                for (uint8_t index=0; index < sizeof(payload); index++) {
+                    payload[index]=0; //clean data (need to do this?)
+                }
 
-                header.sequencenumber = 0;
-                header.dest_pan       = 0;
-                header.source_pan     = 0;
-                header.controlfield.init();
-                setDefaultPayload();
                 size                  = 0;
             }
+
             explicit MessageFrameMAC(FrameTypeIEEE msgtyp, DeviceAddress source, DeviceAddress destination, uint8_t* dataBuffer, uint8_t dataSize) {
-                if ( dataSize > (platform::config::rc_t::info::frame - sizeof(FrameHeaderMAC)) ) { //FIXME move to appropriate enum payloadSize
+                if ( dataSize > sizeof(payload)){ 
                     log::emit()
                         << "FATAL ERROR: FAILED to create MessageFrameMAC object, since payload is to small"
                         << log::endl;
                     return;
                 }
-                new (&header) FrameHeaderMAC( msgtyp, source, destination);
-                if ( (platform::config::rc_t::info::frame - sizeof(FrameHeaderMAC)) < dataSize ) { //FIXME seems unnecessary since already checked
-                    log::emit()
-                        << "ERROR: MAC_Payload: number of bytes in databuffer does not fit in MAC_Payload! -> decrease size of databuffer or transmit multiple MessageFrameMACs!"
-                        << log::endl;
-                    return;
-                }
+                header.controlfield.frametype = msgtyp;
 
-                for(int index=0; index < dataSize; index++) {
-                    payload[index]=dataBuffer[index];
+                header.source_adress  = source;
+                header.dest_adress    = destination;
+
+                for(uint8_t index=0; index < dataSize; index++) {
+                    payload[index] = dataBuffer[index];
                 }
                 size = dataSize;
             }
-            void setDefaultPayload() {
-                for (uint8_t index=0; index < (platform::config::rc_t::info::frame - sizeof(FrameHeaderMAC)); index++) { //FIXME move to appropriate enum payloadSize
-                    payload[index]=0;
-                }
-            }
+
             void print() {
                 log::emit()
                     << "FrameHeaderMAC:" << log::endl
@@ -143,56 +131,50 @@ namespace mac {
                     << "source_pan: " << (int) header.source_pan << log::endl
                     << "source_adress: " <<  (int) header.source_adress << log::endl;
             }
-            void hexdump() { //FIXME is this method necessary
-                uint8_t loopcounter = 0;
+
+            void hexdump() { //FIXME is this method necessary NO says Karl
+                uint8_t  loops = 0; //need to insert linebrakes
                 uint8_t* pointer = (uint8_t*) this;
 
                 log::emit()
                     << log::endl << "=== BEGIN HEX DUMP ===" << log::endl << log::endl
                     << log::hex;
+
                 for (uint8_t index=0; index < sizeof(MessageFrameMAC); index++) { //FIXME this loop is used twice, maybe it should be moved to another method
-                    log::emit() << (uint16_t) pointer[index] << ","; //FIXME use correct cast
-                    if ( loopcounter >= 20 ) {
-                        loopcounter=0;
+                    log::emit() << (uint16_t) pointer[index] << ",";
+                    if ( loops++ >= 20 ){
+                        loops = 0;
                         log::emit() << log::endl;
                     }
                 }
-                log::emit() << log::endl << log::endl << log::dec;
-                loopcounter = 0;
-                for (uint8_t index=0; index < sizeof(MessageFrameMAC); index++) { //FIXME do we need both hex and dec printout?
-                    log::emit() << (uint16_t) pointer[i] << ","; //FIXME use correct cast
-                    if ( loopcounter >= 20 ) {
-                        loopcounter = 0;
-                        log::emit() << log::endl;
-                    }
-                }
-                log::emit() << log::endl << "=== END HEX DUMP ===" << log::endl 
-                    << log::endl;
+                log::emit() << log::endl << "=== END HEX DUMP ===" << log::endl << log::endl;
             }
+
+#define MAC_LAYER_VERBOSE_OUTPUT true
             bool isValid() {
                 if ( MAC_LAYER_VERBOSE_OUTPUT ) {
                     log::emit() << "Validate MAC Frame..." << log::endl;
                 }
-                if ( size > MAX_NUMBER_OF_DATABYTES ) {
+                if ( size > sizeof(payload) ) {
                     log::emit() 
-                        << "FATAL ERROR: Size of Payload to large! MAX Value: " << MAX_NUMBER_OF_DATABYTES
+                        << "FATAL ERROR: Size of Payload to large! MAX Value: " << sizeof(payload)
                         << " Value of Frame: " << (int) size << log::endl;
                     return false;
                 }
                 //FIXME unnecessary functionality, should be moved to a method
-                if ( header.controlfield.frametype == FrameTypeIEEE::beacon ) {
+                if ( header.controlfield.frametype == beacon ) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT) {
                         log::emit() << "Beacon Message" << log::endl;
                     }
-                } else if(header.controlfield.frametype == FrameTypeIEEE::command) {
+                } else if(header.controlfield.frametype == command) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) {
                         log::emit() << "MAC_command Message" << log::endl;
                     }
-                } else if(header.controlfield.frametype == FrameType::data) {
+                } else if(header.controlfield.frametype == data) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) {
                         log::emit() << "Data Message" << log::endl;
                     }
-                } else if ( header.controlfield.frametype == FrameType::acknowledgment ) {
+                } else if ( header.controlfield.frametype == acknowledgment ) {
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) {
                         log::emit() << "Acknowledgment Message" << log::endl;
                     }
@@ -206,24 +188,25 @@ namespace mac {
                 }
                 return true;
             }
+#undef MAC_LAYER_VERBOSE_OUTPUT
             /*! \brief Stores an object of arbitrary type in a message of the Medium Access Layer (MAC).
              *  \note The size of the object type has to be smaler or equal the available payload size!
              */
             template <class T>
             int storeObject(T& object) {
-                static const bool k = ( MAX_NUMBER_OF_DATABYTES >= sizeof(T) ) ? true : false;
+                static const bool k = ( sizeof(payload) >= sizeof(T) );
                 ARMAROW_STATIC_ASSERT_ERROR(k,TYPE_TO_LARGE__DOES_NOT_FIT_IN_MESSAGE_PAYLOAD,(T));
                 uint8_t* objectData = (uint8_t*) &object; //FIXME use appropriated cast
                 for (uint8_t index = 0; index < sizeof(T); index++)
                     payload[index]=objectData[index];
-                    size = sizeof(T);
+                size = sizeof(T);
                 return 0; //FIXME what is a return value needed for?
             }
 
             /*! \brief Loads an object of arbitrary type from the message payload.*/
             template <class T>
             int readObject(T& object) {
-                static const bool k = ( MAX_NUMBER_OF_DATABYTES >= sizeof(T) ) ? true : false;
+                static const bool k = ( sizeof(payload) >= sizeof(T) );
                 ARMAROW_STATIC_ASSERT_ERROR(k,TYPE_TO_LARGE__DOES_NOT_FIT_IN_MESSAGE_PAYLOAD,(T));
                 uint8_t* objectData = (uint8_t*) &object;
                 for (uint8_t index = 0; index < sizeof(T); index++)
@@ -233,7 +216,7 @@ namespace mac {
 
             platform::config::mob_t* getPhysicalLayerMessage() {
                 size += sizeof(FrameHeaderMAC);
-                return (platform::config::mob_t*)this; //FIXME use appropriated cast
+                return (platform::config::mob_t*) this; //FIXME use appropriated cast
             }
 
             /*! \brief Converts a message from the Physical Lyaer into a message of the Medium Access Layer (MAC).
@@ -244,7 +227,7 @@ namespace mac {
             static MessageFrameMAC* transformPhysicalLayerMessageIntoMediumAccessLayerMessage( platform::config::mob_t& message) {
                 bool decodingSuccessful = true;
                 MessageFrameMAC* messageMAC = (MessageFrameMAC*) new(&message) MessageFrameMAC(message, decodingSuccessful);
-                return ( ( decodingSuccessful ) ? messsageMAC : (MessageFrameMAC*)0 ); //FIXME use reference or NULL
+                return ( ( decodingSuccessful ) ? messageMAC : (MessageFrameMAC*)0 ); //FIXME use reference or NULL
             }
         private:
             explicit MessageFrameMAC(platform::config::mob_t& physical_layer_message, bool& decoding_was_successful) {
@@ -252,7 +235,7 @@ namespace mac {
                     decoding_was_successful = false;
                     log::emit()
                         << "ERROR: MessageFrameMAC constructor: physical Message to short, to contain a FrameHeaderMAC!"
-                        << log::endl; << "Minimal Size: " << sizeof(header) << " size of current MAC_Frame: "
+                        << log::endl << "Minimal Size: " << sizeof(header) << " size of current MAC_Frame: "
                         << (int) physical_layer_message.size << log::endl << log::endl;
                     print();
                     log::emit() << log::endl << log::endl << log::endl; //FIXME is this needed???
@@ -264,7 +247,7 @@ namespace mac {
                 minfo.lqi = physical_layer_message.minfo.lqi;
 
                 decoding_was_successful = (decoding_was_successful) ? isValid() : decoding_was_successful;
-                static const bool k = (sizeof(platform::config::mob_t) == sizeof(MessageFrameMAC) ) ? true : false;
+                static const bool k = ( sizeof(platform::config::mob_t) == sizeof(MessageFrameMAC) );
                 ARMAROW_STATIC_ASSERT_ERROR(k,MessageFrameMAC_AND_PHY_MESSAGE_HAVE_DIFFERENT_SIZES__MESSAGEDECODING_WILL_NOT_WORK,(int));
             }
     } __attribute__((packed));

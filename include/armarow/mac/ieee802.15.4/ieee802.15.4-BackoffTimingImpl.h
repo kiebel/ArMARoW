@@ -8,7 +8,7 @@ namespace mac {
         struct BackoffTiming {
             uint8_t BackoffExponend;
             uint8_t MaxRetransmissionCount; //FIXME is not used here
-            uint8_t RetransmissonCount;     //FIXME is not used here
+            uint8_t RetransmissionCount;     //FIXME is not used here
 
             BackoffTiming() {
                 reset();
@@ -30,7 +30,7 @@ namespace mac {
 
                 if(MAC_LAYER_VERBOSE_OUTPUT) {
                     log::emit()
-                        << "random waiting time in ms: " << (int) random_waitingtime << log::endl;
+                        << "random waiting time in ms: " << (int) backoffTime << log::endl;
                 }
 
                 return (uint16_t)backoffTime;
@@ -39,7 +39,7 @@ namespace mac {
             /*! \brief Resets the IEEE backoff timing computation.*/
             void reset() {
                 BackoffExponend    = MACCFG::MinBackoffExponend; //FIXME use template parameter
-                RetransmissonCount = 0;
+                RetransmissionCount = 0;
             }
         };
 
