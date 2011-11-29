@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include <armarow/common/interface.h>
+#include <armarow/common/attributeContainer.h>
 
 #include <avr-halib/share/interruptLock.h>
 
@@ -16,12 +17,20 @@ struct Message
     Error state;
 };
 
-class TestMAC : public armarow::common::Interface<Message>
+using armarow::common::AttributeContainer;
+using armarow::common::Interface;
+
+class TestMAC : public Interface<Message>
 {
     public:
         static const Message::Address BROADCAST_ADDRESS=255;
-        template<void (*f)(Message& msg)>
-        struct TxCompleteCallback{};
+
+        struct TxCompleteAttribute{};
+
+        typedef AttributeContainer< TxCompleteAttribute, 
+                                    Delegate<Message&> 
+                                  > 
+                    TxCompleteCallback;
 
     private:
         Delegate<Message&> txCompleteDelegate;
@@ -33,10 +42,9 @@ class TestMAC : public armarow::common::Interface<Message>
             return armarow::common::SUCCESS;
         }
 
-        template<void (*f)(Message&)>
-        Error setAttribute(const TxCompleteCallback<f>& attr)
+        Error setAttribute(const TxCompleteCallback& attr)
         {
-            txCompleteDelegate.bind<f>();
+            txCompleteDelegate = attr.param;
             return armarow::common::SUCCESS;
         }
 };
@@ -61,7 +69,9 @@ void init()
     msg.size        = strlen(content);
     msg.dstAddress = MacLayer::BROADCAST_ADDRESS;
 
-    MacLayer::TxCompleteCallback<&txComplete> txCompleteCallback;
+    MacLayer::TxCompleteCallback txCompleteCallback;
+
+    txCompleteCallback.param.bind<&txComplete>();
 
     Error error=mac.setAttribute(txCompleteCallback);
     if(error)
@@ -69,7 +79,6 @@ void init()
     sei();
 }
 
-highlight OverLength ctermbg=red ctermfg=white guibg=#FFA0A0
 int main()
 {
     init();
