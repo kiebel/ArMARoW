@@ -1,49 +1,52 @@
+#include <string.h>
 
-#include "armarow/mac/mediumAccessLayerInterface.h"
+#include <armarow/common/interface.h>
+
 #include <avr-halib/share/interruptLock.h>
 
 using armarow::common::Error;
 
-struct TestMAC : public armarow::mac::MacInterface
+struct Message
 {
-	typedef uint16_t Address;
+    typedef uint16_t Address;
 
-	static const Address BROADCAST_ADDRESS=255;
+    uint8_t size;
+    Address dstAddress;
+    uint8_t payload[126];
+    Error state;
+};
 
-	struct Message
-	{
-		uint8_t size;
-		Address dstAddress;
-		uint8_t payload[126];
-		Error state;
-	};
+class TestMAC : public armarow::common::Interface<Message>
+{
+    public:
+        static const Message::Address BROADCAST_ADDRESS=255;
+        template<void (*f)(Message& msg)>
+        struct TxCompleteCallback{};
 
-	Delegate<Message&> txCompleteDelegate;
+    private:
+        Delegate<Message&> txCompleteDelegate;
 
-	template<void (*f)(Message& msg)>
-	struct TxCompleteCallback{};
+    public:
+        Error send(Message& msg)
+        {
+            txCompleteDelegate(msg);
+            return armarow::common::SUCCESS;
+        }
 
-	Error send(Message& msg)
-	{
-		txCompleteDelegate(msg);
-		return armarow::common::SUCCESS;
-	}
-
-	template<void (*f)(Message&)>
-	Error setAttribute(const TxCompleteCallback<f>& attr)
-	{
-		txCompleteDelegate.bind<f>();
-		return armarow::common::SUCCESS;
-	}
+        template<void (*f)(Message&)>
+        Error setAttribute(const TxCompleteCallback<f>& attr)
+        {
+            txCompleteDelegate.bind<f>();
+            return armarow::common::SUCCESS;
+        }
 };
 
 typedef TestMAC MacLayer;
 MacLayer mac;
 
-typedef MacLayer::Message Message;
 Message msg;
 
-PGM_P content="MAC LAYER TEST";
+const char* const content="MAC LAYER TEST";
 
 void txComplete(Message& msg){
     avr_halib::locking::GlobalIntLock lock;
@@ -53,33 +56,33 @@ void txComplete(Message& msg){
 
 void init()
 {
-    strcpy_P(reinterpret_cast<char*>(msg.payload), content);
+    strcpy(reinterpret_cast<char*>(msg.payload), content);
 
-    msg.size        = strlen_P(content);
+    msg.size        = strlen(content);
     msg.dstAddress = MacLayer::BROADCAST_ADDRESS;
 
-	MacLayer::TxCompleteCallback<&txComplete> txCompleteCallback;
+    MacLayer::TxCompleteCallback<&txComplete> txCompleteCallback;
 
-	Error error=mac.setAttribute(txCompleteCallback);
-	if(error)
-		log::emit<log::Error>() << "setting of callback failed: " << error << log::endl;
+    Error error=mac.setAttribute(txCompleteCallback);
+    if(error)
+        log::emit<log::Error>() << "setting of callback failed: " << error << log::endl;
     sei();
 }
 
-
+highlight OverLength ctermbg=red ctermfg=white guibg=#FFA0A0
 int main()
 {
-	init();
+    init();
 
-	log::emit() << PROGMEMSTRING("Mac Bubbler") << log::endl;
+    log::emit() << PROGMEMSTRING("Mac Bubbler") << log::endl;
 
     while(true)
-	{
-		Error error=mac.send(msg);
-		if(error)
-			log::emit<log::Error>() << "transmission rejected due to " << error << log::endl;
-		delay_ms(500);
-	}
-	return 0;
+    {
+        Error error=mac.send(msg);
+        if(error)
+            log::emit<log::Error>() << "transmission rejected due to " << error << log::endl;
+        delay_ms(500);
+    }
+    return 0;
 }
 
