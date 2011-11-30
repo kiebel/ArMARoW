@@ -15,15 +15,16 @@
 
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_base_of.hpp>
-#include "armarow/mac/MediumAccessLayer.h"
-#include "armarow/mac/MediumAccessLayerAddress.h"
-#include "armarow/mac/MediumAccessLayerConfiguration.h"
+#include <armarow/mac/MediumAccessLayer.h>
+#include <armarow/mac/MediumAccessLayerAddress.h>
+#include <armarow/mac/MediumAccessLayerConfiguration.h>
 
 
 
 namespace armarow {
 namespace mac {
-namespace ieee801_15_4 {
+namespace simple801_15_4
+{
     typedef void* AttributType;
     typedef uint16_t DeviceAddress; //FIXME should be provided by "armarow/mac/MediumAccessLayer.h"
     typedef MessageFrameMAC mob_t;
@@ -37,8 +38,6 @@ namespace ieee801_15_4 {
     template<class config, class PhysicalLayer>
     struct NonBeaconCsmaCa : public MediumAccessLayerInterface< PhysicalLayer> {
         protected:
-            
-            
 
             MessageFrameMAC bufferRECV;
             MessageFrameMAC bufferSEND;
@@ -53,16 +52,16 @@ namespace ieee801_15_4 {
 
 
             /** \brief Run to completion Task of the Mac protocol, tries to send the message that is stored in the bufferSEND buffer.
-	     *
-	     * Note, that tasks are not intended to be called directly by the
-	     * user. Some general behaviour of this function: Acknolagement
-	     * messages have priority over data messages. The backoff timing
-	     * behaviour is different for Ack and Data messages. Data messages
-	     * have the IEEE backoff timing implementation. Ack messages have a
-	     * constant backoff time, because they are time critical. If the
-	     * medium is busy, then a oneshot timer is started, that calls this
-	     * Task again after the specified timing behaviour. 
-	     **/
+             *
+             * Note, that tasks are not intended to be called directly by the
+             * user. Some general behaviour of this function: Acknolagement
+             * messages have priority over data messages. The backoff timing
+             * behaviour is different for Ack and Data messages. Data messages
+             * have the IEEE backoff timing implementation. Ack messages have a
+             * constant backoff time, because they are time critical. If the
+             * medium is busy, then a oneshot timer is started, that calls this
+             * Task again after the specified timing behaviour. 
+             **/
 
             void sendMessage() {
                 uint8_t ccaValue = 0;
@@ -125,7 +124,6 @@ namespace ieee801_15_4 {
                     if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "leave send ISR" << log::endl;
                 }
             }
- 
 
         public:
             MacCsmaCa() {
@@ -215,7 +213,6 @@ namespace ieee801_15_4 {
                 if ( MAC_LAYER_VERBOSE_OUTPUT ) log::emit() << "leave receive ISR" << log::endl;
             }
            //============== END Interrupt Service Routines ===============================================================================
-
 
 
             /*! \brief  ReInitializes the Medium Access Layer protocol.*/
