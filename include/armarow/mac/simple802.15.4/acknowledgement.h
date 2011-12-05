@@ -71,12 +71,11 @@ namespace simple802_15_4
             *  \todo   provide the delegate for onSendComplete as template parameter
             */
         void receivedACK(MessageFrameMAC& acknowledgement, volatile bool& messageReadyFlag, Delegate<>& onSendCompleted, layer& alayer) {
-            if(MAC_LAYER_VERBOSE_OUTPUT) {
-                log::emit()
-                    << "ack was received, validating..." << log::endl
-                    << "last message sequence number: " << (int) expectedSequenceNumber << log::endl
-                    << "ack sequence number: " << (int) acknowledgement.header.sequencenumber << log::endl;
-            }
+            log::emit<log::Trace>()
+                << "ack was received, validating..." << log::endl
+                << "last message sequence number: " << (int) expectedSequenceNumber << log::endl
+                << "ack sequence number: " << (int) acknowledgement.header.sequencenumber << log::endl;
+
             if ( expectedSequenceNumber == acknowledgement.header.sequencenumber ) {
                 alayer.reset_acknowlegement_timer(); //FIXME why is acknowledgement handling separated from the acknowledgement timer
 
@@ -86,12 +85,10 @@ namespace simple802_15_4
                 messageReadyFlag   = false;
                 lastErrorCode      = success;
 
-                if(MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT) {
-                    log::emit()
-                        << "received ACK for message " << (int) expectedSequenceNumber << log::endl
-                        << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: "
-                        << (int) timeout_duration_in_ms << log::endl;
-                }
+                log::emit<log::Trace>()
+                    << "received ACK for message " << (int) expectedSequenceNumber << log::endl
+                    << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: "
+                    << (int) timeout_duration_in_ms << log::endl;
 
                 if ( !onSendCompleted.isEmpty() ) onSendCompleted();
             }
@@ -105,7 +102,7 @@ namespace simple802_15_4
             *  \todo remove the unnecessary return value
             */
         ack_error_code initializeAcknowledgementTimeout(MessageFrameMAC& messageObject, layer& aLayer) {
-            if (MAC_LAYER_VERBOSE_OUTPUT) log::emit() << "wait for ACK..." << log::endl;
+            log::emit<log::Trace>() << "wait for ACK..." << log::endl;
 
             expectedSequenceNumber   = messageObject.header.sequencenumber;
             destination_id_of_last_transmitted_message    = messageObject.header.dest_adress;
@@ -170,22 +167,18 @@ namespace simple802_15_4
                 handlerACK.receivedTimeout    = true;
 
                 if ( handlerACK.BackoffTiming.RetransmissionsCount <= handlerACK.BackoffTiming.MaxRetransmissionCount ) {
-                    if ( MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT ) {
-                        log::emit()
-                            << "retry transmitting... attempt number "
-                            << (int) handlerACK.BackoffTiming.RetransmissionCount
-                            << log::endl;
-                    }
+                    log::emit<log::Trace>()
+                        << "retry transmitting... attempt number "
+                        << (int) handlerACK.BackoffTiming.RetransmissionCount
+                        << log::endl;
                     handlerACK.BackoffTiming.BackoffExponend = MACCFG::MinBackoffExponend;
                     sendMessage();
                 } else {
                     handlerACK.lastErrorCode = handlerACK::timeout;
                     messageReadyFlag = false;
-                    if ( MAC_VERBOSE_ACK_OUTPUT || MAC_LAYER_VERBOSE_OUTPUT ) {
-                        log::emit()
+                    log::emit<log::Trace>()
                             << "TIMEOUT..." << log::endl
                             << "number of retries has exeeded..." << log::endl;
-                    }
                     if ( !onSendCompleted.isEmpty() ) onSendCompleted();
                 }
             }
