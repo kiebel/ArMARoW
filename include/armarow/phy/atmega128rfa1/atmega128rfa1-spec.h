@@ -72,6 +72,13 @@ namespace armarow {
                         return (((1UL << maxChannel) - 1) & ~((1UL << minChannel) - 1));
                     }
                 };
+
+		struct SignalParameters
+		{
+			/** \brief the amount of symbols transmitted in one second **/
+			static const uint32_t symbolRate = 62500;
+		};
+
                 // --- register defaults --------------------------------------
                 /*! \brief  Register %specification of the ATmega128RFA1
                  *          radio controller.
