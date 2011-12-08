@@ -1,25 +1,27 @@
 #pragma once
 
-#include <backoffTimer.h>
+#include "backoffTimer.h"
 
 namespace armarow {
 namespace mac {
 namespace simple801_15_4
 {
-    /*! \brief  Implementation of the IEEE 802.15.4 Medium Access Layer protocol using non beacon and CSMA/CA.
+    /** \brief  Implementation of the IEEE 802.15.4 Medium Access Layer protocol using non beacon and CSMA/CA.
      *
      *  \tparam config configuration for the CSMA/CA protocol
      *  \tparam PhysicalLayer the type of physical layer to be used as base
-     *  \tparam Message type of the messages to be transmitted     */
+     *  \tparam Message type of the messages to be transmitted
+     */
     template<class config, class PhysicalLayer, class Message>
     class NonBeaconCsmaCa{
         private:
             struct BackoffConfig
             {
-                static const uint8_t minBackoffExponent=;
-                static const uint8_t maxBackoffExponent=;
-                static const uint16_t backoffUnitDuration=;
-                static const uint32_t backoffPeriod=;
+                static const uint8_t minBackoffExponent = 3;
+                static const uint8_t maxBackoffExponent = 8;
+                static const uint32_t ticksperSecond    = 1000 * 1000;
+                static const uint32_t ticksperSymbol    = ticksperSecond / PhysicalLayer::SignalParameters::symbolRate;
+                static const uint32_t backoffPeriod     = 20 * ticksperSymbol;
                 typedef config::BackoffTimer Timer;
             };
             PhysicalLayer& phy;
@@ -29,7 +31,7 @@ namespace simple801_15_4
 
             /** \brief CSMA/CA internal state flags **/
             struct InternalFlags
-            {       
+            {
                 bool txBusy : 1; /**< Flag indicating an ongoing transmission. **/
 
                 /** \brief default constructor to initialize values **/
@@ -46,16 +48,19 @@ namespace simple801_15_4
                     txBuffer->state=TX_DONE;
                     flags.txBusy=false;
                     backoffTimer.reset();
-                    txComplete(*txBuffer);            
+                    txComplete(*txBuffer);
                 }
                 else
-                    if (!backoffTimer.wait())
+                {
+                    bool backoffsexceeded = !backoffTimer.wait()
+                    if( backoffsexceeded )
                     {
                         txBuffer->state=FAILED;
                         flags.txBusy=false;
                         backoffTimer.reset();
                         txComplete(*txBuffer);
                     }
+                }
             }
 
             BackoffTimer< BackoffConfig > backoffTimer;

@@ -90,7 +90,7 @@ namespace simple802_15_4
                     << "waiting time in ms: " << (int) timeout_counter_in_ms << " current timeout duration: "
                     << (int) timeout_duration_in_ms << log::endl;
 
-                if ( !onSendCompleted.isEmpty() ) onSendCompleted();
+                onSendCompleted();
             }
         }
 
@@ -177,9 +177,9 @@ namespace simple802_15_4
                     handlerACK.lastErrorCode = handlerACK::timeout;
                     messageReadyFlag = false;
                     log::emit<log::Trace>()
-                            << "TIMEOUT..." << log::endl
-                            << "number of retries has exeeded..." << log::endl;
-                    if ( !onSendCompleted.isEmpty() ) onSendCompleted();
+                        << "TIMEOUT..." << log::endl
+                        << "number of retries has exeeded..." << log::endl;
+                    onSendCompleted();
                 }
             }
         }
