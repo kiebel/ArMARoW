@@ -41,30 +41,30 @@
  *  \brief  Example implementation of a sniffer on the physical layer.
  */
 /* === includes ============================================================= */
-#include <platform-cfg.h>               // platform dependent software config
+#include <platform.h>               // platform dependent software config
+#include <radio.h>
 #include <avr-halib/share/delay.h>      // delays and timings
 
 #include <armarow/armarow.h>            // main ArMARoW include
 #include <armarow/debug.h>              // ArMARoW logging and debugging
 #include <armarow/phy/phy.h>            // physical layer
-#include <idler.h>
 #include <avr-halib/regmaps/local.h>
 #include <avr-halib/avr/clock.h>
-/* === globals ============================================================== */
-UseInterrupt(SIG_OUTPUT_COMPARE3A);
 
-struct MyClockConfig
+using avr_halib::config::Frequency;
+
+typedef platform::config::RadioDriver<> RadioController;
+
+RadioController::mob_t message = {0,{0}};
+RadioController  rc;             // radio controller
+
+struct ClockConfig : public platform::avr::clock::Clock1BaseConfig
 {
     typedef uint16_t TickValueType;
     typedef Frequency<1> TargetFrequency;
-    typedef CPUClock TimerFrequency;
-    typedef avr_halib::regmaps::local::Timer3 Timer;
 };
 
-typedef avr_halib::drivers::Clock<MyClockConfig> Clock;
-
-platform::config::mob_t message = {0,{0}};
-platform::config::rc_t  rc;             // radio controller
+typedef avr_halib::drivers::Clock<ClockConfig> Clock;
 Clock clock;
 Clock::Time t;
 uint8_t channel = 11;                   // channel number
@@ -115,7 +115,7 @@ int main() {
     while(true){
         Clock::Time t2;
         clock.getTime(t);
-        uint8_t ccaValue;
+        uint8_t ccaValue=0;
         armarow::PHY::State state=rc.doCCA(ccaValue);
         clock.getTime(t2);
         if(state==armarow::PHY::success)

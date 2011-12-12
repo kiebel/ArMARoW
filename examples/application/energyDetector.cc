@@ -41,33 +41,33 @@
  *  \brief  Example implementation of a sniffer on the physical layer.
  */
 /* === includes ============================================================= */
-#include <platform-cfg.h>               // platform dependent software config
+#include <platform.h>               // platform dependent software config
+#include <radio.h>
 #include <avr-halib/share/delay.h>      // delays and timings
 
 #include <armarow/armarow.h>            // main ArMARoW include
 #include <armarow/debug.h>              // ArMARoW logging and debugging
 #include <armarow/phy/phy.h>            // physical layer
-#include <idler.h>
 #include <avr-halib/regmaps/local.h>
 #include <avr-halib/avr/clock.h>
 /* === globals ============================================================== */
-platform::config::mob_t message = {0,{0}};
-platform::config::rc_t  rc;             // radio controller
-uint8_t channel = 11;                   // channel number
+using avr_halib::config::Frequency;
 
-UseInterrupt(SIG_OUTPUT_COMPARE1A);
+typedef platform::config::RadioDriver<> RadioController;
 
-struct MyClockConfig
+RadioController::mob_t message = {0,{0}};
+RadioController  rc;             // radio controller
+
+struct ClockConfig : public platform::avr::clock::Clock1BaseConfig
 {
     typedef uint16_t TickValueType;
     typedef Frequency<1> TargetFrequency;
-    typedef CPUClock TimerFrequency;
-    typedef avr_halib::regmaps::local::Timer1 Timer;
 };
 
-typedef avr_halib::drivers::Clock<MyClockConfig> Clock;
-
+typedef avr_halib::drivers::Clock<ClockConfig> Clock;
 Clock clock;
+Clock::Time t;
+uint8_t channel = 11;                   // channel number
 
 /* === functions ============================================================ */
 /*! \brief  Callback triggered by an interrupt of the radio controller.
@@ -97,7 +97,7 @@ void init() {
 int main() {
     sei();                              // enable interrupts
     log::emit()
-        << PROGMEMSTRING("Starting EnergyDetector!")
+        << "Starting EnergyDetector!"
         << log::endl << log::endl;
 
     init();                             // initialize

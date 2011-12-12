@@ -44,8 +44,8 @@
 # configure location for logging library
 #LOGGINGDIR   ?= 
 #BOOSTDIR     ?= /usr/include/
-PLATFORM     ?= default
-#AVR_HALIBDIR ?= 
+PLATFORM     ?= deRFmega128
+AVR_HALIBDIR ?= ${HOME}/eos/research/avr-halib
 
 LIBS      += 
 LDPATHS   +=

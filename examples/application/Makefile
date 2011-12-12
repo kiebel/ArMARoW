@@ -40,10 +40,6 @@
 ################################################################################
 ARMAROWDIR=../../
 
-#PLATFORM = default
-#PLATFORM = deRFtoRCB
-#PLATFORM = ICradioStick
-
 CXXFLAGS+=-Wall -Os
 
 BIN=./bin

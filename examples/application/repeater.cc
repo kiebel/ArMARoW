@@ -42,21 +42,33 @@
  *          regard any MAC protocol.
  */
 /* === includes ============================================================= */
-#include <platform-cfg.h>               // platform dependent software config
+#include <platform.h>               // platform dependent software config
+#include <radio.h>
 #include <avr-halib/share/delay.h>      // delays and timings
+#include <avr-halib/avr/clock.h>
+#include <avr-halib/share/freq.h>
 
 #include <armarow/armarow.h>            // main ArMARoW include
 #include <armarow/debug.h>              // ArMARoW logging and debugging
 #include <armarow/phy/phy.h>            // physical layer
-#include <idler.h>
-/* === globals ============================================================== */
-platform::config::mob_t message = {0,{0}};
-platform::config::rc_t  rc;             // radio controller
-uint8_t channel = 11;                   // channel number the sniffer checks
-uint8_t counter = 0;
-TimeTriggeredEventSource eventSource;
-/* === functions ============================================================ */
-/*! \brief  Callback triggered by an interrupt of the radio controller.*/
+
+using avr_halib::config::Frequency;
+using avr_halib::drivers::Clock;
+
+typedef platform::config::RadioDriver<> RadioController;
+RadioController::mob_t message;
+
+struct ClockConfig : public platform::avr::clock::Clock1BaseConfig
+{
+    typedef Frequency<1> TargetFrequency;
+    typedef uint8_t TickValueType;
+};
+
+Clock<ClockConfig> periodicTrigger;
+RadioController rc;
+uint8_t counter;
+uint8_t channel=11;
+
 void callback_recv() {
     uint8_t size = ( !counter) ? rc.receive(message) : 0;
     counter = (size != 0) ? 5 : 0;       // set number of repetitions
@@ -66,9 +78,9 @@ void send(){
     if ( counter ) {
         rc.setStateTRX(armarow::PHY::tx_on);
         rc.send(message);
-        ::logging::log::emit()
-            << PROGMEMSTRING("Send message ") << (int32_t)counter
-            << ::logging::log::endl;
+        log::emit()
+            << "Send message " << (int32_t)counter
+            << log::endl;
         counter--;
     }
 }
@@ -79,14 +91,14 @@ void init() {
     rc.setAttribute(armarow::PHY::phyCurrentChannel, &channel);
     rc.setStateTRX(armarow::PHY::rx_on);
     rc.onReceive.bind<callback_recv>();
-    eventSource.registerCallback<send>();
+    periodicTrigger.registerCallback<send>();
 }
 /* === main ================================================================= */
 int main() {
     sei();                              // enable interrupts
-    ::logging::log::emit()
-        << PROGMEMSTRING("Starting PHY repeater!")
-        << ::logging::log::endl << ::logging::log::endl;
+    log::emit()
+        << "Starting PHY repeater!"
+        << log::endl << log::endl;
 
     init();                             // initialize radio controller
 

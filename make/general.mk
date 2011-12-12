@@ -75,7 +75,7 @@ ifeq (${AVR_HALIBDIR},)
 	include ${ARMAROWDIR}/external/make/boost.mk
 	include ${ARMAROWDIR}/external/make/logging.mk	
 endif
-include ${ARMAROWDIR}/platform/${PLATFORM}/make/config.mk
+include ${ARMAROWDIR}/platform/${PLATFORM}/config.mk
 include ${ARMAROWDIR}/make/${ARCH}/config.mk
 
 

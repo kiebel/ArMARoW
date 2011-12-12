@@ -40,16 +40,17 @@
  *  \brief  Example implementation of a sniffer on the physical layer.
  */
 /* === includes ============================================================= */
-#include <platform-cfg.h>               // platform dependent software config
+#include <platform.h>               // platform dependent software config
+#include <radio.h>               // platform dependent software config
+
 #include <avr-halib/share/delay.h>      // delays and timings
 
 #include <armarow/armarow.h>            // main ArMARoW include
 #include <armarow/debug.h>              // ArMARoW logging and debugging
 #include <armarow/phy/phy.h>            // physical layer
-#include <idler.h>
 /* === globals ============================================================== */
-platform::config::mob_t message = {0,{0}};
-platform::config::rc_t  rc;             // radio controller
+platform::config::RadioDriver<>::mob_t message = {0,{0}};
+platform::config::RadioDriver<>  rc;             // radio controller
 uint8_t channel = 11;                   // channel number
 /* === functions ============================================================ */
 /*! \brief  Callback triggered by an interrupt of the radio controller.
@@ -58,9 +59,9 @@ uint8_t channel = 11;                   // channel number
 void callback_recv() {
     rc.receive(message);
     log::emit()
-        << PROGMEMSTRING("[CHANNEL: ") << (int32_t)channel
-        << PROGMEMSTRING(", [DATA: [LENGTH: ") << (int32_t)message.size
-        << PROGMEMSTRING("], [CONTENT: \"");
+        << "[CHANNEL: " << (int32_t)channel
+        << ", [DATA: [LENGTH: " << (int32_t)message.size
+        << "], [CONTENT: \"";
 
     /*for (uint8_t index = 0; index < message.size; index++) {
         log::emit() << message.payload[index];
@@ -69,7 +70,7 @@ void callback_recv() {
     }*/
     log::emit() << ((uint32_t*)message.payload)[0];
     log::emit()
-        << PROGMEMSTRING("\"]]]")
+        << "\"]]]"
         << log::endl;
 }
 /*! \brief  Initializes the physical layer.*/
@@ -83,7 +84,7 @@ void init() {
 int main() {
     sei();                              // enable interrupts
     log::emit()
-        << PROGMEMSTRING("Starting sniffer!")
+        << "Starting sniffer!"
         << log::endl << log::endl;
 
     init();                             // initialize famouso
