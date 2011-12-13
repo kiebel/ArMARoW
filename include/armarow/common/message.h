@@ -12,39 +12,54 @@ namespace meta {
         struct type : public Base, public Extension {};
     };
 
-    template< typename ConcatHeaders, typename ConcatAttrs, typename PayloadType >
+    template< typename ConcatHeaders, typename ConcatProps, uint16_t maximumSize >
     struct assembleMessage
     {
-        struct type : public ConcatHeaders, public PayloadType, public ConcatAttrs 
+        struct type
         {
             private:
                 typedef type Message;
-                typedef ConcatHeaders Headers;
-                typedef ConcatAttrs Attributes;
+                typedef ConcatHeaders Header;
+                typedef ConcatProps Properties;
 
             public:
-                static const uint8_t maxSize = sizeof(Headers) + sizeof(PayloadType);
-            
-            template<typename NewHeader, typename NewAttributes>
-            struct extend
-            {
-                private:
-                    typedef typename concat<Headers, NewHeader>::type        ExtHeader;
-                    typedef typename concat<Attributes, NewAttributes>::type ExtAttr;
-                    typedef typename PayloadType::template resize< 
-                                        maxSize - sizeof( ExtHeader) >::type  NewPayloadType;
-                public:
-                    struct type : public assembleMessage< ExtHeader, 
-                                                          ExtAttr, 
-                                                          NewPayloadType
-                                                        >::type
-                    {
+                static const uint16_t maxSize = maximumSize;
 
-                        type(){}
-                        type(Message& copy){}
-                        type& operator =(const Message& copy){return *reinterpret_cast<type*>(&copy);}       
+                Header     header;
+                uint8_t    payload[maxSize - sizeof(ConcatHeaders)];
+                Properties properies;
+
+                static const uint16_t payloadSize = sizeof(payload);
+
+            
+                template<typename NewHeader, typename NewProps>
+                struct extend
+                {
+                    private:
+                        typedef typename concat<Header, NewHeader>::type    ExtHeader;
+                        typedef typename concat<Properties, NewProps>::type ExtProps;
+                    public:
+                        struct type : public assembleMessage< ExtHeader, 
+                                                              ExtProps, 
+                                                              maxSize
+                                                            >::type
+                        {};
+                };
+
+                template<typename CustomType>
+                struct customize
+                {
+                    struct type
+                    {
+                        static const uint16_t maxSize = maximumSize;
+
+                        Header     header;
+                        CustomType payload;
+                        Properties properies;
+
+                        static const uint16_t payloadSize = sizeof(payload);
                     };
-            };
+                };
         };
     };
 }
@@ -58,29 +73,17 @@ namespace common{
         DefaultHeader() : size(0){}
     };
 
-    struct DefaultAttr
+    struct DefaultProps
     {
         MessageState state;
 
-        DefaultAttr() : state(NOTHING) {};
+        DefaultProps() : state(NOTHING) {};
     };
 
-    template<uint8_t size>
-    struct Payload
-    {
-        uint8_t data[size];
-
-        template<uint8_t newSize>
-        struct resize
-        {
-            typedef Payload<newSize> type;
-        };
-    };
-
-    template<uint8_t maxSize>
+    template<uint16_t maxSize>
     struct Message : public meta::assembleMessage< DefaultHeader,
-                                                   DefaultAttr,
-                                                   Payload< maxSize -sizeof(DefaultHeader) >
+                                                   DefaultProps,
+                                                   maxSize >
                                                  >::type
     {};
 }
