@@ -5,8 +5,6 @@
 namespace platform
 {
     using namespace deRFmega128;
-
-    struct RadioHal{};
 };
 
 #include <armarow/platform/avr/logging.h>

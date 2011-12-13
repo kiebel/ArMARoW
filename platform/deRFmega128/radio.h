@@ -15,6 +15,6 @@ namespace config {
     using armarow::phy::ATmega128RfA1CFG;
 
     template<typename Config=ATmega128RfA1CFG>
-    struct RadioDriver : public ATmega128RfA1< RadioHal, Config >{};
+    struct RadioDriver : public ATmega128RfA1< Config >{};
 }
 }

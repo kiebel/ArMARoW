@@ -85,13 +85,13 @@ namespace armarow {
          *              (\link At86Rf230CFG\endlink)
          *  \ingroup PhyL RcImpl
          */
-        template < class Hal, class CFG = struct ATmega128RfA1CFG >
+        template < class CFG = struct ATmega128RfA1CFG >
         class ATmega128RfA1 {
             public:
               template<class NewCFG>
-              struct reconfigure{typedef ATmega128RfA1<Hal, NewCFG> type;};
+              struct reconfigure{typedef ATmega128RfA1<NewCFG> type;};
                 /*! \brief  definition of the class type*/
-                typedef ATmega128RfA1< Hal, CFG > type;
+                typedef ATmega128RfA1< CFG > type;
                 /*! \brief  definition of the radio controller %specification*/
                 typedef armarow::phy::specification::ATmega128RfA1 spec_t;
                 /*! \brief  definition of layer specific information*/
