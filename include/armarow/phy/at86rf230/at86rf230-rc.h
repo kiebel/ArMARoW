@@ -88,6 +88,22 @@ namespace armarow {
                 /*! \brief  definition of the class type*/
                 typedef At86Rf230< Hal, CFG > type;
                 /*! \brief  definition of the radio controller %specification*/
+
+                struct SpiConfig : public Hal::SpiBaseConfig
+                {
+                    typedef typename Hal::SpiBaseConfig::RegMap RegMap;
+                    enum CommunicationParameters
+                    {
+                        dataDirection = RegMap::msb,
+                        leadingEdge   = RegMap::rising,
+                        sampleEdge    = RegMap::leading,
+                        busywaitput   = true
+                    };
+                };
+
+                typedef typename SpiConfig::template Spi< SpiConfig > Spi;
+                typedef typename Hal::PortMap PortMap;
+
                 typedef armarow::phy::specification::At86Rf230 spec_t;
                 /*! \brief  definition of layer specific information*/
                 struct info{
@@ -123,7 +139,7 @@ namespace armarow {
           private:
 
                 /*! \brief  definition of interface between %MC and %RC.*/
-                typedef ControllerInterface< typename Hal::spi_t, typename Hal::portmap_t, spec_t > ControllerInterface_t;
+                typedef ControllerInterface< Spi, PortMap, spec_t > ControllerInterface_t;
 
                 ControllerInterface_t  rc;
 
@@ -136,14 +152,14 @@ namespace armarow {
                     typename ControllerInterface_t::regval_t registerValue;
 
                     if ( CFG::enableConcurrence ) {
-                        Hal::irq_t::disable();
+                        Hal::Interrupts::disable();
                         sei();
                     }
                     rc.readRegister( spec_t::registerDefault::irqStatus, registerValue);
                     handlerIRQ( registerValue );
                     if ( CFG::enableConcurrence ) {
                         cli();
-                        Hal::irq_t::enable();
+                        Hal::Interrupts::enable();
                     }
                 }
 
@@ -219,7 +235,7 @@ namespace armarow {
                  */
                 At86Rf230() {
                     // configure radio controller hardware
-                    UseRegmap(rm, Portmap);
+                    UseRegmap(rm, PortMap);
                     rm.reset.ddr  = true;   // reset pin is output
                     rm.reset.port = false;  // pin set to LOW
                     rm.sleep.ddr  = true;   // sleep pin is output
@@ -227,7 +243,7 @@ namespace armarow {
                     SyncRegmap(rm);
                     delay_us( spec_t::Duration::trx_chip_reset_time_us );
                     // map interrupt to method onIRQ()
-                    Hal::irq_t::template init<type,&type::onIRQ>(this);
+                    Hal::Interrupts::template init<type,&type::onIRQ>(this);
                 }
                 ~At86Rf230() {}
 
@@ -238,7 +254,7 @@ namespace armarow {
                     typename ControllerInterface_t::regval_t registerValue;
 
                     // transceiver initialization
-                    UseRegmap(rm, Portmap);
+                    UseRegmap(rm, PortMap);
                     rc.readRegister(spec_t::registerDefault::trxStatus, registerValue);
                     if ( registerValue.trxStatus.trx_status != spec_t::defaultValue::trx_off ) {
                         if ( registerValue.trxStatus.trx_status !=  spec_t::defaultValue::p_on ) {
@@ -278,7 +294,7 @@ namespace armarow {
                  *          in state <code>TRX_OFF</code>.
                  */
                 void reset() {
-                    UseRegmap(rm, Portmap);
+                    UseRegmap(rm, PortMap);
                     rm.reset.port = false;  // reset pin LOW
                     SyncRegmap(rm);
                     delay_us( spec_t::Duration::trx_reset_time_us );
@@ -676,14 +692,14 @@ namespace armarow {
                 void sleep()
                 {
                     setStateTRX(PHY::trx_off);
-                    UseRegmap(rm, Portmap);
+                    UseRegmap(rm, PortMap);
                     rm.sleep.port=true;
                     SyncRegmap(rm);
                 }
                 
                 void wakeup()
                 {
-                    UseRegmap(rm, Portmap);
+                    UseRegmap(rm, PortMap);
                     rm.sleep.port=true;
                     SyncRegmap(rm);
                 }

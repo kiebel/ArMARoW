@@ -1,0 +1,13 @@
+#pragma once
+
+portmap RadioPortMap for atmega1281
+{
+
+    pin interrupt : d 4;
+    pin sleep     : b 4;
+    pin reset     : b 5;
+    pin cs        : b 0;
+    pin sck       : b 1;
+    pin mosi      : b 2;
+    pin miso      : b 3;
+};

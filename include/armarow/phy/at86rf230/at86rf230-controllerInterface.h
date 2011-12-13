@@ -24,9 +24,9 @@ namespace armarow {
 			private:
 				/*! \brief  internal status of the interface*/
 				status_t status;
-
-				void put(const uint8_t p) {ComInterface::put((const char)(p));}
+/*    			void put(const uint8_t p) {ComInterface::put((const char)(p));}
 				bool get(uint8_t &p) {return ComInterface::get((char &)(p));}
+*/
 			public:
 				ControllerInterface() {
 					UseRegmap(rm, Portmap);
