@@ -45,7 +45,7 @@
 #LOGGINGDIR   ?= 
 #BOOSTDIR     ?= /usr/include/
 PLATFORM     ?= deRFmega128
-AVR_HALIBDIR ?= ${HOME}/eos/research/avr-halib
+#AVR_HALIBDIR ?= 
 
 LIBS      += 
 LDPATHS   +=
