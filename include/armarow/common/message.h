@@ -27,7 +27,7 @@ namespace meta {
 
                 Header     header;
                 uint8_t    payload[maxSize - sizeof(ConcatHeaders)];
-                Properties properies;
+                Properties properties;
 
                 static const uint16_t payloadSize = sizeof(payload);
 
@@ -83,8 +83,7 @@ namespace common{
     template<uint16_t maxSize>
     struct Message : public meta::assembleMessage< DefaultHeader,
                                                    DefaultProps,
-                                                   maxSize >
-                                                 >::type
+                                                   maxSize >::type
     {};
 }
 }

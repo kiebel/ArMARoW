@@ -12,16 +12,6 @@ namespace simple802_15_4
         COMMAND = 3         /**< Frame is a command of the mac protocol**/
     };
 
-    /** \brief Don`t know
-     *  //FIXME
-     **/
-    enum MessageType {
-        RTS  = 0,           /**< Unknow **/
-        CTS  = 1,           /**< Unknow **/
-        DATA = 2,           /**< Unknow **/
-        ACK  = 3            /**< Unknow **/
-    };
-
     /** \brief IEEE adressing modes **/
     enum AdressingMode {
         NONE     = 0,       /**< no address given**/
@@ -32,22 +22,26 @@ namespace simple802_15_4
 
     /** \brief IEEE control field of a IEEE MAC frame**/
     struct ControlField {
-        FrameType     type       : 3;   /**< type of the frame**/
-        bool          security   : 1;   /**< security extension enabled?**/
-        bool          pending    : 1;   /**< pending frame?**/
-        bool          ackRequest : 1;   /**< acknowledgement for this frame rquested**/
-        bool          intraPAN   : 1;   /**< no routing?**/
-        uint8_t                  : 2;
-        AdressingMode dstAdrMode : 2;   /**< adressing mode of destination**/
-        uint8_t                  : 2;
-        AdressingMode srcAdrMode : 2;   /**< addressing mode of source**/
-
+        union{
+            struct{
+                FrameType     type       : 3;   /**< type of the frame**/
+                bool          security   : 1;   /**< security extension enabled?**/
+                bool          pending    : 1;   /**< pending frame?**/
+                bool          ackRequest : 1;   /**< acknowledgement for this frame rquested**/
+                bool          intraPAN   : 1;   /**< no routing?**/
+                uint8_t                  : 3;   /**< reserved and should be set to zero**/
+                AdressingMode dstAdrMode : 2;   /**< adressing mode of destination**/
+                uint8_t       version    : 2;   /**< 0x00 ieee 802.15.4-2003 0x01 ieee 802.15.4-2006**/
+                AdressingMode srcAdrMode : 2;   /**< addressing mode of source**/
+            };
+            uint16_t value;
+        };
         /** \brief Default constructor
          *
          *  calls reset()
          **/
         ControlField() {
-            reset()
+            reset();
         }
 
         /** \brief resets control information to default values
@@ -56,11 +50,8 @@ namespace simple802_15_4
          *  Also all other options are disabled
          **/
         void reset() {
+            value      = 0x0000;
             type       = DATA;
-            security   = 0;
-            pending    = 0;
-            ackRequest = 0;
-            intraPAN   = 0;
             dstAdrMode = SHORT;
             srcAdrMode = SHORT;
         }
@@ -85,6 +76,7 @@ namespace simple802_15_4
                 default:     return "unknown";
             }
         }
+    public:
         void log()
         {
             log::emit<log::Info>()
@@ -115,8 +107,8 @@ namespace simple802_15_4
 
         void log() {
             log::emit<log::Info>()
-                << "   pan: " << hex << pan << log::endl
-                << "   id : " << hex << id << log::endl;
+                << "   pan: " << log::hex << pan << log::endl
+                << "   id : " << log::hex << id  << log::endl;
         }
     };
 
@@ -128,8 +120,8 @@ namespace simple802_15_4
 
         void log() {
             log::emit<log::Info>()
-                << "   pan: " << hex << pan << log::endl
-                << "   id : " << hex << id << log::endl;
+                << "   pan: " << log::hex << pan << log::endl
+                << "   id : " << log::hex << id << log::endl;
         }
     };
 
@@ -137,6 +129,7 @@ namespace simple802_15_4
      *
      * currently only the short addressing mode is supported!
      **/
+    template<typename config>
     struct FrameHeader {
         ControlField control;
         uint8_t seqNr;
@@ -151,7 +144,7 @@ namespace simple802_15_4
             control.log();
             log::emit<log::Info>()
                 << "  destination: " << log::endl;
-            destination.log()
+            destination.log();
             log::emit<log::Info>()
                 << "  source: " << log::endl;
             source.log();

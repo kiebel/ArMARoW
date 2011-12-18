@@ -4,7 +4,7 @@
 
 namespace armarow {
 namespace mac {
-namespace simple801_15_4
+namespace simple802_15_4
 {
     /** \brief  Implementation of the IEEE 802.15.4 Medium Access Layer protocol using non beacon and CSMA/CA.
      *
@@ -19,15 +19,16 @@ namespace simple801_15_4
             {
                 static const uint8_t minBackoffExponent = 3;
                 static const uint8_t maxBackoffExponent = 8;
-                static const uint32_t ticksperSecond    = 1000 * 1000;
+                static const uint32_t ticksperSecond    = 1000UL * 1000UL;
                 static const uint32_t ticksperSymbol    = ticksperSecond / PhysicalLayer::SignalParameters::symbolRate;
                 static const uint32_t backoffPeriod     = 20 * ticksperSymbol;
-                typedef config::BackoffTimer Timer;
+                typedef typename config::BackoffTimer Timer;
             };
             PhysicalLayer& phy;
             /** \brief Pointer to message buffer for transmission**/
             Message *txBuffer;
-            Delegate<Message&> txComplete;
+            Delegate<Message&> txCallback;
+            BackoffTimer< BackoffConfig > backoffTimer;
 
             /** \brief CSMA/CA internal state flags **/
             struct InternalFlags
@@ -40,36 +41,35 @@ namespace simple801_15_4
 
             void nextTry()
             {
-                PhysicalLayer::Attribute::ClearChannelAssessment cca;
+                typename PhysicalLayer::Attribute::ClearChannelAssessment cca;
                 phy.getAttribute(cca);
                 if(cca.value)
                 {
                     phy.send(*txBuffer);
-                    txBuffer->state=TX_DONE;
+                    txBuffer->properties.state=common::TX_DONE;
                     flags.txBusy=false;
                     backoffTimer.reset();
-                    txComplete(*txBuffer);
+                    txCallback(*txBuffer);
                 }
                 else
                 {
-                    bool backoffsexceeded = !backoffTimer.wait()
+                    bool backoffsexceeded = !backoffTimer.wait();
                     if( backoffsexceeded )
                     {
-                        txBuffer->state=FAILED;
+                        txBuffer->properties.state=common::TX_FAILED;
                         flags.txBusy=false;
                         backoffTimer.reset();
-                        txComplete(*txBuffer);
+                        txCallback(*txBuffer);
                     }
                 }
             }
 
-            BackoffTimer< BackoffConfig > backoffTimer;
 
        public:
             NonBeaconCsmaCa(PhysicalLayer& phy) : phy(phy)
             {
                 reset();
-                backoffTimer.register<NonBeaconCsmaCa, &NonBeaconCsmaCa::nextTry>(*this);
+                backoffTimer.template register_callback<NonBeaconCsmaCa, &NonBeaconCsmaCa::nextTry>(*this);
             }
 
             void sendMessage(Message& msg) {
@@ -95,5 +95,6 @@ namespace simple801_15_4
             }
 
     };
+}
 }
 }

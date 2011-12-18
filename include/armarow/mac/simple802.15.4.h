@@ -16,17 +16,15 @@ namespace mac {
      *      - CSMA/CA based transmission
      ***/
     template<typename config, class PhysicalLayer>
-    class Simple802_15_4 : public common::Interface< simple802.15.4::Message<config> >, public PhysicalLayer
+    class Simple802_15_4 : public common::Interface< simple802_15_4::Message<config,PhysicalLayer> >, public PhysicalLayer
     {
-        public:
-            /**\brief forward typedef of message type**/
-            typedef simple802.15.4::Message<config> Message;
-
+    public:
+        typedef typename common::Interface< simple802_15_4::Message<config,PhysicalLayer> >::Message Message;
         private:
             /**\brief the CSMA_CA implementation**/
-            NonBeaconCSMA_CA<config, PhysicalLayer, Message> mac;
+            simple802_15_4::NonBeaconCsmaCa<config, PhysicalLayer, Message> mac;
             /**\brief internal variable for sequence number generation**/
-            Message::SequenceNumberType seqNumber;
+            typename Message::SequenceNumberType seqNumber;
 
             void txComplete(Message& msg)
             {
@@ -44,6 +42,7 @@ namespace mac {
             }
 
         public:
+            Simple802_15_4(): mac(*this){}
             /**\brief transmit a message
              *
              * \param msg a reference to the message being transmitted
@@ -63,15 +62,16 @@ namespace mac {
              **/
             common::Error send(Message& msg)
             {
-                if(mac.txReady())
+                if(mac.isReady())
                 {
-                                msg.seqNumber      = seqNumber++;
-                                msg.source.address = config::address;
-                                mag.source.pan     = config::pan;
-                    return mac.transmit(msg, *this);
+                    msg.header.seqNumber      = seqNumber++;
+                    msg.header.source.id      = config::address;
+                    msg.header.source.pan     = config::pan;
+                    mac.sendMessage(msg);
+                    return common::SUCCESS;
                 }
                 else
-                                return common::BUSY;
+                    return common::BUSY;
             }
 
             /**\brief receive a message
@@ -95,9 +95,9 @@ namespace mac {
                 if(error)
                     return error;
                 if(!isValid(msg))
-                    return NO_MESSAGE;
-                msg.state=VALID_RX;
-                return SUCCESS;
+                    return common::NO_MESSAGE;
+                msg.state=common::RX_DONE;
+                return common::SUCCESS;
             }
 
             void reset()

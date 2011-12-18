@@ -6,7 +6,7 @@ namespace common {
     enum MessageState
     {
         NOTHING,    /**< Nothing happended yet              **/
-        BUSY,       /**< currently working on it            **/
+        WORKING,    /**< currently working on it            **/
         TX_DONE,    /**< transmssion complete               **/
         RX_DONE,    /**< message received                   **/
         ACK_DONE,   /**< acknowledgement received           **/

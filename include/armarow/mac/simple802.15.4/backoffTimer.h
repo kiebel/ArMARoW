@@ -1,7 +1,4 @@
-#include <math.h>
-#include <avr-halib/share/eggTimer.h>
-
-#include <platform-cfg.h>
+#include <avr-halib/avr/timer.h> //eggTimer
 
 namespace armarow {
 namespace mac {
@@ -15,7 +12,7 @@ namespace simple802_15_4
     class BackoffTimer{
         private:
             /** \brief One-shot-Timer executing the registered callback after timeout duration **/
-            ExactEggTimer<config::Timer> timer;
+            ExactEggTimer<typename config::Timer> timer;
             /** \brief number of waited backoffs
              *
              * is used to calculate the next backoff exponent and by this the
@@ -27,8 +24,8 @@ namespace simple802_15_4
 
             static const uint8_t minBackoffExponent = config::minBackoffExponent;
             static const uint8_t maxBackoffExponent = config::maxBackoffExponent;
-            static const uint8_t maxBackoffCount    = config::maxBackoffCount;
-            static const uint32_t backoffPeriod      = config::backoffPeriod;
+            static const uint8_t maxBackoffCount    = maxBackoffExponent - minBackoffExponent;
+            static const uint32_t backoffPeriod     = config::backoffPeriod;
 
             /** \brief calculates random backoff time
              *
@@ -41,16 +38,16 @@ namespace simple802_15_4
              **/
             uint32_t backoffTime()
             {
-                uint8_t  backoffExponent = min( (minBackoffExponent + backoffCount), 
-                                                 maxBackoffExponent 
-                                              );
+                uint16_t  backoffExponent = minBackoffExponent + backoffCount;
+                if( backoffExponent > maxBackoffExponent )
+                    backoffExponent = maxBackoffExponent;
 
                 // +1 enables the compiler to optimize divison to shift
                 uint16_t backoffPeriods =   (uint32_t)rand()
                                           * ((1 << (backoffExponent)) - 1)
                                           / (RAND_MAX + 1); 
 
-                return periodNumber * backoffPeriod;
+                return  (uint32_t) backoffPeriods * backoffPeriod;
             }
 
         public:
@@ -96,9 +93,9 @@ namespace simple802_15_4
             }
 
             template<typename T, void (T::*f)(void)>
-            void register(T& obj)
+            void register_callback(T& obj)
             {
-                timer.onTimerDelegate.template bind<T, f>(obj);
+                timer.onTimerDelegate.template bind<T, f>(&obj);
             }
     };
 }

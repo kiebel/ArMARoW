@@ -1,7 +1,5 @@
 #pragma once
 
-#include "platform-cfg.h"
-
 namespace armarow {
 namespace common {
 
@@ -13,8 +11,9 @@ namespace common {
 	{
 		SUCCESS = 0 ,   /**< operation successfull **/
 		FAILURE     ,   /**< operation failed **/
-		BUSY	    ,   /**< medium or hardware busy **/
-		OUT_OF_RANGE   /**< parameter not valid for this attribute **/
+		BUSY        ,   /**< medium or hardware busy **/
+        OUT_OF_RANGE,   /**< parameter not valid for this attribute **/
+        NO_MESSAGE
 	};
 }
 }
@@ -33,6 +32,7 @@ namespace common {
 		case(armarow::common::FAILURE):      return out << PROGMEMSTRING("operation failed");
 		case(armarow::common::BUSY):         return out << PROGMEMSTRING("medium or hardware busy");
 		case(armarow::common::OUT_OF_RANGE): return out << PROGMEMSTRING("parameter out of range");
+        case(armarow::common::NO_MESSAGE):   return out << PROGMEMSTRING("none Message recived");
 	}
 	return out << PROGMEMSTRING("unknown error");
 }
