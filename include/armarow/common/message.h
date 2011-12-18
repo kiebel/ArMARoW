@@ -31,7 +31,6 @@ namespace meta {
 
                 static const uint16_t payloadSize = sizeof(payload);
 
-            
                 template<typename NewHeader, typename NewProps>
                 struct extend
                 {
@@ -65,7 +64,7 @@ namespace meta {
 }
 
 namespace common{
-    
+
     struct DefaultHeader
     {
         uint8_t size;
