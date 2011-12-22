@@ -4,10 +4,9 @@
 
 namespace test {
     namespace common = armarow::common;
+    namespace meta = armarow::meta;
     namespace phy {
-        struct Message: public common::Message< 128 >::type{};
-        
-        struct Phy: public common::Interface< phy::Message >
+        struct Phy : public common::Interface< common::Message< 128 > >
         {
             typedef platform::config::RadioDriver<> RadioController;
             RadioController::mob_t message;
@@ -15,7 +14,7 @@ namespace test {
             
             struct SignalParameters: public RadioController::SignalParameters {};
             
-            typedef phy::Message Message;
+            typedef common::Message< 128 > Message;
             
             Phy()
             {

@@ -31,49 +31,62 @@ namespace meta {
 
                 static const uint16_t payloadSize = sizeof(payload);
 
-                template<typename NewHeader, typename NewProps>
-                struct extend
-                {
-                    private:
-                        typedef typename concat<Header, NewHeader>::type    ExtHeader;
-                        typedef typename concat<Properties, NewProps>::type ExtProps;
-                        typedef assembleMessage BaseMessage;
-                    public:
-                        struct type : public assembleMessage< ExtHeader, 
-                                                              ExtProps, 
-                                                              maxSize
-                                                            >::type
-                        {
-                            static BaseMessage& down(type& from)
-                            {
-                                from.header.size += sizeof(NewHeader);
-                                return reinterpret_cast<BaseMessage&>(from);
-                            }
-                            static type& up(BaseMessage& from)
-                            {
-                                type& to = reinterpret_cast<type&>(from);
-                                to.header.size -= sizeof(NewHeader);
-                                return reinterpret_cast<type&>(to);
-                            }
-                        };
-                };
+                template<class> friend class Extensible;
+        };
+    };
 
-                template<typename CustomType>
-                struct customize
+    template<typename BaseMsg>
+    struct Extensible
+    {
+        template<typename NewHeader, typename NewProps>
+        struct extend
+        {
+            private:
+                typedef typename concat<typename BaseMsg::Header    , NewHeader>::type ExtHeader;
+                typedef typename concat<typename BaseMsg::Properties, NewProps >::type ExtProps;
+            public:
+                struct type : public assembleMessage< ExtHeader, 
+                                                      ExtProps, 
+                                                      BaseMsg::maxSize
+                                                    >::type,
+                              public Extensible< type >
                 {
-                    struct type
+                    typedef BaseMsg BaseMessage;
+                    static BaseMessage& down(type& from)
                     {
-                        static const uint16_t maxSize = maximumSize;
-
-                        Header     header;
-                        CustomType payload;
-                        Properties properies;
-
-                        static const uint16_t payloadSize = sizeof(payload);
-                    };
+                        from.header.size += sizeof(NewHeader);
+                        return reinterpret_cast<BaseMessage&>(from);
+                    }
+                    static type& up(BaseMessage& from)
+                    {
+                        from.header.size -= sizeof(NewHeader);
+                        return reinterpret_cast<type&>(from);
+                    }
                 };
         };
     };
+
+    template<typename BaseMsg>
+    struct Customizable
+    {
+        template<typename CustomType>
+        struct customize
+        {
+            struct type
+            {
+                typedef BaseMsg BaseMessage;
+                static const uint16_t maxSize = sizeof(CustomType);
+
+                typename BaseMsg::Header     header;
+                CustomType payload;
+                typename BaseMsg::Properties properies;
+
+                static const uint16_t payloadSize = sizeof(payload);
+            };
+        };
+    };
+
+
 }
 
 namespace common{
@@ -95,7 +108,8 @@ namespace common{
     template<uint16_t maxSize>
     struct Message : public meta::assembleMessage< DefaultHeader,
                                                    DefaultProps,
-                                                   maxSize >::type
+                                                   maxSize >::type, 
+                     public meta::Extensible< Message<maxSize> >
     {};
 }
 }

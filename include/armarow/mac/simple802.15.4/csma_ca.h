@@ -45,7 +45,7 @@ namespace simple802_15_4
                 phy.getAttribute(cca);
                 if(cca.value)
                 {
-                    phy.send( txBuffer->down(*txBuffer) );
+                    phy.send( *(typename Message::BaseMessage*)(txBuffer) );
                     txBuffer->properties.state=common::TX_DONE;
                     flags.txBusy=false;
                     backoffTimer.reset();
