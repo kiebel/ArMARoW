@@ -19,7 +19,7 @@ Clock<ClockConfig> periodicTrigger;
 
 struct config
 {
-    typedef avr_halib::regmaps::local::Timer3 BackoffTimer;
+    typedef Timer3 BackoffTimer;
     static const uint8_t pan = 1;
     static const uint8_t address = 2;
 };

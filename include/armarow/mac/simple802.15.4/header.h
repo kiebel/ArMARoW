@@ -132,7 +132,7 @@ namespace simple802_15_4
     template<typename config>
     struct FrameHeader {
         ControlField control;
-        uint8_t seqNr;
+        uint8_t seqNumber;
         ShortAddress destination;
         ShortAddress source;
 

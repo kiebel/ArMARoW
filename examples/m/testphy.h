@@ -12,7 +12,9 @@ namespace test {
             typedef platform::config::RadioDriver<> RadioController;
             RadioController::mob_t message;
             RadioController rc;
-
+            
+            struct SignalParameters: public RadioController::SignalParameters {};
+            
             typedef phy::Message Message;
             
             Phy()

@@ -37,12 +37,25 @@ namespace meta {
                     private:
                         typedef typename concat<Header, NewHeader>::type    ExtHeader;
                         typedef typename concat<Properties, NewProps>::type ExtProps;
+                        typedef assembleMessage BaseMessage;
                     public:
                         struct type : public assembleMessage< ExtHeader, 
                                                               ExtProps, 
                                                               maxSize
                                                             >::type
-                        {};
+                        {
+                            static BaseMessage& down(type& from)
+                            {
+                                from.header.size += sizeof(NewHeader);
+                                return reinterpret_cast<BaseMessage&>(from);
+                            }
+                            static type& up(BaseMessage& from)
+                            {
+                                type& to = reinterpret_cast<type&>(from);
+                                to.header.size -= sizeof(NewHeader);
+                                return reinterpret_cast<type&>(to);
+                            }
+                        };
                 };
 
                 template<typename CustomType>

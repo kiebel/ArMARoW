@@ -124,7 +124,12 @@ namespace armarow {
                 /*! \brief  definition of layer specific message information
                  *  \todo add information such as RSSI, CRC validity aso.
                  */
-                
+
+                struct SignalParameters
+                {
+                    /** \brief the amount of symbols transmitted in one second **/
+                    static const uint32_t symbolRate = 62500;
+                };
           private:
 #if 0
                 /*! \brief  definition of interface between %MC and %RC.*/
