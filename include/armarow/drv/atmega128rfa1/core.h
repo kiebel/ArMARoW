@@ -1,7 +1,6 @@
 #pragma once
 
-#include <avr-halib/share/delay.h>
-#include <avr-halib/share/delegate.h>
+#include <armarow/common/message.h>
 
 #include "spec.h"
 #include "attr.h"
@@ -38,29 +37,29 @@ namespace atmega128rfa1 {
      *   \see DefaultConfig for a descriptio of all configuration parameters
      **/
     template< typename Config = DefaultConfig >
-    class Core : public Attributes< spec::RegMap >, spec::Constants {
+    class Core : public AttributeHandler< specification::RegMap >,
+                 public specification::Constants {
         public:
             /** \brief  forward declaration of this driver**/
             typedef Core< Config > type;
 
             /** \brief  definition of a layer specific message object**/
-            typedef common::Message Message;
+            typedef common::Message<maxPayload> Message;
 
-            typedef spec::State State;
-            typedef spec::RegMap RegMap;
-            typedef spec::FrameBufferMap FrameBufferMap;
+            typedef specification::States States;
+            typedef specification::StateType StateType;
+            typedef specification::RegMap RegMap;
+            typedef specification::FrameBufferMap FrameBufferMap;
 
         private:
-            /** \brief delegate to contain callback to upper layer **/
-            Delegate<> callUpper;
 
             /** \brief  fetch the current operation state from the radio
              *  \return The current operation state
              **/
-            State getState() const{
+            StateType getState() const{
                 UseRegMap(rm, RegMap);
                 SyncRegMap(rm);
-                return reinterpret_cast<State>(rm.trx_status);
+                return (StateType)(rm.trx_status);
             }
 
             /** \brief  change the current operation state of the radio
@@ -74,9 +73,9 @@ namespace atmega128rfa1 {
 
                 switch(newState)
                 {
-                    case(FORCE_TRX_OFF): if(oldState == TRX_OFF)
+                    case(States::force_trx_off): if(oldState == States::trx_off)
                                             return true;
-                    case(FORCE_TX_ON)  : if(oldState == TX_ON)
+                    case(States::force_tx_on)  : if(oldState == States::tx_on)
                                              return true;
                     default            : if(oldState == newState)
                                              return true;
@@ -84,15 +83,16 @@ namespace atmega128rfa1 {
 
                 switch(newState)
                 {
-                    case(RX_ON)  : if( !( oldState == TRX_OFF || oldState = PLL_ON ))
+                    case(States::rx_on)  : if( !( oldState == States::trx_off || oldState == States::tx_on ))
                                     stateTransitionPossible = false;
                                    break;
-                    case(TRX_OFF): if( !( oldState == RX_ON || oldState == TX_ON ))
+                    case(States::trx_off): if( !( oldState == States::rx_on || oldState == States::tx_on ))
                                     stateTransitionPossible = false;
                                    break;
-                    case(TX_ON)  : if( !(oldState == TRX_OFF || oldState == RX_ON ))
+                    case(States::tx_on)  : if( !(oldState == States::trx_off || oldState == States::rx_on ))
                                     stateTransitionPossible = false;
                                    break;
+                    default:       break;
                 }
 
                 if( !stateTransitionPossible )
@@ -104,19 +104,19 @@ namespace atmega128rfa1 {
                     return false;
                 }
 
-                while(getState() == CHANGING);
+                while(getState() == States::changing);
 
                 UseRegMap(rm, RegMap);
 
                 rm.trx_cmd = newState;
                 SyncRegMap(rm);
 
-                while(getState() == CHANGING);
+                while(getState() == States::changing);
 
                 switch(newState)
                 {
-                    case(FORCE_TRX_OFF): return getState() == TRX_OFF;
-                    case(FORCE_TX_ON)  : return getState() == TX_ON;
+                    case(States::force_trx_off): return getState() == States::trx_off;
+                    case(States::force_tx_on)  : return getState() == States::tx_on;
                     default            : return getState() == newState;
                 }
             }
@@ -130,37 +130,39 @@ namespace atmega128rfa1 {
             /** \brief end of reception interrupt handler**/
             void rxEnded()
             {
+                log::emit<log::Info>() << PROGMEMSTRING("got message") << log::endl;
                 callUpper();
             }
             /** \brief end of cca or ed interrupt handler**/
             void ccaEdDone(){}
             /** \brief address matched interrupt handler**/
-            void adressMatched(){}
+            void addressMatched(){}
             /** \brief transmission ended interrupt handler**/
             void txEnded()
             {
-                if( rxOnIdle )
-                    setState( RX_ON );
+                if( Config::rxOnIdle )
+                   setState( States::rx_on );
+                log::emit<log::Info>() << PROGMEMSTRING("tx ended") << log::endl;
                 callUpper();
+                
             }
             /** \brief radio awoken from sleep interrupt handler**/
             void awoken()
             {
-                if( rxOnIdle )
-                    setState( RX_ON );
+                log::emit<log::Info>() << PROGMEMSTRING("awoken from sleep") << log::endl;
+                if( Config::rxOnIdle )
+                    setState( States::rx_on );
                 else
-                    setState( TX_ON );
+                    setState( States::tx_on );
             }
 
         public:
             /** \brief Default constructor of the ATmega128RFA1 radio controller.
              *
-             *  Initializes and resets the radio controller hardware using
-             *  \link reset()\endlink, as well as maps interrupts of the
-             *  radio controller to <code>onIRQ()</code>.
+             *  calls reset()
              **/
             Core() {
-                reset()
+                reset();
             }
             /** \brief Default destructor
              *
@@ -225,7 +227,7 @@ namespace atmega128rfa1 {
              *  \see Specification
              **/
             void reset() {
-                UseRegMap(rm, registers);
+                UseRegMap(rm, RegMap);
                 rm.sleep  = false;
                 rm.reset = true;
 
@@ -238,21 +240,31 @@ namespace atmega128rfa1 {
                 rm.irqStatus.value = 0xff;
                 SyncRegMap(rm);
 
-                setState(FORCE_TRX_OFF);
+                setState(States::force_trx_off);
 
-                if(getState != TRX_OFF)
+                StateType temp;
+                do{
+                    temp=getState();
+                }while(temp==States::nop || temp==States::changing);
+
+                if(temp != States::trx_off)
                   log::emit<log::Error>() << 
-                      PROGMEMSTRING("Initialization failed! Current state is not " << 
-                      TRX_OFF << log::endl;
+                      PROGMEMSTRING("Initialization failed! Current state is ") << 
+                      temp << PROGMEMSTRING(" but should be ") << 
+                      States::trx_off << log::endl;
 
                 redirectISRM(TRX24_RX_START_vect, &type::rxStarted, *this);
                 redirectISRM(TRX24_RX_END_vect,   &type::rxEnded,   *this);
                 redirectISRM(TRX24_TX_END_vect,   &type::txEnded,   *this);
 
-                rm.irqMask.txEnd   = useInterrupt;
-                rm.irqMask.rxEnd   = useInterrupt;
-                rm.irqMask.rxStart = useInterrupt;
+                rm.irqMask.txEnd   = Config::useInterrupts;
+                rm.irqMask.rxEnd   = Config::useInterrupts;
+                rm.irqMask.rxStart = Config::useInterrupts;
+                rm.tx_auto_crc_on=false;
                 SyncRegMap(rm);
+
+                if(Config::rxOnIdle)
+                    setState(States::rx_on);
             }
 
             /** \brief  Transmit a message.
@@ -260,26 +272,29 @@ namespace atmega128rfa1 {
              *  \return an error code indicating the result of the operation
              **/
             Error send(Message& msg) {
-                if( !setState(TX_ON) )
+                if( !setState(States::tx_on) )
                         return common::BUSY;
 
-                if( msg.size == 0 )
+                if( msg.header.size == 0 )
                 {
-                    if( rxOnIdle )
-                        setState( RX_ON );
+                    if( Config::rxOnIdle )
+                        setState( States::rx_on );
 
                     return common::SUCCESS;
                 }
 
                 UseRegMap(frameRM, FrameBufferMap);
 
-                frameRM.frame[0] = size;
-                for(uint8_t i = 0; i< msg.size; i++)
+                frameRM.frame[0] = msg.header.size;
+
+                log::emit<log::Info>() << "put " << (uint16_t)frameRM.frame[0] << " message bytes to chip" << log::endl;
+
+                for(uint8_t i = 0; i< msg.header.size; i++)
                   frameRM.frame[i+1] = msg.payload[i];
 
                 SyncRegMap(frameRM);
 
-                setState(BUSY_TX);
+                setState(States::busy_tx);
 
                 return common::SUCCESS;
             }
@@ -292,8 +307,10 @@ namespace atmega128rfa1 {
                 UseRegMap(frameRM, FrameBufferMap);
                 SyncRegMap(frameRM);
 
-                msg.size = frameRM.length;
-                for( uint8_t i = 0; i < msg.size; i++)
+                log::emit<log::Info>() << "fetch " << (uint16_t)frameRM.length << " message bytes from chip" << log::endl;
+
+                msg.header.size = frameRM.length;
+                for( uint8_t i = 0; i < msg.header.size; i++)
                     msg.payload[i]=frameRM.frame[i];
 
                 return common::SUCCESS;

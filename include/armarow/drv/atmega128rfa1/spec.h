@@ -1,8 +1,10 @@
 #pragma once
 
 #include <stdint.h>
-#include "registers.h"
-#include "frameBuffer.h"
+#include <platform.h>
+
+#include "register.h"
+#include "framebuffer.h"
 
 namespace armarow {
 namespace drv {
@@ -33,25 +35,54 @@ namespace atmega128rfa1 {
 		{
 			/** \brief the amount of symbols transmitted in one second **/
 			static const uint32_t symbolRate = 62500;
+            /** \brief maximum bytes in message payload **/
+            static const uint8_t maxPayload = 128;
 		};
 
-        /** \brief radio operation states **/
-        enum State
+        struct States
         {
-            NOP           = 0x00,   /**< do nothing only useful for setState**/
-            BUSY_RX       = 0x01,   /**< radio busy receiving**/
-            BUSY_TX       = 0x02,   /**< radio busy transmitting**/
-            FORCE_TRX_OFF = 0x03,   /**< force radio to enter TRX_OFF**/
-            FORCE_TX_ON   = 0x04,   /**< force radio to enter TX_ON**/
-            RX_ON         = 0x06,   /**< ready for receiving**/
-            TRX_OFF       = 0x08,   /**< \todo see documentation**/
-            TX_ON         = 0x09,   /**< ready for transmission**/
-            SLEEP         = 0x0f,   /**< deactivate radio**/
-            CHANGING      = 0x1f    /**< state change in progress**/
+            /** \brief radio operation states **/
+            enum State
+            {
+                nop           = 0x00,   /**< do nothing only useful for setState()**/
+                busy_rx       = 0x01,   /**< radio busy receiving**/
+                busy_tx       = 0x02,   /**< radio busy transmitting**/
+                force_trx_off = 0x03,   /**< force radio to enter trx_off**/
+                force_tx_on   = 0x04,   /**< force radio to enter tx_on**/
+                rx_on         = 0x06,   /**< ready for receiving**/
+                trx_off       = 0x08,   /**< transceiver deactivated**/
+                tx_on         = 0x09,   /**< ready for transmission**/
+                sleep         = 0x0f,   /**< deactivate radio**/
+                changing      = 0x1f    /**< state change in progress**/
+            };
         };
+
+        typedef States::State StateType;
 
         typedef avr_halib::regmaps::local::atmega128rfa1::Registers   RegMap;
         typedef avr_halib::regmaps::local::atmega128rfa1::FrameBuffer FrameBufferMap;
 }
 }
+}
+}
+
+LoggingOutput& operator<<(LoggingOutput& out, const armarow::drv::atmega128rfa1::specification::StateType& state)
+{
+    typedef armarow::drv::atmega128rfa1::specification::States States;
+    switch(state)
+    {
+        case(States::nop)          : return out << PROGMEMSTRING("nothing");
+        case(States::busy_rx)      : return out << PROGMEMSTRING("busy-rx");
+        case(States::busy_tx)      : return out << PROGMEMSTRING("busy-tx");
+        case(States::force_trx_off): return out << PROGMEMSTRING("force-off");
+        case(States::force_tx_on)  : return out << PROGMEMSTRING("force-rx");
+        case(States::rx_on)        : return out << PROGMEMSTRING("rx-ready");
+        case(States::trx_off)      : return out << PROGMEMSTRING("trx-off");
+        case(States::tx_on)        : return out << PROGMEMSTRING("tx-ready");
+        case(States::sleep)        : return out << PROGMEMSTRING("sleep");
+        case(States::changing)     : return out << PROGMEMSTRING("state-changing");
+        default                    : return out << PROGMEMSTRING("unknown driver state");
+    };
+
+    return out;
 }

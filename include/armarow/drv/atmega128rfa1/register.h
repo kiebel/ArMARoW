@@ -35,8 +35,8 @@ public:
 			union
 			{
 				struct{ 
-					bool trx_reset :1;
-					bool sleep_tr :1;
+					bool reset :1;
+					bool sleep :1;
 				};
 				uint8_t trxpr;
 			};
@@ -193,35 +193,35 @@ public:
 			uint8_t __pad_irq_mask[0x14e];
 			union{
 				struct{
-					bool pll_lock_enable :1;
-					bool pll_unlock_enable :1;
-					bool rx_start_enable :1;
-					bool rx_end_enable :1;
+					bool pllLock :1;
+					bool pllUnlock :1;
+					bool rxStart :1;
+					bool rxEnd :1;
 
-					bool cca_ed_done_enable :1;
-					bool ami_enable :1;
-					bool tx_end_enable :1;
-					bool awake_enable :1;
+					bool ccaEdDone :1;
+					bool ami :1;
+					bool txEnd :1;
+					bool awake :1;
 				};
-				uint8_t irq_mask;
-			};
+				uint8_t value;
+			} irqMask;
 		};
 		struct
 		{
 			uint8_t __pad_irq_status[0x14f];
 			union{
 				struct{
-					bool pll_lock :1;
-					bool pll_unlock :1;
-					bool rx_start :1;
-					bool rx_end :1;
-					bool cca_ed_done :1;
+					bool pllLock :1;
+					bool pllUnlock :1;
+					bool rxStart :1;
+					bool rxEnd :1;
+					bool ccaEdDone :1;
 					bool ami :1;
-					bool tx_end :1;
+					bool txEnd :1;
 					bool awake :1;
 				};
-				uint8_t irq_status;
-			};
+				uint8_t value;
+			} irqStatus;
 		};
 		struct
 		{

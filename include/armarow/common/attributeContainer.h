@@ -8,14 +8,14 @@ namespace common {
      *  \tparam Tag the unique identifier of the specific attribute
      *  \tparam ParamType the parameter type of the attribute
      **/
-    template<typename Tag, typename ParamType>
+    template<typename Tag, typename ValType>
     struct AttributeContainer
     {
-        /** \brief the local storage for the parameter value**/
-        ParamType param;
-
         /** \brief forward declaration of the parameter type**/
-        typedef ParamType ParameterType;
+        typedef ValType ValueType;
+
+        /** \brief the local storage for the parameter value**/
+        ValueType value;
 
         /** \brief parameter free constructor for getAttribute **/
         AttributeContainer(){}
@@ -24,7 +24,7 @@ namespace common {
          *
          *  \param param reference to the value of the parameter
          **/
-        AttributeContainer(const ParamType& param) : param(param){}
+        AttributeContainer(const ValueType& value) : value(value){}
 
         /** \brief copy constructor for different attributes with the same parameter type
          *
@@ -32,7 +32,7 @@ namespace common {
          *  \param copy a reference to the source attribute
          **/
         template<typename OtherTag>
-        AttributeContainer(AttributeContainer<OtherTag, ParamType>& copy) : param(copy.param){}
+        AttributeContainer(AttributeContainer<OtherTag, ValueType>& copy) : value(copy.value){}
     };
 
 }
