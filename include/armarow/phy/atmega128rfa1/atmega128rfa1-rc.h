@@ -481,6 +481,8 @@ namespace armarow {
                  */
                 armarow::PHY::State doCCA(uint8_t& value) { //FIXME still untested
                     TRACE_FUNCTION;
+
+                    value = 0;
                     
                     armarow::PHY::State cState = (armarow::PHY::State)getStateTRX();
                     if ( cState == armarow::PHY::trx_off ) return cState;

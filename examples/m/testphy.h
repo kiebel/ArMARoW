@@ -1,4 +1,5 @@
 #include <armarow/common/interface.h>
+#include <armarow/common/attributeContainer.h>
 #include <armarow/common/message.h>
 #include <armarow/common/error.h>
 
@@ -43,16 +44,17 @@ namespace test {
                 }
                 return common::SUCCESS;
             }
+            
             struct Attribute{
-                struct ClearChannelAssessment
-                {
-                    uint8_t value;
-                };
+                struct CCA_tag{};
+                typedef common::AttributeContainer<CCA_tag,bool> ClearChannelAssessment;
             };
             
             common::Error getAttribute(Attribute::ClearChannelAssessment& attr)
             {
-                rc.doCCA(attr.value);
+                uint8_t val;
+                rc.doCCA(val);
+                attr.value = (val != 0);
                 return common::SUCCESS;
             }
 

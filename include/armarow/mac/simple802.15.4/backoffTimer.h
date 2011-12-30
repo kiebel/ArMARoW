@@ -45,7 +45,7 @@ namespace simple802_15_4
                 // +1 enables the compiler to optimize divison to shift
                 uint16_t backoffPeriods =   (uint32_t)rand()
                                           * ((1 << (backoffExponent)) - 1)
-                                          / (RAND_MAX + 1); 
+                                          / ((uint32_t)RAND_MAX + 1); 
 
                 return  (uint32_t) backoffPeriods * backoffPeriod;
             }
@@ -77,12 +77,12 @@ namespace simple802_15_4
             bool wait() {
                 if(backoffCount > maxBackoffCount)
                     return false;
-
-                timer.start( (uint16_t)(backoffTime() / 1000) );
+                uint16_t backoffTime_ms = (uint16_t)(backoffTime() / 1000);
+                timer.start( backoffTime_ms );
 
                 log::emit<log::Trace>()
                     << "started backoff timer, timeout in "
-                    << backoffTime << " ms." << log::endl;
+                    << backoffTime_ms << " ms." << log::endl;
 
                 return true;
             }
