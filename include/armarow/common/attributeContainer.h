@@ -3,13 +3,15 @@
 namespace armarow {
 namespace common {
 
+    struct Empty{};
+
     /** \brief General attribute container
      *
      *  \tparam Tag the unique identifier of the specific attribute
      *  \tparam ParamType the parameter type of the attribute
      **/
-    template<typename Tag, typename ValType>
-    struct AttributeContainer
+    template<typename Tag, typename ValType, typename ValueDescription=Empty>
+    struct AttributeContainer : public ValueDescription
     {
         /** \brief forward declaration of the parameter type**/
         typedef ValType ValueType;
@@ -34,6 +36,5 @@ namespace common {
         template<typename OtherTag>
         AttributeContainer(AttributeContainer<OtherTag, ValueType>& copy) : value(copy.value){}
     };
-
 }
 }
