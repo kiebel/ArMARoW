@@ -9,93 +9,124 @@ namespace armarow {
 namespace drv {
 namespace atmega128rfa1 {
     namespace attributes {
-        using common::AttributeContainer;
         namespace tags
         {
             struct Channel{};
             struct Sleep{};
             struct Callback{};
+            struct CCA{};
+            struct CCAParams{};
         }
         namespace params
         {
-            typedef specification::Channels ChannelType;
-            typedef bool SleepType;
-            typedef Delegate<void> CallbackType;
+            using specification::ChannelType;
+            using specification::RSSIType;
+            struct CCAParamType
+            {
+                typedef specification::CCAModeType CCAModeType;
+                typedef specification::CCAThresholdType CCAThresholdType;
+
+                CCAModeType     mode;
+                CCAThresholdType threshold;
+            };
+            using specification::CCAType;
+            using specification::SleepType;
         }
-        typedef AttributeContainer< tags::Channel , params::ChannelType  > Channel;
-        typedef AttributeContainer< tags::Sleep   , params::SleepType    > Sleep;
-        typedef AttributeContainer< tags::Callback, params::CallbackType > Callback;
+        namespace values
+        {
+            using specification::Channels;
+            struct CCAParams : public specification::CCAModes
+            {
+                static const specification::CCAThresholdType minThreshold = specification::Constants::minCCAThreshold;
+                static const specification::CCAThresholdType maxThreshold = specification::Constants::maxCCAThreshold;
+            };
+        };
     }
    
-    template<typename RegMap>
-    struct AttributeHandler
+    template<typename Driver>
+    struct AttributeHandler : public Driver
     {
-        private:
-            void defaultCallback(){}
-        protected:
-            attributes::params::CallbackType callUpper;
         public:
-            AttributeHandler()
-            {
-                callUpper.template bind<AttributeHandler, &AttributeHandler::defaultCallback>(this);
-            }
-
             struct Attributes
             {
-                typedef attributes::Channel  Channel;
-                typedef attributes::Sleep    Sleep;
-                typedef attributes::Callback Callback;
+                typedef common::AttributeContainer< attributes::tags::Channel, 
+                                                    attributes::params::ChannelType,
+                                                    attributes::values::Channels     > Channel;
+                typedef common::AttributeContainer< attributes::tags::Sleep, 
+                                                    attributes::params::SleepType    > Sleep;
+                typedef common::AttributeContainer< attributes::tags::CCA, 
+                                                    attributes::params::CCAType      > CCA;
+                typedef common::AttributeContainer< attributes::tags::CCA, 
+                                                    attributes::params::CCAParamType,
+                                                    attributes::values::CCAParams    > CCAParams;
+                typedef common::AttributeContainer< attributes::tags::Callback,
+                                                    typename Driver::CallbackType >    Callback;
             };
 
-            common::Error setAttribute(attributes::Callback& cb)
+            common::Error setAttribute(typename Attributes::Callback& cb)
             {
-                callUpper=cb.value;
+                this->callUpper=cb.value;
                 return common::SUCCESS;
             }
 
-            common::Error getAttribute(attributes::Callback& cb) const
+            common::Error getAttribute(typename Attributes::Callback& cb) const
             {
-                cb.value=callUpper;
+                cb.value=this->callUpper;
                 return common::SUCCESS;
             }
 
-            common::Error setAttribute(attributes::Sleep& attr)
+            common::Error setAttribute(typename Attributes::Sleep& attr)
             {
-                UseRegMap(rm, RegMap);
-                rm.sleep=attr.value;
-                SyncRegMap(rm);
-                while(!rm.irqStatus.pllLock)
-                    SyncRegMap(rm);
-                rm.irqStatus.pllLock=true;
-                SyncRegMap(rm);
+                bool result;
+                if(attr.value)
+                    result=this->sleep();
+                else
+                    result=this->wakeup();
+
+                if(result)
+                    return common::SUCCESS;
+                else
+                    return common::BUSY;
+            }
+
+            common::Error getAttribute(typename Attributes::Sleep& attr) const
+            {
+                attr.value=this->isSleeping();
                 return common::SUCCESS;
             }
 
-            common::Error getAttribute(attributes::Sleep& attr) const
+            common::Error setAttribute(typename Attributes::Channel& attr)
             {
-                UseRegMap(rm, RegMap);
-                SyncRegMap(rm);
-                attr.value=rm.sleep;
+                this->setChannel(attr.value);
                 return common::SUCCESS;
             }
 
-            common::Error setAttribute(attributes::Channel& attr)
+            common::Error getAttribute(typename Attributes::Channel& attr) const
             {
-                UseRegMap(rm, RegMap);
-                rm.channel=attr.value;
-                SyncRegMap(rm);
-                while(!rm.irqStatus.pllLock)
-                    SyncRegMap(rm);
-                rm.irqStatus.pllLock=true;
-                SyncRegMap(rm);
+                attr.value=this->getChannel();
                 return common::SUCCESS;
             }
 
-            common::Error getAttribute(attributes::Channel& attr) const
+            common::Error getAttribute(typename Attributes::CCA& cca)
             {
-                UseRegMap(rm, RegMap);
-                SyncRegMap(rm);
-                attr.value=rm.channel;
+                if(!this->startCCA())
+                    return common::BUSY;
+                while(!this->ccaDone());
+                cca.value=this->getCCAValue();
+                return common::SUCCESS;
+            }
+
+            common::Error setAttribute(typename Attributes::CCAParams& param)
+            {
+                if(!this->setCCAParams(param.value.mode, param.value.threshold))
+                    return common::OUT_OF_RANGE;
+                else
+                    return common::SUCCESS;
+            }
+             
+            common::Error getAttribute(typename Attributes::CCAParams& param) const
+            {
+                this->getCCAParams(param.value.mode, param.value.threshold);
                 return common::SUCCESS;
             }
     };

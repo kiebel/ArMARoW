@@ -10,40 +10,41 @@ namespace armarow {
 namespace drv {
 namespace atmega128rfa1 {
     namespace specification {
-        enum Channels{
-            minChannel = 11,
-            Channel11  = 11,
-            Channel12  = 12,
-            Channel13  = 13,
-            Channel14  = 14,
-            Channel15  = 15,
-            Channel16  = 16,
-            Channel17  = 17,
-            Channel18  = 18,
-            Channel19  = 19,
-            Channel20  = 20,
-            Channel21  = 21,
-            Channel22  = 22,
-            Channel23  = 23,
-            Channel24  = 24,
-            Channel25  = 25,
-            Channel26  = 26,
-            MaxChannel = 26
+        struct Channels{
+            enum Channel{
+                minChannel = 11,
+                Channel11  = 11,
+                Channel12  = 12,
+                Channel13  = 13,
+                Channel14  = 14,
+                Channel15  = 15,
+                Channel16  = 16,
+                Channel17  = 17,
+                Channel18  = 18,
+                Channel19  = 19,
+                Channel20  = 20,
+                Channel21  = 21,
+                Channel22  = 22,
+                Channel23  = 23,
+                Channel24  = 24,
+                Channel25  = 25,
+                Channel26  = 26,
+                MaxChannel = 26
+            };
         };
 
-		struct Constants
-		{
-			/** \brief the amount of symbols transmitted in one second **/
-			static const uint32_t symbolRate = 62500;
-            /** \brief maximum bytes in message payload **/
-            static const uint8_t maxPayload = 128;
-		};
+        struct CCAModes{
+            enum CCAMode{
+                CarrierSenseOrEnergy  = 0,
+                Energy                = 1,
+                CarrierSense          = 2,
+                CarrierSenseAndEnergy = 3
+            };
+        };
 
-        struct States
-        {
+        struct States{
             /** \brief radio operation states **/
-            enum State
-            {
+            enum State{
                 nop           = 0x00,   /**< do nothing only useful for setState()**/
                 busy_rx       = 0x01,   /**< radio busy receiving**/
                 busy_tx       = 0x02,   /**< radio busy transmitting**/
@@ -57,7 +58,32 @@ namespace atmega128rfa1 {
             };
         };
 
-        typedef States::State StateType;
+        typedef States::State     StateType;
+        typedef Channels::Channel ChannelType;
+        typedef int8_t            RSSIType;
+
+        typedef CCAModes::CCAMode CCAModeType;
+        typedef uint8_t           CCAThresholdType ;
+        typedef bool              CCAType;
+        typedef bool              SleepType;
+
+
+		struct Constants
+		{
+            private:
+                static const RSSIType rssi_base_val = -90;
+                static const uint8_t ccaThresholdSize = 4;
+                static const uint8_t ccaThresholdModifier = 2; 
+
+            public:
+
+			/** \brief the amount of symbols transmitted in one second **/
+			static const uint32_t symbolRate = 62500;
+            /** \brief maximum bytes in message payload **/
+            static const uint8_t maxPayload = 128;
+            static const CCAThresholdType minCCAThreshold = rssi_base_val;
+            static const CCAThresholdType maxCCAThreshold = rssi_base_val + ccaThresholdModifier*((1<<ccaThresholdSize)-1);
+		};
 
         typedef avr_halib::regmaps::local::atmega128rfa1::Registers   RegMap;
         typedef avr_halib::regmaps::local::atmega128rfa1::FrameBuffer FrameBufferMap;
@@ -85,4 +111,25 @@ LoggingOutput& operator<<(LoggingOutput& out, const armarow::drv::atmega128rfa1:
     };
 
     return out;
+}
+
+LoggingOutput& operator<<(LoggingOutput& out, const armarow::drv::atmega128rfa1::specification::CCAModeType& mode)
+{
+    using armarow::drv::atmega128rfa1::specification::CCAModes;
+
+    switch(mode)
+    {
+        case(CCAModes::CarrierSenseOrEnergy)  : return out << PROGMEMSTRING("carrier sensed or energy detected");
+        case(CCAModes::CarrierSense)          : return out << PROGMEMSTRING("carrier sensed");
+        case(CCAModes::Energy)                : return out << PROGMEMSTRING("energy detected");
+        case(CCAModes::CarrierSenseAndEnergy) : return out << PROGMEMSTRING("carrier sensed and energy detected");
+        default                              : return out << PROGMEMSTRING("unknown cca mode");
+    };
+
+    return out;
+}
+
+LoggingOutput& operator<<(LoggingOutput& out, const armarow::drv::atmega128rfa1::specification::ChannelType& channel)
+{
+    return out << uint16_t(channel);
 }

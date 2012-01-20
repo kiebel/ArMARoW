@@ -1,9 +1,9 @@
 #pragma once
 
 #include <armarow/common/message.h>
+#include <armarow/common/error.h>
 
 #include "spec.h"
-#include "attr.h"
 
 namespace armarow {
 namespace drv {
@@ -37,8 +37,20 @@ namespace atmega128rfa1 {
      *   \see DefaultConfig for a descriptio of all configuration parameters
      **/
     template< typename Config = DefaultConfig >
-    class Core : public AttributeHandler< specification::RegMap >,
-                 public specification::Constants {
+    class Core : public specification::Constants {
+        private:
+            typedef specification::States           States;
+            typedef specification::StateType        StateType;
+            typedef specification::ChannelType      ChannelType;
+            typedef specification::CCAModeType      CCAModeType;
+            typedef specification::CCAThresholdType CCAThresholdType;
+            typedef specification::CCAType          CCAType;
+
+            typedef specification::RegMap           RegMap;
+            typedef specification::FrameBufferMap   FrameBufferMap;
+
+            static const StateType idleState = (Config::rxOnIdle)?(States::rx_on):(States::tx_on);
+            
         public:
             /** \brief  forward declaration of this driver**/
             typedef Core< Config > type;
@@ -46,10 +58,13 @@ namespace atmega128rfa1 {
             /** \brief  definition of a layer specific message object**/
             typedef common::Message<maxPayload> Message;
 
-            typedef specification::States States;
-            typedef specification::StateType StateType;
-            typedef specification::RegMap RegMap;
-            typedef specification::FrameBufferMap FrameBufferMap;
+        private:
+            void defaultCallback(){}
+
+        protected:
+            typedef Delegate<void>                  CallbackType;
+
+            CallbackType callUpper;
 
         private:
 
@@ -69,7 +84,6 @@ namespace atmega128rfa1 {
             bool setState(const StateType newState) {
 
                 StateType oldState = getState();
-                bool stateTransitionPossible = true;
 
                 switch(newState)
                 {
@@ -79,29 +93,6 @@ namespace atmega128rfa1 {
                                              return true;
                     default            : if(oldState == newState)
                                              return true;
-                }
-
-                switch(newState)
-                {
-                    case(States::rx_on)  : if( !( oldState == States::trx_off || oldState == States::tx_on ))
-                                    stateTransitionPossible = false;
-                                   break;
-                    case(States::trx_off): if( !( oldState == States::rx_on || oldState == States::tx_on ))
-                                    stateTransitionPossible = false;
-                                   break;
-                    case(States::tx_on)  : if( !(oldState == States::trx_off || oldState == States::rx_on ))
-                                    stateTransitionPossible = false;
-                                   break;
-                    default:       break;
-                }
-
-                if( !stateTransitionPossible )
-                {
-                    log::emit<log::Error>() <<
-                        PROGMEMSTRING("State transition impossible: ") <<
-                        oldState << PROGMEMSTRING(" -> ") <<
-                        newState << log::endl;
-                    return false;
                 }
 
                 while(getState() == States::changing);
@@ -140,8 +131,7 @@ namespace atmega128rfa1 {
             /** \brief transmission ended interrupt handler**/
             void txEnded()
             {
-                if( Config::rxOnIdle )
-                   setState( States::rx_on );
+                setState( idleState );
                 log::emit<log::Info>() << PROGMEMSTRING("tx ended") << log::endl;
                 callUpper();
                 
@@ -150,10 +140,7 @@ namespace atmega128rfa1 {
             void awoken()
             {
                 log::emit<log::Info>() << PROGMEMSTRING("awoken from sleep") << log::endl;
-                if( Config::rxOnIdle )
-                    setState( States::rx_on );
-                else
-                    setState( States::tx_on );
+                setState( idleState );
             }
 
         public:
@@ -162,6 +149,7 @@ namespace atmega128rfa1 {
              *  calls reset()
              **/
             Core() {
+                callUpper.template bind<Core, &Core::defaultCallback>(this);
                 reset();
             }
             /** \brief Default destructor
@@ -263,8 +251,7 @@ namespace atmega128rfa1 {
                 rm.tx_auto_crc_on=false;
                 SyncRegMap(rm);
 
-                if(Config::rxOnIdle)
-                    setState(States::rx_on);
+                setState( idleState );
             }
 
             /** \brief  Transmit a message.
@@ -277,8 +264,7 @@ namespace atmega128rfa1 {
 
                 if( msg.header.size == 0 )
                 {
-                    if( Config::rxOnIdle )
-                        setState( States::rx_on );
+                    setState( idleState );
 
                     return common::SUCCESS;
                 }
@@ -287,7 +273,9 @@ namespace atmega128rfa1 {
 
                 frameRM.frame[0] = msg.header.size;
 
-                log::emit<log::Info>() << "put " << (uint16_t)frameRM.frame[0] << " message bytes to chip" << log::endl;
+                log::emit<log::Info>() << "put " << 
+                    (uint16_t)frameRM.frame[0] << 
+                    " message bytes to chip" << log::endl;
 
                 for(uint8_t i = 0; i< msg.header.size; i++)
                   frameRM.frame[i+1] = msg.payload[i];
@@ -307,13 +295,118 @@ namespace atmega128rfa1 {
                 UseRegMap(frameRM, FrameBufferMap);
                 SyncRegMap(frameRM);
 
-                log::emit<log::Info>() << "fetch " << (uint16_t)frameRM.length << " message bytes from chip" << log::endl;
+                log::emit<log::Info>() << "fetch " << 
+                    (uint16_t)frameRM.length << 
+                    " message bytes from chip" << log::endl;
 
                 msg.header.size = frameRM.length;
                 for( uint8_t i = 0; i < msg.header.size; i++)
                     msg.payload[i]=frameRM.frame[i];
 
                 return common::SUCCESS;
+            }
+
+        protected:
+            /** \brief set trx channel
+             *  \param channel the new channel
+             **/
+            void setChannel(ChannelType channel)
+            {
+                UseRegMap(rm, RegMap);
+                rm.channel=channel;
+                SyncRegMap(rm);
+                while(!rm.irqStatus.pllLock)
+                    SyncRegMap(rm);
+                rm.irqStatus.pllLock=true;
+                SyncRegMap(rm);
+            }
+
+            /** \brief get trx channel
+             *  \return the currently used channel
+             **/
+            ChannelType getChannel() const
+            {
+                UseRegMap(rm, RegMap);
+                SyncRegMap(rm);
+                return rm.channel;
+            }
+
+            bool sleep()
+            {
+                if(!setState(States::trx_off))
+                    return false;
+                UseRegMap(rm, RegMap);
+                rm.sleep=true;
+                SyncRegMap(rm);
+                return true;
+            }
+
+            bool wakeup()
+            {
+                UseRegMap(rm, RegMap);
+                rm.sleep=false;
+                do
+                    SyncRegMap(rm);
+                while(!rm.irqStatus.pllLock);
+                rm.irqStatus.pllLock=true;
+                SyncRegMap(rm);
+                return setState(idleState);
+            }
+
+            bool isSleeping() const
+            {
+                UseRegMap(rm ,RegMap);
+                SyncRegMap(rm);
+                return rm.sleep && getState()==States::trx_off;
+            }
+
+            bool startCCA()
+            {
+                UseRegMap(rm, RegMap);
+                if(!setState(States::rx_on))
+                    return false;
+                rm.cca_request=true;
+                SyncRegMap(rm);
+                return true;
+            }
+
+            bool ccaDone()
+            {
+                UseRegMap(rm, RegMap);
+                SyncRegMap(rm);
+                if(rm.cca_done)
+                {
+                    setState(idleState);
+                    return true;
+                }
+                else
+                    return false;
+            }
+
+            bool getCCAValue() const
+            {
+                UseRegMap(rm, RegMap);
+                SyncRegMap(rm);
+                return rm.cca_status;
+            }
+
+            void getCCAParams(CCAModeType& mode, CCAThresholdType& threshold) const
+            {
+                UseRegMap(rm, RegMap);
+                SyncRegMap(rm);
+                mode=rm.cca_mode;
+                threshold=rm.cca_threshold;
+            }
+
+            bool setCCAParams(CCAModeType mode, CCAThresholdType threshold)
+            {
+                if(threshold < minCCAThreshold || threshold > maxCCAThreshold)
+                    return false;
+                UseRegMap(rm, RegMap);
+                rm.cca_mode=mode;
+                rm.cca_threshold=threshold / ccaThresholdModifier;
+                SyncRegMap(rm);
+                return true;
             }
     };
 }

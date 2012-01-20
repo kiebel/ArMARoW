@@ -145,7 +145,8 @@ public:
 				};
 				uint8_t phy_cc_cca;
 			};
-			uint8_t cca_threshold;
+			uint8_t cca_threshold :4;
+            uint8_t               :4;
 		};
 		struct
 		{
