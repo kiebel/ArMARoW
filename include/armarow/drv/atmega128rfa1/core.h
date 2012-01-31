@@ -58,9 +58,6 @@ namespace atmega128rfa1 {
             /** \brief  definition of a layer specific message object**/
             typedef common::Message<maxPayload> Message;
 
-        private:
-            void defaultCallback(){}
-
         protected:
             typedef Delegate<void>                  CallbackType;
 
@@ -83,19 +80,19 @@ namespace atmega128rfa1 {
              **/
             bool setState(const StateType newState) {
 
+                while(getState() == States::changing);
+
                 StateType oldState = getState();
 
                 switch(newState)
                 {
                     case(States::force_trx_off): if(oldState == States::trx_off)
-                                            return true;
+                                                    return true;
                     case(States::force_tx_on)  : if(oldState == States::tx_on)
-                                             return true;
-                    default            : if(oldState == newState)
-                                             return true;
+                                                    return true;
+                    default                    : if(oldState == newState)
+                                                    return true;
                 }
-
-                while(getState() == States::changing);
 
                 UseRegMap(rm, RegMap);
 
@@ -108,7 +105,7 @@ namespace atmega128rfa1 {
                 {
                     case(States::force_trx_off): return getState() == States::trx_off;
                     case(States::force_tx_on)  : return getState() == States::tx_on;
-                    default            : return getState() == newState;
+                    default                    : return getState() == newState;
                 }
             }
 
@@ -148,8 +145,7 @@ namespace atmega128rfa1 {
              *
              *  calls reset()
              **/
-            Core() {
-                callUpper.template bind<Core, &Core::defaultCallback>(this);
+            Core() : callUpper(){
                 reset();
             }
             /** \brief Default destructor
@@ -265,8 +261,7 @@ namespace atmega128rfa1 {
                 if( msg.header.size == 0 )
                 {
                     setState( idleState );
-
-                    return common::SUCCESS;
+                    return common::NO_MESSAGE;
                 }
 
                 UseRegMap(frameRM, FrameBufferMap);

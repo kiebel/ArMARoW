@@ -1,47 +1,28 @@
-#include <string.h>
-
+#define LOGGING_DISABLE
+#include <armarow/debug.h>
 #include <radio.h>
-#include <avr-halib/avr/clock.h>
-#include <avr-halib/share/freq.h>
 
-using avr_halib::config::Frequency;
-using avr_halib::drivers::Clock;
-
-typedef platform::config::RadioDriver<> RadioController;
-RadioController::Message message;
-
-struct ClockConfig : public platform::avr::clock::Clock1BaseConfig
+struct Config : public armarow::drv::atmega128rfa1::DefaultConfig
 {
-    typedef Frequency<1> TargetFrequency;
-    typedef uint8_t TickValueType;
+    static const bool rxOnIdle = false;
+    static const bool useInterrupt = false;
 };
 
-Clock<ClockConfig> periodicTrigger;
+typedef platform::config::RadioDriver<Config> RadioController;
+RadioController::Message message;
+
 RadioController rc;
 
-void send(){
-    rc.send(message);
-    log::emit() << "Sending message: "
-                << (uint16_t)(message.payload[0]++)
-                << log::endl;
-}
-
-void init(){
-
-    periodicTrigger.registerCallback<send>();
-    
-    message.header.size=sizeof(uint8_t);
-    message.payload[0]=0;
-}
-
 int main() {
-
-    init();
+    message.header.size=127;
 
     log::emit() << "Periodic bubbler" << log::endl << log::endl;
-    sei();
 
-    Idler::idle();
-
+    while(true)
+    {
+        armarow::common::Error error=rc.send(message);
+        if(error)
+            log::emit() << error << log::endl;
+    }
     return 0;
 }
