@@ -12,10 +12,12 @@ namespace platform
 #include <armarow/platform/avr/power.h>
 
 namespace platform {
-namespace power {
+namespace power
+{
     using avr::power::Idler;
 }
-namespace logging {
+namespace logging
+{
     using avr::logging::log;
 }
 }
@@ -23,3 +25,5 @@ namespace logging {
 using platform::logging::log;
 using platform::config::CPUClock;
 using platform::power::Idler;
+using platform::config::Clock1;
+using platform::config::Clock2;

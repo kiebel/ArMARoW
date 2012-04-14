@@ -19,13 +19,13 @@ namespace logging
 }
 
 setLoggingConfig(::platform::avr::logging::Config);
-setLoggingDevice(::avr_halib::logExt::devices::Uart);
+setLoggingDevice(::avr_halib::logging::devices::Uart);
 
 #include <avr-halib/ext/logging.h>
 namespace platform{
 namespace avr{
 namespace logging{
-    using avr_halib::logExt::log;
+    using avr_halib::logging::log;
 }
 }
 }

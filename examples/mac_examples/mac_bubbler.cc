@@ -1,82 +1,44 @@
+#include <platform.h>
+#include <radio.h>
+#include <armarow/mac/simple802.15.4.h>
 #include <string.h>
 
-#include <armarow/common/interface.h>
-#include <armarow/common/attributeContainer.h>
-
-#include <avr-halib/share/interruptLock.h>
-
 using armarow::common::Error;
+using armarow::mac::Simple802_15_4;
 
-struct Message
+typedef platform::config::RadioDriver<> Phy;
+
+struct MacConfig
 {
-    typedef uint16_t Address;
-
-    uint8_t size;
-    Address dstAddress;
-    uint8_t payload[126];
-    Error state;
+    typedef Clock1 BackoffTimer;
+    static const uint16_t pan     = 0;
+    static const uint16_t address = 1;
 };
 
-using armarow::common::AttributeContainer;
-using armarow::common::Interface;
-
-class TestMAC : public Interface<Message>
-{
-    public:
-        static const Message::Address BROADCAST_ADDRESS=255;
-
-        struct TxCompleteAttribute{};
-
-        typedef AttributeContainer< TxCompleteAttribute, 
-                                    Delegate<Message&> 
-                                  > 
-                    TxCompleteCallback;
-
-    private:
-        Delegate<Message&> txCompleteDelegate;
-
-    public:
-        Error send(Message& msg)
-        {
-            txCompleteDelegate(msg);
-            return armarow::common::SUCCESS;
-        }
-
-        Error setAttribute(const TxCompleteCallback& attr)
-        {
-            txCompleteDelegate = attr.param;
-            return armarow::common::SUCCESS;
-        }
-};
-
-typedef TestMAC MacLayer;
-MacLayer mac;
+typedef Simple802_15_4<MacConfig, Phy> Mac;
+typedef Mac::Message Message;
+Mac mac;
 
 Message msg;
 
 const char* const content="MAC LAYER TEST";
 
-void txComplete(Message& msg){
-    avr_halib::locking::GlobalIntLock lock;
-
-    log::emit() << "transmission finished with " << msg.state << log::endl;
-}
-
 void init()
 {
     strcpy(reinterpret_cast<char*>(msg.payload), content);
 
-    msg.size        = strlen(content);
-    msg.dstAddress = MacLayer::BROADCAST_ADDRESS;
+    msg.header.size            = strlen(content);
+    msg.header.destination.pan = 0;
+    msg.header.destination.id  = 255;
 
-    MacLayer::TxCompleteCallback txCompleteCallback;
+/*    Mac::TxCompleteCallback txCompleteCallback;
 
-    txCompleteCallback.param.bind<&txComplete>();
+    txCompleteCallback.value.bind<&txComplete>();
 
     Error error=mac.setAttribute(txCompleteCallback);
     if(error)
         log::emit<log::Error>() << "setting of callback failed: " << error << log::endl;
-    sei();
+    sei();*/
 }
 
 int main()

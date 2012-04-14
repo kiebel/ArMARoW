@@ -341,8 +341,9 @@ namespace atmega128rfa1 {
                 UseRegMap(rm, RegMap);
                 rm.sleep=false;
                 do
+                {
                     SyncRegMap(rm);
-                while(!rm.irqStatus.pllLock);
+                }while(!rm.irqStatus.pllLock);
                 rm.irqStatus.pllLock=true;
                 SyncRegMap(rm);
                 return setState(idleState);

@@ -1,4 +1,5 @@
 #include <avr-halib/avr/timer.h> //eggTimer
+#include <stdlib.h>
 
 namespace armarow {
 namespace mac {

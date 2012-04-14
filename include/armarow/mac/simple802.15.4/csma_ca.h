@@ -20,7 +20,7 @@ namespace simple802_15_4
                 static const uint8_t minBackoffExponent = 3;
                 static const uint8_t maxBackoffExponent = 8;
                 static const uint32_t ticksperSecond    = 1000UL * 1000UL;
-                static const uint32_t ticksperSymbol    = ticksperSecond / PhysicalLayer::SignalParameters::symbolRate;
+                static const uint32_t ticksperSymbol    = ticksperSecond / PhysicalLayer::symbolRate;
                 static const uint32_t backoffPeriod     = 20 * ticksperSymbol;
                 typedef typename config::BackoffTimer Timer;
             };
@@ -41,7 +41,7 @@ namespace simple802_15_4
 
             void nextTry()
             {
-                typename PhysicalLayer::Attribute::ClearChannelAssessment cca;
+                typename PhysicalLayer::Attributes::CCA cca;
                 phy.getAttribute(cca);
                 if(cca.value)
                 {

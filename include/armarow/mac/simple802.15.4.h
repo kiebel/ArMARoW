@@ -18,8 +18,8 @@ namespace mac {
     template<typename config, class PhysicalLayer>
     class Simple802_15_4 : public common::Interface< simple802_15_4::Message<config,typename PhysicalLayer::Message> >, public PhysicalLayer
     {
-    public:
-        typedef typename common::Interface< simple802_15_4::Message<config,typename PhysicalLayer::Message> >::Message Message;
+        public:
+            typedef typename common::Interface< simple802_15_4::Message<config,typename PhysicalLayer::Message> >::Message Message;
         private:
             /**\brief the CSMA_CA implementation**/
             simple802_15_4::NonBeaconCsmaCa<config, PhysicalLayer, Message> mac;
