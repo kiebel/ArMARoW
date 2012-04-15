@@ -1,4 +1,6 @@
-#include <avr-halib/avr/timer.h> //eggTimer
+#include <avr-halib/avr/oneShot.h> 
+#include <avr-halib/avr/timer.h>
+#include <avr-halib/common/frequency.h>
 #include <stdlib.h>
 
 namespace armarow {
@@ -10,10 +12,17 @@ namespace simple802_15_4
      *  \tparam config configuration structure for backoff timing
      **/
     template<typename config>
-    class BackoffTimer{
+    class BackoffTimer
+	{
         private:
+			struct OneShotTimerConfig : public avr_halib::config::TimerDefaultConfig<config::BackoffTimer>
+			{
+				typedef config::BackoffTimer RegMap;
+				typedef avr_halib::config::Frequency<1000> BaseFrequency;
+			};
             /** \brief One-shot-Timer executing the registered callback after timeout duration **/
-            ExactEggTimer<typename config::Timer> timer;
+			typedef avr_halib::drivers::OneShotTimer::configure<OneShotTimerConfig>::type Timer;
+			Timer timer;
             /** \brief number of waited backoffs
              *
              * is used to calculate the next backoff exponent and by this the
@@ -79,7 +88,7 @@ namespace simple802_15_4
                 if(backoffCount > maxBackoffCount)
                     return false;
                 uint16_t backoffTime_ms = (uint16_t)(backoffTime() / 1000);
-                timer.start( backoffTime_ms );
+                timer.setup( backoffTime_ms );
 
                 log::emit<log::Trace>()
                     << "started backoff timer, timeout in "
@@ -96,7 +105,9 @@ namespace simple802_15_4
             template<typename T, void (T::*f)(void)>
             void register_callback(T& obj)
             {
-                timer.onTimerDelegate.template bind<T, f>(&obj);
+				typedef Timer::CallbackType temp;
+				temp.bind<T, f>(&obj)
+				timer.setDelegate<Timer::Units::matchA>(temp);
             }
     };
 }
