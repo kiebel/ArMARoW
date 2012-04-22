@@ -1,5 +1,4 @@
+include ../../config.mk
+include ${AVR_HALIBDIR}/platforms/deRCB128RFA1/config.mk
+
 ARCH		= avr
-MCU		    = atmega128rfa1
-CLOCK		= 16000000
-PROGRAMMER	?= avr911
-PORT        ?= /dev/ttyS0

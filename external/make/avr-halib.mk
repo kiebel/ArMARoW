@@ -50,13 +50,15 @@ ifeq ($(AVR_HALIBDIR),)
 	AVR_REMOVE=rm -rf ${AVR_HALIBDIR} &
 endif
 
+.PHONY: ${AVR_HALIBDIR}/${MCU}/lib/libavr-halib.a
+
 HALIB=${AVR_HALIBDIR}
 CHIP=${MCU}
 
 -include ${AVR_HALIBDIR}/config.mk
 -include ${AVR_HALIBDIR}/make/config.mk
 
-EXTERNAL_DEPS    += ${AVR_HALIBDIR}/lib/libavr-halib-${MCU}.a
+EXTERNAL_DEPS    += ${AVR_HALIBDIR}/${MCU}/lib/libavr-halib.a
 EXTERNAL_TARGETS += ${AVR_HALIBDIR}
 EXTERNAL_CLEANS  += ${AVR_CLEAN}
 EXTERNAL_REMOVES += ${AVR_REMOVE}
@@ -70,6 +72,6 @@ ${AVR_HALIBDIR}/config.mk: | ${AVR_HALIBDIR}
 
 ${AVR_HALIBDIR}/make/config.mk: | ${AVR_HALIBDIR}
 
-${AVR_HALIBDIR}/lib/libavr-halib-${MCU}.a:
+${AVR_HALIBDIR}/lib/${MCU}/libavr-halib.a:
 	@echo "Building needed avr-halib for $(MCU)"
-	@make -C $(AVR_HALIBDIR) CHIP=${MCU}
+	@make -C $(AVR_HALIBDIR) CHIP=${MCU} lib

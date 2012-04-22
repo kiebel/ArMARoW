@@ -47,6 +47,8 @@ SRC=.
 BUILD=./build
 INCLUDE=.
 
+PLATFORM = deRCB128RFA1
+
 .PHONY: default
 
 default: help
