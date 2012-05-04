@@ -41,17 +41,15 @@
 # -----------------------------------------------------------------------------
 #                             CONFIGURATION
 # -----------------------------------------------------------------------------
-# configure location for logging library
-#LOGGINGDIR   ?= 
-#BOOSTDIR     ?= /usr/include/
-PLATFORM     ?= deRFmega128
-#AVR_HALIBDIR ?= 
+AVR_HALIBDIR ?= ${HOME}/eos/research/AVR-HaLib
 
-LIBS      += 
-LDPATHS   +=
-INCLUDES  += 
-CFLAGS    += 
-CXXFLAGS  += 
-ASMFLAGS  += 
+ARMAROW_DIR  := $(dir $(abspath $(lastword ${MAKEFILE_LIST})))
+PLATFORM     ?= ${ARMAROW_DIR}/platform/deRCB128RFA1
+LIBS         += 
+LDPATHS      +=
+INCLUDES     += ${ARMAROW_DIR}/include
+CFLAGS       += 
+CXXFLAGS     += 
+ASMFLAGS     += 
 
 # -----------------------------------------------------------------------------

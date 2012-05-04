@@ -35,7 +35,6 @@
 ##    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
 ##
-## $Id$
 ##
 ################################################################################
 # -----------------------------------------------------------------------------
@@ -44,34 +43,19 @@
 ifeq ($(AVR_HALIBDIR),)
 	AVR_HALIBDIR:=${BASEEXTERNAL}/avr_halib
 	AVR_ECHO="Checking out latest AVR-halib"
-	AVR_FETCH=svn co https://svn-eos.cs.uni-magdeburg.de/repos/Projects/AVR/halib/trunk ${AVR_HALIBDIR} --ignore-externals -q
-	AVR_CONFIGURE=sed -e s?.*BOOST_DIR=?BOOST_DIR=$(abspath ${BOOSTDIR})?g -e s?.*LOGGING_DIR=?LOGGING_DIR=$(abspath ${LOGGINGDIR})?g ${AVR_HALIBDIR}/config.mk > temp && mv temp ${AVR_HALIBDIR}/config.mk
+	AVR_FETCH=echo "Fetching"
+	AVR_CONFIGURE=echo "Please configure your AVR-HaLib now! Afterwards start the make process again"
 	AVR_CLEAN=${MAKE} -C ${AVR_HALIBDIR} clean &
 	AVR_REMOVE=rm -rf ${AVR_HALIBDIR} &
 endif
 
-.PHONY: ${AVR_HALIBDIR}/${MCU}/lib/libavr-halib.a
+HALIB_DIR = ${AVR_HALIBDIR}
 
-HALIB=${AVR_HALIBDIR}
-CHIP=${MCU}
-
--include ${AVR_HALIBDIR}/config.mk
--include ${AVR_HALIBDIR}/make/config.mk
-
-EXTERNAL_DEPS    += ${AVR_HALIBDIR}/${MCU}/lib/libavr-halib.a
-EXTERNAL_TARGETS += ${AVR_HALIBDIR}
 EXTERNAL_CLEANS  += ${AVR_CLEAN}
 EXTERNAL_REMOVES += ${AVR_REMOVE}
 
-${AVR_HALIBDIR}:
+
+${HALIB_DIR}/make/singleObjectApps.mk ${HALIB_DIR}/make/multiObjectApps.mk:
 	@echo ${AVR_ECHO}
 	@${AVR_FETCH}
 	@${AVR_CONFIGURE}
-
-${AVR_HALIBDIR}/config.mk: | ${AVR_HALIBDIR}
-
-${AVR_HALIBDIR}/make/config.mk: | ${AVR_HALIBDIR}
-
-${AVR_HALIBDIR}/lib/${MCU}/libavr-halib.a:
-	@echo "Building needed avr-halib for $(MCU)"
-	@make -C $(AVR_HALIBDIR) CHIP=${MCU} lib

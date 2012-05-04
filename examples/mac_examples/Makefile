@@ -37,20 +37,16 @@
 ##
 ## $Id$
 ##
-################################################################################
-ARMAROWDIR=../../
+#############################################################################
+ARMAROW_DIR := ../../
 
-CXXFLAGS+=-Wall -Os
+CXXFLAGS    += -Wall -Os
 
-BIN=./bin
-SRC=.
-BUILD=./build
-INCLUDE=.
+BIN         := ./bin
+SRC         := .
+BUILD       := ./build
+INCLUDE     := .
 
-PLATFORM = deRCB128RFA1
+#PLATFORM    := ${ARMAROW_DIR}/platform/deRCB128RFA1
 
-.PHONY: default
-
-default: help
-
-include ${ARMAROWDIR}/make/example.mk
+include ${ARMAROW_DIR}/make/example.mk

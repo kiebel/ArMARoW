@@ -1,8 +1,6 @@
 ################################################################################
 ##
-## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-##               2010 Thomas Kiebel <kiebel@ivs.cs.uni-magdeburg.de>
-##               2010 Christoph Steup <christoph.steup@student.ovgu.de>
+## Copyright (c) 2012 Christoph Steup <christoph.steup@student.ovgu.de>
 ## All rights reserved.
 ##
 ##    Redistribution and use in source and binary forms, with or without
@@ -38,3 +36,7 @@
 ## $Id$
 ##
 ################################################################################
+# -----------------------------------------------------------------------------
+#                             AVR - EXTERNALS
+# -----------------------------------------------------------------------------
+include ${ARMAROW_DIR}/external/make/avr-halib.mk

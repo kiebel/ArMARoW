@@ -1,19 +1,16 @@
-################################################################################
-##
-## Copyright (c) 2010 Michael Schulze <mschulze@ivs.cs.uni-magdeburg.de>
-ARMAROWDIR=../../../
+ARMAROW_DIR=../../../
 
 CXXFLAGS+=-Wall -Os
 
-PLATFORM=deRCB128RFA1_newDriver
+PLATFORM=${ARMAROW_DIR}/platform/deRCB128RFA1
 
 BIN=./bin
-SRC=.
+SRC=./src
 BUILD=./build
-INCLUDE=.
+INC=./include
 
 .PHONY: default
 
 default: help
 
-include ${ARMAROWDIR}/make/example.mk
+include ${ARMAROW_DIR}/make/example.mk
