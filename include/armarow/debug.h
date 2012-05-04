@@ -40,7 +40,7 @@
  ******************************************************************************/
 #pragma once
 
-#include <platform.h> //this should deliver a configure log
+#include <platform.h> //this should deliver a configured log
 #include <stdlib.h>
 
 /*! \defgroup UnitTest Logging and Debugging
@@ -53,8 +53,10 @@
 #endif
 
 #ifdef ARMAROW_DEBUG_DISABLE
-LOGGING_DISABLE_LEVEL(platform::logging::log::Trace);
-LOGGING_DISABLE_LEVEL(platform::logging::log::Info);
+LOGGING_DISABLE_LEVEL(avr_halib::logging::log::Error);
+LOGGING_DISABLE_LEVEL(avr_halib::logging::log::Warning);
+LOGGING_DISABLE_LEVEL(avr_halib::logging::log::Trace);
+LOGGING_DISABLE_LEVEL(avr_halib::logging::log::Info);
 #endif
 
 #define TRACE_FUNCTION do {                                         \
@@ -76,9 +78,9 @@ LOGGING_DISABLE_LEVEL(platform::logging::log::Info);
  */
 template<typename ExprT, typename FileT, typename LineT> static inline
 void __assert_failed_handler(ExprT expr, FileT file, LineT line) {
-    platform::logging::log::emit() << file << ':' << line
+    ::log::emit() << file << ':' << line
         << PROGMEMSTRING(": Assertion '") << expr
-        << PROGMEMSTRING("' failed.") << platform::logging::log::endl;
+        << PROGMEMSTRING("' failed.") << ::log::endl;
     cli();while(true);
 }
 

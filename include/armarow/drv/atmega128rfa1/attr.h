@@ -1,134 +1,218 @@
 #pragma once
 
-#include <avr-halib/share/delegate.h>
+#include "core.h"
 
 #include <armarow/common/attributeContainer.h>
 #include <armarow/common/error.h>
 
 namespace armarow {
 namespace drv {
-namespace atmega128rfa1 {
-    namespace attributes {
-        namespace tags
-        {
-            struct Channel{};
-            struct Sleep{};
-            struct Callback{};
-            struct CCA{};
-            struct CCAParams{};
-        }
-        namespace params
-        {
-            using specification::ChannelType;
-            using specification::RSSIType;
-            struct CCAParamType
-            {
-                typedef specification::CCAModeType CCAModeType;
-                typedef specification::CCAThresholdType CCAThresholdType;
+namespace atmega128rfa1
+{
+    using common::AttributeContainer;
 
-                CCAModeType     mode;
-                CCAThresholdType threshold;
-            };
-            using specification::CCAType;
-            using specification::SleepType;
-        }
-        namespace values
-        {
-            using specification::Channels;
-            struct CCAParams : public specification::CCAModes
-            {
-                static const specification::CCAThresholdType minThreshold = specification::Constants::minCCAThreshold;
-                static const specification::CCAThresholdType maxThreshold = specification::Constants::maxCCAThreshold;
-            };
-        };
-    }
-   
-    template<typename Driver>
-    struct AttributeHandler : public Driver
+    class AttributeHandler
     {
-        public:
-            struct Attributes
+        private:
+            struct Tags
             {
-                typedef common::AttributeContainer< attributes::tags::Channel, 
-                                                    attributes::params::ChannelType,
-                                                    attributes::values::Channels     > Channel;
-                typedef common::AttributeContainer< attributes::tags::Sleep, 
-                                                    attributes::params::SleepType    > Sleep;
-                typedef common::AttributeContainer< attributes::tags::CCA, 
-                                                    attributes::params::CCAType      > CCA;
-                typedef common::AttributeContainer< attributes::tags::CCA, 
-                                                    attributes::params::CCAParamType,
-                                                    attributes::values::CCAParams    > CCAParams;
-                typedef common::AttributeContainer< attributes::tags::Callback,
-                                                    typename Driver::CallbackType >    Callback;
+                struct Channel{};
+                struct Sleep{};
+                struct Callback{};
+                struct ClearChannelAssessment{};
+                struct ClearChannelParameters{};
             };
 
-            common::Error setAttribute(typename Attributes::Callback& cb)
+            struct Parameters
             {
-                this->callUpper=cb.value;
-                return common::SUCCESS;
-            }
+                typedef specification::ChannelType ChannelType;
+                typedef specification::RSSIType    RSSIType;
+                typedef specification::ClearChannelAssessmentType     ClearChannelAssessmentType;
+                typedef specification::SleepType   SleepType;
 
-            common::Error getAttribute(typename Attributes::Callback& cb) const
-            {
-                cb.value=this->callUpper;
-                return common::SUCCESS;
-            }
+                struct ClearChannelParametersType
+                {
+                    typedef specification::ClearChannelModeType      ClearChannelModeType;
+                    typedef specification::ClearChannelThresholdType ClearChannelThresholdType;
 
-            common::Error setAttribute(typename Attributes::Sleep& attr)
-            {
-                bool result;
-                if(attr.value)
-                    result=this->sleep();
-                else
-                    result=this->wakeup();
+                    ClearChannelModeType      mode;
+                    ClearChannelThresholdType threshold;
+                };
+            };
 
-                if(result)
-                    return common::SUCCESS;
-                else
-                    return common::BUSY;
-            }
+            struct Values
+            {
+                struct ClearChannelParameters
+                {
+                    typedef specification::ClearChannelModes ClearChannelModes;
+                    static const specification::ClearChannelThresholdType minThreshold = specification::Constants::minCCAThreshold;
+                    static const specification::ClearChannelThresholdType maxThreshold = specification::Constants::maxCCAThreshold;
+                };
 
-            common::Error getAttribute(typename Attributes::Sleep& attr) const
-            {
-                attr.value=this->isSleeping();
-                return common::SUCCESS;
-            }
+                typedef specification::Channels Channels;
+            };
 
-            common::Error setAttribute(typename Attributes::Channel& attr)
+        public:
+            template<typename Config>
+            class configure
             {
-                this->setChannel(attr.value);
-                return common::SUCCESS;
-            }
+                private:
+                    typedef typename Core::configure< Config >::type Base;
 
-            common::Error getAttribute(typename Attributes::Channel& attr) const
-            {
-                attr.value=this->getChannel();
-                return common::SUCCESS;
-            }
+                public:
+                    struct type : public Base
+                    {
+                        public:
+                            struct Attributes
+                            {
+                                typedef AttributeContainer< Tags      ::Channel, 
+                                                            Parameters::ChannelType,
+                                                            Values    ::Channels                    > Channel;
+                                typedef AttributeContainer< Tags      ::Sleep, 
+                                                            Parameters::SleepType                   > Sleep;
+                                typedef AttributeContainer< Tags      ::ClearChannelAssessment, 
+                                                            Parameters::ClearChannelAssessmentType  > ClearChannelAssessment;
+                                typedef AttributeContainer< Tags      ::ClearChannelParameters, 
+                                                            Parameters::ClearChannelParametersType,
+                                                            Values    ::ClearChannelParameters      > ClearChannelParameters;
+                                typedef AttributeContainer< Tags      ::Callback,
+                                                            typename Base::CallbackType           > Callback;
+                            };
+                        private:
+                            typedef typename Base::RegMap RegMap;
+                            typedef typename Base::StateType StateType;
+                            typedef typename Base::States States;
+                            typedef typename Base::Constants Constants;
+                            static const StateType idleState = Base::idleState;
 
-            common::Error getAttribute(typename Attributes::CCA& cca)
-            {
-                if(!this->startCCA())
-                    return common::BUSY;
-                while(!this->ccaDone());
-                cca.value=this->getCCAValue();
-                return common::SUCCESS;
-            }
+                        public:
+                            common::Error setAttribute(const typename Attributes::Callback& cb)
+                            {
+                                this->setCallback(cb.value);
+                                return common::SUCCESS;
+                            }
 
-            common::Error setAttribute(typename Attributes::CCAParams& param)
-            {
-                if(!this->setCCAParams(param.value.mode, param.value.threshold))
-                    return common::OUT_OF_RANGE;
-                else
-                    return common::SUCCESS;
-            }
-             
-            common::Error getAttribute(typename Attributes::CCAParams& param) const
-            {
-                this->getCCAParams(param.value.mode, param.value.threshold);
-                return common::SUCCESS;
-            }
+                            common::Error getAttribute(typename Attributes::Callback& cb) const
+                            {
+                                cb.value=this->getCallback();
+                                return common::SUCCESS;
+                            }
+
+                            common::Error setAttribute(const typename Attributes::Sleep& attr)
+                            {
+                                UseRegMap(rm, RegMap);
+
+                                if(attr.value)
+                                {
+                                    if( !setState(States::trx_off) )
+                                        return common::BUSY;
+                                    rm.sleep=true;
+                                    SyncRegMap(rm);
+                                    return common::SUCCESS;
+                                }
+                                else
+                                {
+                                    rm.sleep=false;
+                                    do
+                                    {
+                                        SyncRegMap(rm);
+                                    }while( !rm.irqStatus.pllLock );
+
+                                    rm.irqStatus.pllLock=true;
+                                    SyncRegMap(rm);
+                                    if(!setState(idleState))
+                                        return common::BUSY;
+                                }
+                            }
+
+                            common::Error getAttribute(typename Attributes::Sleep& attr) const
+                            {
+                                UseRegMap(rm ,RegMap);
+
+                                SyncRegMap(rm);
+                                attr.value = (rm.sleep && this->getState() == States::trx_off);
+                                
+                                return common::SUCCESS;
+                            }
+
+                            common::Error setAttribute(const typename Attributes::Channel& attr)
+                            {
+                                UseRegMap(rm, RegMap);
+
+                                rm.channel=attr.value;
+                                SyncRegMap(rm);
+
+                                do
+                                    SyncRegMap(rm);
+                                while(!rm.irqStatus.pllLock);
+                                    
+                                rm.irqStatus.pllLock=true;
+                                SyncRegMap(rm);
+
+                                return common::SUCCESS;
+                            }
+
+                            common::Error getAttribute(typename Attributes::Channel& attr) const
+                            {
+                                UseRegMap(rm, RegMap);
+
+                                SyncRegMap(rm);
+                                attr.value=rm.channel;
+
+                                return common::SUCCESS;
+                            }
+
+                            common::Error getAttribute(typename Attributes::ClearChannelAssessment& cca)
+                            {
+                                UseRegMap(rm, RegMap);
+
+                                if( !setState(States::rx_on) )
+                                    return common::BUSY;
+
+                                rm.cca_request=true;
+                                SyncRegMap(rm);
+
+                                do
+                                {
+                                    SyncRegMap(rm);
+                                }
+                                while(!rm.cca_done);
+
+                                setState(idleState);
+
+                                SyncRegMap(rm);
+                                cca.value=rm.cca_status;
+
+                                return common::SUCCESS;
+                            }
+
+                            common::Error setAttribute(const typename Attributes::ClearChannelParameters& param)
+                            {
+                                UseRegMap(rm, RegMap);
+
+                                if( param.value.threshold < Attributes::ClearChannelParameters::minThreshold ||
+                                    param.value.threshold > Attributes::ClearChannelParameters::maxThreshold    )
+                                    return common::OUT_OF_RANGE;
+
+                                rm.cca_mode      = param.value.mode;
+                                rm.cca_threshold = param.value.threshold / specification::Constants::ccaThresholdModifier;
+                                SyncRegMap(rm);
+
+                                return common::SUCCESS;
+                            }
+                             
+                            common::Error getAttribute(typename Attributes::ClearChannelParameters& param) const
+                            {
+                                UseRegMap(rm, RegMap);
+
+                                SyncRegMap(rm);
+                                param.value.mode      = rm.cca_mode;
+                                param.value.threshold = rm.cca_threshold;
+
+                                return common::SUCCESS;
+                            }
+                    };
+            };
     };
 }
 }

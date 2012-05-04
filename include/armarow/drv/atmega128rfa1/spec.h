@@ -33,8 +33,8 @@ namespace atmega128rfa1 {
             };
         };
 
-        struct CCAModes{
-            enum CCAMode{
+        struct ClearChannelModes{
+            enum ClearChannelModeType{
                 CarrierSenseOrEnergy  = 0,
                 Energy                = 1,
                 CarrierSense          = 2,
@@ -62,15 +62,15 @@ namespace atmega128rfa1 {
         typedef Channels::Channel ChannelType;
         typedef int8_t            RSSIType;
 
-        typedef CCAModes::CCAMode CCAModeType;
-        typedef uint8_t           CCAThresholdType ;
-        typedef bool              CCAType;
+        typedef ClearChannelModes::ClearChannelModeType ClearChannelModeType;
+        typedef uint8_t           ClearChannelThresholdType;
+        typedef bool              ClearChannelAssessmentType;
         typedef bool              SleepType;
 
 
 		struct Constants
 		{
-            private:
+            public:
                 static const RSSIType rssi_base_val = -90;
                 static const uint8_t ccaThresholdSize = 4;
                 static const uint8_t ccaThresholdModifier = 2; 
@@ -81,8 +81,8 @@ namespace atmega128rfa1 {
 			static const uint32_t symbolRate = 62500;
             /** \brief maximum bytes in message payload **/
             static const uint8_t maxPayload = 128;
-            static const CCAThresholdType minCCAThreshold = rssi_base_val;
-            static const CCAThresholdType maxCCAThreshold = rssi_base_val + ccaThresholdModifier*((1<<ccaThresholdSize)-1);
+            static const ClearChannelThresholdType minCCAThreshold = rssi_base_val;
+            static const ClearChannelThresholdType maxCCAThreshold = rssi_base_val + ccaThresholdModifier*((1<<ccaThresholdSize)-1);
 		};
 
         typedef avr_halib::regmaps::local::atmega128rfa1::Registers   RegMap;
@@ -113,16 +113,16 @@ LoggingOutput& operator<<(LoggingOutput& out, const armarow::drv::atmega128rfa1:
     return out;
 }
 
-LoggingOutput& operator<<(LoggingOutput& out, const armarow::drv::atmega128rfa1::specification::CCAModeType& mode)
+LoggingOutput& operator<<(LoggingOutput& out, const armarow::drv::atmega128rfa1::specification::ClearChannelModeType& mode)
 {
-    using armarow::drv::atmega128rfa1::specification::CCAModes;
+    using armarow::drv::atmega128rfa1::specification::ClearChannelModes;
 
     switch(mode)
     {
-        case(CCAModes::CarrierSenseOrEnergy)  : return out << PROGMEMSTRING("carrier sensed or energy detected");
-        case(CCAModes::CarrierSense)          : return out << PROGMEMSTRING("carrier sensed");
-        case(CCAModes::Energy)                : return out << PROGMEMSTRING("energy detected");
-        case(CCAModes::CarrierSenseAndEnergy) : return out << PROGMEMSTRING("carrier sensed and energy detected");
+        case(ClearChannelModes::CarrierSenseOrEnergy)  : return out << PROGMEMSTRING("carrier sensed or energy detected");
+        case(ClearChannelModes::CarrierSense)          : return out << PROGMEMSTRING("carrier sensed");
+        case(ClearChannelModes::Energy)                : return out << PROGMEMSTRING("energy detected");
+        case(ClearChannelModes::CarrierSenseAndEnergy) : return out << PROGMEMSTRING("carrier sensed and energy detected");
         default                              : return out << PROGMEMSTRING("unknown cca mode");
     };
 
