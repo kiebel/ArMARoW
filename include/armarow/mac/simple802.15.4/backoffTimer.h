@@ -1,4 +1,4 @@
-#include <avr-halib/avr/oneShot.h> 
+#include <avr-halib/avr/oneShotTimer.h> 
 #include <avr-halib/avr/timer.h>
 #include <avr-halib/common/frequency.h>
 #include <stdlib.h>
@@ -15,13 +15,14 @@ namespace simple802_15_4
     class BackoffTimer
 	{
         private:
-			struct OneShotTimerConfig : public avr_halib::config::TimerDefaultConfig<config::BackoffTimer>
+			struct OneShotTimerConfig : public avr_halib::drivers::OneShotTimer::DefaultConfig
 			{
-				typedef config::BackoffTimer RegMap;
-				typedef avr_halib::config::Frequency<1000> BaseFrequency;
+                typedef platform::Timer1BaseConfig::RegMap RegMap;
+                typedef platform::Timer1BaseConfig::InputFrequency InputFrequency;
+				typedef avr_halib::config::Frequency<config::backoffFrequency> BaseFrequency;
 			};
             /** \brief One-shot-Timer executing the registered callback after timeout duration **/
-			typedef avr_halib::drivers::OneShotTimer::configure<OneShotTimerConfig>::type Timer;
+			typedef typename avr_halib::drivers::OneShotTimer::configure<OneShotTimerConfig>::type Timer;
 			Timer timer;
             /** \brief number of waited backoffs
              *
@@ -46,38 +47,30 @@ namespace simple802_15_4
              *   grows exponentially with the number of waited
              *   backoffs.
              **/
-            uint32_t backoffTime()
+            uint32_t nextNrOfBackoffs()
             {
                 uint16_t  backoffExponent = minBackoffExponent + backoffCount;
                 if( backoffExponent > maxBackoffExponent )
                     backoffExponent = maxBackoffExponent;
 
                 // +1 enables the compiler to optimize divison to shift
-                uint16_t backoffPeriods =   (uint32_t)rand()
-                                          * ((1 << (backoffExponent)) - 1)
-                                          / ((uint32_t)RAND_MAX + 1); 
+                uint16_t backoffs = ( ( (uint32_t)rand() << backoffExponent ) - 1 )
+                                    / ( (uint32_t) RAND_MAX + 1); 
 
-                return  (uint32_t) backoffPeriods * backoffPeriod;
+                return backoffs;
             }
 
         public:
+            typedef typename Timer::CallbackType CallbackType;
+            typedef typename Timer::InterruptSlotList InterruptSlotList;
+
             /** \brief Default constructor
-             *  \tparam T type of the object on which the callback will be called
-             *  \tparam F member function of T acting as callback
-             *  \param obj instance of T used to call F
              *
-             *   Resets backoff exponent to minimum value, also
-             *   registers supplied callback function with timer
-             *   delegate
+             *   Resets backoff exponent to minimum value
              **/
             
             BackoffTimer() {
                 reset();
-            }
-
-            /** \brief Destructor stopping the internal timer**/
-            ~BackoffTimer() {
-                timer.stop();
             }
 
             /** \brief Start random backoff timer
@@ -87,12 +80,13 @@ namespace simple802_15_4
             bool wait() {
                 if(backoffCount > maxBackoffCount)
                     return false;
-                uint16_t backoffTime_ms = (uint16_t)(backoffTime() / 1000);
-                timer.setup( backoffTime_ms );
+                backoffCount++;
+                uint8_t backoffs = nextNrOfBackoffs();
+                timer.template setup<Timer::Units::matchA>( backoffs );
 
                 log::emit<log::Trace>()
                     << "started backoff timer, timeout in "
-                    << backoffTime_ms << " ms." << log::endl;
+                    << (uint16_t)backoffs << log::endl;
 
                 return true;
             }
@@ -102,12 +96,9 @@ namespace simple802_15_4
                 backoffCount = 0;
             }
 
-            template<typename T, void (T::*f)(void)>
-            void register_callback(T& obj)
+            void setCallback(const CallbackType& cb)
             {
-				typedef Timer::CallbackType temp;
-				temp.bind<T, f>(&obj)
-				timer.setDelegate<Timer::Units::matchA>(temp);
+			    timer.template setCallback<Timer::Units::matchA>(cb);
             }
     };
 }

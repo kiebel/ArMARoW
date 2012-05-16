@@ -35,7 +35,7 @@ namespace simple802_15_4
                 AdressingMode srcAdrMode : 2;   /**< addressing mode of source**/
             };
             uint16_t value;
-        };
+        } __attribute__((packed));
         /** \brief Default constructor
          *
          *  calls reset()
@@ -110,7 +110,7 @@ namespace simple802_15_4
                 << "   pan: " << log::hex << pan << log::endl
                 << "   id : " << log::hex << id  << log::endl;
         }
-    };
+    } __attribute__((packed));
 
     /** \brief IEEE address in full adressing mode **/
     struct FullAddress
@@ -123,7 +123,7 @@ namespace simple802_15_4
                 << "   pan: " << log::hex << pan << log::endl
                 << "   id : " << log::hex << id << log::endl;
         }
-    };
+    } __attribute__((packed));
 
     /** \brief IEEE MAC frame header
      *
@@ -131,6 +131,8 @@ namespace simple802_15_4
      **/
     template<typename config>
     struct FrameHeader {
+        typedef uint8_t SequenceNumberType;
+
         ControlField control;
         uint8_t seqNumber;
         ShortAddress destination;
