@@ -1,0 +1,14 @@
+#pragma once
+
+namespace platform {
+namespace deRCB128RFA1
+{
+    portmap Debug for atmega128rfa1
+    {
+        pin debug0 : b 4;
+        pin debug1 : b 5;
+        pin debug2 : b 6;
+        pin debug3 : b 7;
+    };
+}
+}
