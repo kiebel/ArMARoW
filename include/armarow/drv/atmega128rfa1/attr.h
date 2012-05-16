@@ -82,10 +82,11 @@ namespace atmega128rfa1
                             typedef typename Base::RegMap RegMap;
                             typedef typename Base::StateType StateType;
                             typedef typename Base::States States;
-                            typedef typename Base::Constants Constants;
+
                             static const StateType idleState = Base::idleState;
 
                         public:
+                            typedef typename Base::Constants Constants;
                             common::Error setAttribute(const typename Attributes::Callback& cb)
                             {
                                 this->setCallback(cb.value);

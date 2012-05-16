@@ -50,7 +50,7 @@ namespace atmega128rfa1 {
                         };
                         typedef typename Events::EventType EventType;
                         typedef Singleton< Implementation >     Base;
-                        typedef Delegate<EventType>             CallbackType;
+                        typedef Delegate< MessageType& >        CallbackType;
                         typedef specification::RegMap           RegMap;
                         typedef specification::FrameBufferMap   FrameBufferMap;
                         typedef specification::States           States;
@@ -61,6 +61,9 @@ namespace atmega128rfa1 {
 
                     private:
                         CallbackType callUpper;
+
+                    protected:
+                        MessageType* currentMsg;
 
                     public:
 
@@ -128,8 +131,32 @@ namespace atmega128rfa1 {
                         /** \brief end of reception interrupt handler**/
                         static void rxEnd()
                         {
-                            log::emit<log::Info>() << PROGMEMSTRING("got message") << log::endl;
-                            Base::getInstance().callUpper(Events::rxEnd);
+                            log::emit<log::Trace>() << PROGMEMSTRING("got message") << log::endl;
+                            Base& base=Base::getInstance();
+                            if(base.currentMsg)
+                            {
+                                UseRegMap(frameRM, FrameBufferMap);
+                                SyncRegMap(frameRM);
+
+                                log::emit<log::Trace>() << "fetch " << (uint16_t)frameRM.length
+                                                       << " message bytes from chip" << log::endl;
+
+                                base.currentMsg->header.size = frameRM.length;
+                                if(base.currentMsg->header.size > MessageType::maxSize)
+                                {
+                                    log::emit<log::Error>() << "impossible size in message: " << (uint16_t)base.currentMsg->header.size << log::endl;
+                                    return;
+                                }
+
+                                for( uint8_t i = 0; i < base.currentMsg->header.size; i++)
+                                    base.currentMsg->payload[i] = frameRM.frame[i];
+
+                                base.currentMsg->properties.state = common::RX_DONE;
+                               
+                                base.callUpper(*base.currentMsg);
+                            }
+                            else
+                                log::emit<log::Error>() << PROGMEMSTRING("dropped unexpected message") << log::endl;
                         }
                         /** \brief end of cca or ed interrupt handler**/
                         static void ccaDone(){}
@@ -138,15 +165,22 @@ namespace atmega128rfa1 {
                         /** \brief transmission ended interrupt handler**/
                         static void txEnd()
                         {
-                            Base::getInstance().setState( idleState );
-                            log::emit<log::Info>() << PROGMEMSTRING("tx ended") << log::endl;
-                            Base::getInstance().callUpper(Events::txEnd);
+                            log::emit<log::Trace>() << PROGMEMSTRING("tx ended") << log::endl;
+                            Base& base=Base::getInstance();
+                            base.setState( idleState );
+                            if(base.currentMsg)
+                            {
+                                base.currentMsg->properties.state=common::TX_DONE;
+                                base.callUpper(*base.currentMsg);
+                            }
+                            else
+                                log::emit<log::Error>() << PROGMEMSTRING("finished tx of unknown message") << log::endl;
                             
                         }
                         /** \brief radio awoken from sleep interrupt handler**/
                         static void awake()
                         {
-                            log::emit<log::Info>() << PROGMEMSTRING("awoken from sleep") << log::endl;
+                            log::emit<log::Trace>() << PROGMEMSTRING("awoken from sleep") << log::endl;
                             Base::getInstance().setState( idleState );
                         }
 
@@ -245,6 +279,7 @@ namespace atmega128rfa1 {
                          *  \see Specification
                          **/
                         void reset() {
+                            currentMsg = 0;
                             UseRegMap(rm, RegMap);
                             rm.sleep  = false;
                             rm.reset = true;
@@ -284,30 +319,36 @@ namespace atmega128rfa1 {
                          *  \param  msg the message to be transmitted
                          *  \return an error code indicating the result of the operation
                          **/
-                        Error send(MessageType& msg) {
-                            if( !setState(States::tx_on) )
-                                    return common::BUSY;
+                        Error send(MessageType& msg)
+                        {
+                            if( msg.header.size > MessageType::maxSize )
+                                return common::OUT_OF_RANGE;
 
                             if( msg.header.size == 0 )
-                            {
-                                setState( idleState );
                                 return common::NO_MESSAGE;
-                            }
+
+                            if( !setState(States::tx_on) )
+                                return common::BUSY;
+
+                            currentMsg = &msg;
 
                             UseRegMap(frameRM, FrameBufferMap);
 
                             frameRM.frame[0] = msg.header.size;
 
-                            log::emit<log::Info>() << "put " << 
-                                (uint16_t)frameRM.frame[0] << 
-                                " message bytes to chip" << log::endl;
+                            log::emit<log::Trace>() << "put " << (uint16_t)frameRM.frame[0] << " message bytes to chip" << log::endl;
 
                             for(uint8_t i = 0; i< msg.header.size; i++)
                               frameRM.frame[i+1] = msg.payload[i];
 
                             SyncRegMap(frameRM);
 
-                            setState(States::busy_tx);
+                            log::emit<log::Trace>() << "starting transmission of message: " << log::hex << (void*)&msg << log::endl;
+
+                            if( !setState(States::busy_tx))
+                                return common::FAILURE;
+
+                            currentMsg->properties.state=common::WORKING;
 
                             return common::SUCCESS;
                         }
@@ -316,17 +357,14 @@ namespace atmega128rfa1 {
                          *  \param  msg the message used as buffer to contain the received message
                          *  \return an error code indicating the result of the operation
                          **/
-                        Error receive(MessageType& msg) {
-                            UseRegMap(frameRM, FrameBufferMap);
-                            SyncRegMap(frameRM);
+                        Error receive(MessageType& msg)
+                        {
+                            currentMsg=&msg;
 
-                            log::emit<log::Info>() << "fetch " << 
-                                (uint16_t)frameRM.length << 
-                                " message bytes from chip" << log::endl;
+                            if( !setState(States::rx_on))
+                                return common::BUSY;
 
-                            msg.header.size = frameRM.length;
-                            for( uint8_t i = 0; i < msg.header.size; i++)
-                                msg.payload[i]=frameRM.frame[i];
+                            currentMsg->properties.state=common::WORKING;
 
                             return common::SUCCESS;
                         }

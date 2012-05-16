@@ -9,7 +9,7 @@ namespace meta {
     template<typename Extension, typename Base>
     struct concat
     {
-        struct type : public Base, public Extension {};
+        struct type : public Extension, public Base {} __attribute__((packed));
     };
 
     template< typename ConcatHeaders, typename ConcatProps, uint16_t maximumSize >
@@ -32,7 +32,7 @@ namespace meta {
                 static const uint16_t payloadSize = sizeof(payload);
 
                 template<class> friend class Extensible;
-        };
+        } __attribute__((packed));
     };
 
     template<typename BaseMsg>
@@ -55,14 +55,14 @@ namespace meta {
                     static BaseMessage& down(type& from)
                     {
                         from.header.size += sizeof(NewHeader);
-                        return reinterpret_cast<BaseMessage&>(from);
+                        return *reinterpret_cast<BaseMessage*>(&from);
                     }
                     static type& up(BaseMessage& from)
                     {
                         from.header.size -= sizeof(NewHeader);
-                        return reinterpret_cast<type&>(from);
+                        return *reinterpret_cast<type*>(&from);
                     }
-                };
+                } __attribute__((packed));
         };
     };
 
@@ -79,10 +79,10 @@ namespace meta {
 
                 typename BaseMsg::Header     header;
                 CustomType payload;
-                typename BaseMsg::Properties properies;
+                typename BaseMsg::Properties properties;
 
                 static const uint16_t payloadSize = sizeof(payload);
-            };
+            } __attribute__((packed));
         };
     };
 
@@ -96,20 +96,20 @@ namespace common{
         uint8_t size;
 
         DefaultHeader() : size(0){}
-    };
+    } __attribute__((packed));
 
     struct DefaultProps
     {
         MessageState state;
 
         DefaultProps() : state(NOTHING) {};
-    };
+    } __attribute__((packed));
 
     template<uint16_t maxSize>
     struct Message : public meta::assembleMessage< DefaultHeader,
                                                    DefaultProps,
                                                    maxSize >::type, 
-                     public meta::Extensible< Message<maxSize> >
+                     public meta::Extensible< Message< maxSize > >
     {};
 }
 }

@@ -1,11 +1,11 @@
-#define ARMAROW_DEBUG_DISABLE
+#define LOGGING_DISABLE //#define ARMAROW_DEBUG_DISABLE
 
 #include <config.h>
 #include <idler.h>
 
 Radio::MessageType message;
 Radio rc;
-Trigger periodicTrigger;
+//Trigger periodicTrigger;
 
 uint16_t counter;
 
@@ -19,7 +19,7 @@ void count(Radio::EventType event)
 {
     switch(event)
     {
-        case(Radio::Events::rxEnd): counter++;
+        case(Radio::Events::rxEnd): PINE|=1<<4;//counter++;
         default:                    break;
     }
 }
@@ -29,9 +29,9 @@ void init(){
     Radio::Attributes::Callback radioCB;
     radioCB.value.bind<count>();
     rc.setAttribute(radioCB);
-    Delegate<void> triggerCB;
-    triggerCB.bind<&eval>();
-    periodicTrigger.setCallback(triggerCB);
+//    Delegate<void> triggerCB;
+//    triggerCB.bind<&eval>();
+//    periodicTrigger.setCallback(triggerCB);
 }
 
 int main() {
@@ -41,6 +41,7 @@ int main() {
     counter=0;
 
     log::emit() << "Bandwidth measure" << log::endl << log::endl;
+    DDRE|=1<<4;
     sei();
 
     platform::Idler::idle();

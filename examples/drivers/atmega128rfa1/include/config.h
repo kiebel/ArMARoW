@@ -14,7 +14,7 @@ using avr_halib::config::Frequency;
 
 struct Config : public RadioDriver::DefaultConfig
 {
-    static const bool rxOnIdle = false;
+    static const bool rxOnIdle = true;
     static const bool useInterrupt = false;
 };
 

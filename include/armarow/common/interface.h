@@ -7,34 +7,39 @@
 namespace armarow {
 namespace common {
 
-    template<typename Msg>
+    template<typename MsgType>
     struct Interface
     {
-        typedef Msg Message;
-        Error send(Message& msg)
+        typedef MsgType MessageType;
+        Error send(MessageType& msg)
         {
-            BOOST_STATIC_ASSERT_MSG(!sizeof(Message), "not_implemented_yet");
+            BOOST_STATIC_ASSERT_MSG(!sizeof(MessageType), "not_implemented_yet");
             return FAILURE;
         }
 
-        Error receive(Message& msg)
+        Error receive(MessageType& msg)
         {
-            BOOST_STATIC_ASSERT_MSG(!sizeof(Message), "not_implemented_yet");
+            BOOST_STATIC_ASSERT_MSG(!sizeof(MessageType), "not_implemented_yet");
             return FAILURE;
         }
 
         template<typename AttributeContainer>
         Error getAttribute(AttributeContainer& attr) const
         {
-            BOOST_STATIC_ASSERT_MSG(!sizeof(Message), "not_implemented_yet");
+            BOOST_STATIC_ASSERT_MSG(!sizeof(MessageType), "not_implemented_yet");
             return FAILURE;
         }
 
         template<typename AttributeContainer>
         Error setAttribute(const AttributeContainer& attr)
         {
-            BOOST_STATIC_ASSERT_MSG(!sizeof(Message), "not_implemented_yet");
+            BOOST_STATIC_ASSERT_MSG(!sizeof(MessageType), "not_implemented_yet");
             return FAILURE;
+        }
+
+        void reset()
+        {
+            BOOST_STATIC_ASSERT_MSG(!sizeof(MessageType), "not_implemented_yet");
         }
     };
 }
