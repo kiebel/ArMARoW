@@ -107,7 +107,7 @@ namespace atmega128rfa1
 
                                 if(attr.value)
                                 {
-                                    if( !setState(States::trx_off) )
+                                    if( !this->setState(States::trx_off) )
                                         return common::BUSY;
                                     rm.sleep=true;
                                     SyncRegMap(rm);
@@ -123,7 +123,7 @@ namespace atmega128rfa1
 
                                     rm.irqStatus.pllLock=true;
                                     SyncRegMap(rm);
-                                    if(!setState(idleState))
+                                    if(!this->setState(idleState))
                                         return common::BUSY;
                                 }
                             }
@@ -180,7 +180,7 @@ namespace atmega128rfa1
                             {
                                 UseRegMap(rm, RegMap);
 
-                                if( !setState(States::rx_on) )
+                                if( !this->setState(States::rx_on) )
                                     return common::BUSY;
 
                                 rm.cca_request=true;
@@ -192,7 +192,7 @@ namespace atmega128rfa1
                                 }
                                 while(!rm.cca_done);
 
-                                setState(idleState);
+                                this->setState(idleState);
 
                                 SyncRegMap(rm);
                                 cca.value=rm.cca_status;
