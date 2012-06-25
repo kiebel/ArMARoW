@@ -62,9 +62,23 @@ namespace mac {
                         typedef simple802_15_4::NonBeaconCsmaCa<config, BaseLayer, MessageType> CSMA_CA;
                         CSMA_CA csma_ca;
                         CallbackType callback;
+                        MessageType* rxBuffer;
 
                         /**\brief internal variable for sequence number generation**/
                         typename Header::SequenceNumberType seqNumber;
+
+                        void rxDone(MessageType& msg)
+                        {
+                            callback(msg);
+                        }
+
+                        void txDone(MessageType& msg)
+                        {
+                            csma_ca.txDone();
+                            if(BaseLayer::config::rxOnIdle && rxBuffer)
+                                this->BaseLayer::receive(MessageType::down(*rxBuffer));
+                            callback(msg);
+                        }
 
                         void handlePhyEvent(BaseMessageType& phyMsg)
                         {
@@ -73,11 +87,8 @@ namespace mac {
                             MessageType& msg = MessageType::up(phyMsg);
                             switch(msg.properties.state)
                             {
-                                case(common::TX_DONE): csma_ca.txDone();
-                                                       callback(msg);
-                                                       break;
-
-                                case(common::RX_DONE): callback(msg);
+                                case(common::TX_DONE): return txDone(msg);
+                                case(common::RX_DONE): return rxDone(msg);
                                 default: break;
                             }
                         }
@@ -102,6 +113,14 @@ namespace mac {
                             cb.template bind< type, &type::handlePhyEvent >( this );
                             BaseLayer::setCallback( cb );
                         }
+
+                        template<typename CustomMsg>
+                        common::Error send(CustomMsg& msg)
+                        {
+                            return send(CustomMsg::down(msg));
+                        }
+
+
                         /**\brief transmit a message
                          *
                          * \param msg a reference to the message being transmitted
@@ -151,6 +170,7 @@ namespace mac {
                          **/
                         common::Error receive(MessageType& msg)
                         {
+                            rxBuffer=&msg;
                             return this->BaseLayer::receive(MessageType::down(msg));
                         }
 

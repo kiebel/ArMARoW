@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <avr-halib/regmaps/base/localRegMap.h>
+#include "spec.h"
 
 namespace avr_halib
 {
@@ -139,7 +140,7 @@ public:
 			uint8_t __pad_phy_cca[0x148];
 			union{
 				struct{
-					uint8_t channel :5;
+                    uint8_t channel  :5;
 					uint8_t cca_mode :2;
 					bool cca_request :1;
 				};

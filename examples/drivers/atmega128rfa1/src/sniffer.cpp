@@ -1,8 +1,14 @@
 //#define LOGGING_DISABLE
 
+#define ARMAROW_DEBUG_DISABLE
+#include <armarow/debug.h>
+
+
 #include <config.h>
 #include <idler.h>
 #include <debug_portmap.h>
+
+typedef Interrupt::InterruptManager< Radio::InterruptSlotList > IM;
 
 Radio radio;
 Radio::MessageType message;
@@ -16,11 +22,11 @@ void printReceivedMessage()
     debug.debug1.pin=true;
     SyncPortmap(debug);
 
-    log::emit() << "->[" << message.header.size
+    log::emit() << "->[" << (uint16_t)message.header.size
                 << "] ";
     for(uint8_t i=0;i<message.header.size;i++)
-        log::emit() << log::hex << (uint16_t)message.payload[i];
-    log::emit() << log::endl;
+        log::emit() << log::hex << (uint16_t)message.payload[i] << " ";
+    log::emit() << log::dec << log::endl;
 }
 
 void handleEvents(Radio::MessageType& msg)
@@ -37,6 +43,10 @@ void init()
     Radio::Attributes::Callback cb;
     cb.value.bind<&handleEvents>();
     radio.setAttribute(cb);
+
+    Radio::Attributes::Channel channel;
+    channel.value = Radio::Attributes::Channel::Channels::Channel11;
+    radio.setAttribute(channel);
 
     UsePortmap(debug, platform::Debug);
     debug.debug0.ddr=true;

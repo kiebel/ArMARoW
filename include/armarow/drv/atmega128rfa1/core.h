@@ -10,7 +10,10 @@
 #include <avr-halib/common/singleton.h>
 #include <avr-halib/common/delegate.h>
 
+#include <debug_portmap.h>
+
 #include "spec.h"
+#include "message.h"
 
 namespace armarow {
 namespace drv {
@@ -41,8 +44,14 @@ namespace atmega128rfa1 {
                 {
                     public:
                         typedef specification::Constants        Constants;
+                    private:
+                        typedef common::Message< Constants::maxPayload > BaseMessage;
+                        typedef MessageProperties< Config::fetchLQI, Config::fetchRSSI > Props;
+
+                    public:
                         /** \brief  definition of a layer specific message object**/
-                        typedef common::Message< Constants::maxPayload > MessageType;
+                        typedef typename BaseMessage::extend< MessageHeader, Props >::type MessageType;
+                        
 
                         struct Events : public InterruptMap
                         {
@@ -131,9 +140,19 @@ namespace atmega128rfa1 {
                         /** \brief end of reception interrupt handler**/
                         static void rxEnd()
                         {
+                            UsePortmap(debug, platform::Debug);
+                            debug.debug1.pin=true;
+                            SyncPortmap(debug);
+
+                            UseRegMap(rm, RegMap);
+                            rm.irqMask.rxEnd = false;
+                            SyncRegMap(rm);
+
                             log::emit<log::Trace>() << PROGMEMSTRING("got message") << log::endl;
                             Base& base=Base::getInstance();
-                            if(base.currentMsg)
+                            MessageType* msg=base.currentMsg;
+                            base.currentMsg=NULL;
+                            if(msg)
                             {
                                 UseRegMap(frameRM, FrameBufferMap);
                                 SyncRegMap(frameRM);
@@ -141,19 +160,33 @@ namespace atmega128rfa1 {
                                 log::emit<log::Trace>() << "fetch " << (uint16_t)frameRM.length
                                                        << " message bytes from chip" << log::endl;
 
-                                base.currentMsg->header.size = frameRM.length;
-                                if(base.currentMsg->header.size > MessageType::maxSize)
+                                msg->header.size = frameRM.length;
+                                if(msg->header.size > MessageType::maxSize)
                                 {
-                                    log::emit<log::Error>() << "impossible size in message: " << (uint16_t)base.currentMsg->header.size << log::endl;
+                                    log::emit<log::Error>() << "impossible size in message: " << (uint16_t)msg->header.size << log::endl;
                                     return;
                                 }
 
-                                for( uint8_t i = 0; i < base.currentMsg->header.size; i++)
-                                    base.currentMsg->payload[i] = frameRM.frame[i];
+                                for( uint8_t i = 0; i < msg->header.size; i++)
+                                    msg->payload[i] = frameRM.frame[i];
 
-                                base.currentMsg->properties.state = common::RX_DONE;
+                                if(Config::fetchLQI)
+                                   msg->properties.lqi = frameRM.frame[msg->header.size];
+
+                                if(Config::fetchRSSI)
+                                    msg->properties.rssi = rm.phy_ed_level;
+
+                                msg->properties.state = common::RX_DONE;
                                
-                                base.callUpper(*base.currentMsg);
+                                if(Config::rxOnIdle)
+                                {
+                                    base.currentMsg = msg;
+                                    UseRegMap(rm, RegMap);
+                                        rm.irqMask.rxEnd = true;
+                                    SyncRegMap(rm);
+                                }
+
+                                base.callUpper(*msg);
                             }
                             else
                                 log::emit<log::Error>() << PROGMEMSTRING("dropped unexpected message") << log::endl;
@@ -165,13 +198,25 @@ namespace atmega128rfa1 {
                         /** \brief transmission ended interrupt handler**/
                         static void txEnd()
                         {
-                            log::emit<log::Trace>() << PROGMEMSTRING("tx ended") << log::endl;
+                            UsePortmap(debug, platform::Debug);
+                            debug.debug1.pin=true;
+                            SyncPortmap(debug);
+
                             Base& base=Base::getInstance();
-                            base.setState( idleState );
-                            if(base.currentMsg)
+
+                            MessageType* msg=base.currentMsg;
+                            base.currentMsg=NULL;
+
+                            UseRegMap(rm, RegMap);
+                            rm.irqMask.txEnd   = false;
+                            SyncRegMap(rm);
+
+                            log::emit<log::Trace>() << PROGMEMSTRING("tx ended") << log::endl;
+
+                            if(msg)
                             {
-                                base.currentMsg->properties.state=common::TX_DONE;
-                                base.callUpper(*base.currentMsg);
+                                msg->properties.state=common::TX_DONE;
+                                base.callUpper(*msg);
                             }
                             else
                                 log::emit<log::Error>() << PROGMEMSTRING("finished tx of unknown message") << log::endl;
@@ -306,13 +351,18 @@ namespace atmega128rfa1 {
                                   temp << PROGMEMSTRING(" but should be ") << 
                                   States::trx_off << log::endl;
 
-                            rm.irqMask.txEnd   = Config::useInterrupts;
-                            rm.irqMask.rxEnd   = Config::useInterrupts;
-                            rm.irqMask.rxStart = Config::useInterrupts;
+                            rm.irqMask.rxEnd     = Config::useInterrupts && Config::rxOnIdle;
+                            rm.irqMask.rxStart   = false;
+                            rm.irqMask.pllLock   = false;
+                            rm.irqMask.pllUnlock = false;
+                            rm.irqMask.awake     = false;
+                            rm.irqMask.ami       = false;
+                            rm.irqMask.ccaEdDone = false;
                             rm.tx_auto_crc_on=false;
                             SyncRegMap(rm);
 
                             setState( idleState );
+
                         }
 
                         /** \brief  Transmit a message.
@@ -345,12 +395,25 @@ namespace atmega128rfa1 {
 
                             log::emit<log::Trace>() << "starting transmission of message: " << log::hex << (void*)&msg << log::endl;
 
+                            UseRegMap(rm, RegMap);
+                            rm.irqMask.txEnd   = Config::useInterrupts;
+                            rm.irqMask.rxEnd   = false;
+                            SyncRegMap(rm);
+
                             if( !setState(States::busy_tx))
+                            {
+                                rm.irqMask.txEnd   = false;
+                                rm.irqMask.rxEnd   = false;
+                                SyncRegMap(rm);
+
+                                currentMsg->properties.state=common::TX_FAILED;
                                 return common::FAILURE;
-
-                            currentMsg->properties.state=common::WORKING;
-
-                            return common::SUCCESS;
+                            }
+                            else
+                            {
+                                currentMsg->properties.state=common::WORKING;
+                                return common::SUCCESS;
+                            }
                         }
 
                         /** \brief  fetch the last received message from the radio
@@ -359,10 +422,17 @@ namespace atmega128rfa1 {
                          **/
                         Error receive(MessageType& msg)
                         {
+                            if(msg.properties.state==common::WORKING)
+                                return common::BUSY;
+
                             currentMsg=&msg;
 
                             if( !setState(States::rx_on))
                                 return common::BUSY;
+
+                            UseRegMap(rm, RegMap);
+                            rm.irqMask.rxEnd   = Config::useInterrupts;
+                            SyncRegMap(rm);
 
                             currentMsg->properties.state=common::WORKING;
 
@@ -393,6 +463,7 @@ namespace atmega128rfa1 {
                         typedef typename Base::Events            Events;
                         typedef typename Base::EventType         EventType;
                         typedef typename Base::InterruptSlotList InterruptSlotList;
+                        typedef Config config;
 
                     public:
                         void poll()                     {        Base::getInstance().poll();       }

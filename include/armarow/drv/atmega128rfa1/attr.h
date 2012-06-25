@@ -4,12 +4,14 @@
 
 #include <armarow/common/attributeContainer.h>
 #include <armarow/common/error.h>
+#include <avr-halib/avr/interruptLock.h>
 
 namespace armarow {
 namespace drv {
 namespace atmega128rfa1
 {
     using common::AttributeContainer;
+    using avr_halib::locking::GlobalIntLock;
 
     class AttributeHandler
     {
@@ -140,16 +142,27 @@ namespace atmega128rfa1
                             {
                                 UseRegMap(rm, RegMap);
 
-                                rm.channel=attr.value;
+                               rm.channel=attr.value;
+                                
                                 SyncRegMap(rm);
 
-                                do
+                                if(rm.irqStatus.pllLock)
+                                {
+                                    GlobalIntLock lock;
+
+                                    rm.irqStatus.pllLock=true;
                                     SyncRegMap(rm);
-                                while(!rm.irqStatus.pllLock);
-                                    
-                                rm.irqStatus.pllLock=true;
-                                SyncRegMap(rm);
 
+                                    while(!rm.irqStatus.pllLock)
+                                    {
+                                        log::emit<log::Trace>() << "waiting for pll to lock" << log::endl;
+                                        SyncRegMap(rm);
+                                    }
+                                    
+                                    rm.irqStatus.pllLock=true;
+                                    SyncRegMap(rm);
+                                }
+                                
                                 return common::SUCCESS;
                             }
 
@@ -158,7 +171,7 @@ namespace atmega128rfa1
                                 UseRegMap(rm, RegMap);
 
                                 SyncRegMap(rm);
-                                attr.value=rm.channel;
+                                *((uint8_t*)&attr.value) = rm.channel;
 
                                 return common::SUCCESS;
                             }

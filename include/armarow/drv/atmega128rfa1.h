@@ -22,6 +22,10 @@ namespace drv {
              *  if interrupts are disabled the poll function must be called periodically.
              **/
             static const bool useInterrupts = true;
+
+            static const bool fetchLQI = true;
+
+            static const bool fetchRSSI = true;
         };
         
         template<typename Config = DefaultConfig>

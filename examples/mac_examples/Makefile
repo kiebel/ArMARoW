@@ -1,7 +1,6 @@
 ARMAROW_DIR=../../
 
-CXXFLAGS+=-Wall -Os -g
-
+CXXFLAGS+=-Wall -Os -g #-DLOGGING_DISABLE
 PLATFORM=${ARMAROW_DIR}/platform/deRCB128RFA1
 
 BIN=./bin

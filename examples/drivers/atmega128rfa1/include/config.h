@@ -15,7 +15,7 @@ using avr_halib::config::Frequency;
 struct Config : public RadioDriver::DefaultConfig
 {
     static const bool rxOnIdle = true;
-    static const bool useInterrupt = false;
+    static const bool useInterrupt = true;
 };
 
 struct TriggerConfig : public platform::Timer1BaseConfig
@@ -33,8 +33,3 @@ struct ClockConfig : public platform::Timer3BaseConfig
 typedef RadioDriver::configure< Config >::type Radio;
 typedef avr_halib::drivers::Clock< TriggerConfig > Trigger;
 typedef avr_halib::drivers::Clock< ClockConfig > Clock;
-
-typedef boost::mpl::joint_view< Trigger::InterruptSlotList, Clock::InterruptSlotList > TimersSlotList;
-typedef boost::mpl::joint_view< Radio::InterruptSlotList, TimersSlotList > InterruptSlotList;
-
-typedef Interrupt::InterruptManager< InterruptSlotList > IM;

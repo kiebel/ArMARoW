@@ -31,7 +31,7 @@ struct MacConfig : public Simple802_15_4::DefaultConfig
     typedef RadioDriver BaseLayer;
     typedef RadioConfig BaseLayerConfig;
     static const uint16_t pan     = 0;
-    static const uint16_t address = 1;
+    static const uint16_t address = ADDRESS;
 };
 
 typedef Simple802_15_4::configure< MacConfig >::type Mac;

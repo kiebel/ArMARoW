@@ -1,5 +1,5 @@
-#define ARMAROW_DEBUG_DISABLE
-
+//#define ARMAROW_DEBUG_DISABLE
+#define LOGGING_DISABLE
 #include <armarow/debug.h>
 
 #include <config.h>
@@ -18,7 +18,7 @@ void init()
 {
     strcpy(reinterpret_cast<char*>(msg.payload), "Mac layer test");
 
-    msg.header.size            = 15;
+    msg.header.size            = 100;
     msg.header.destination.pan = 0;
     msg.header.destination.id  = 255;
 
@@ -49,19 +49,18 @@ int main()
 
     while(true)
     {
-        delay_ms(1000);
+//        delay_ms(1000);
         debug.debug0.pin=true;
         SyncPortmap(debug);
         msg.header.size=15;
-        log::emit() << "transmitting message" << log::endl;
         Error error=mac.send(msg);
         if(error)
         {
-            log::emit<log::Error>() << "transmission rejected due to " << error << log::endl;
+            log::emit() << "transmission rejected due to " << error << log::endl;
             continue;
         }
-//        debug.debug1.pin=true;
-//        SyncPortmap(debug);
+        else
+            log::emit() << "transmitted message" << log::endl;
     }
     return 0;
 }

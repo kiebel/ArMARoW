@@ -4,6 +4,7 @@
 #include <config.h>
 #include <idler.h>
 #include <debug_portmap.h>
+#include <string.h>
 
 Mac mac;
 Mac::MessageType message;
@@ -17,17 +18,18 @@ void receive(Mac::MessageType& msg){
 
     UsePortmap(debug, platform::Debug);
     debug.debug0.pin=true;
-    debug.debug1.pin=true;
     SyncPortmap(debug);
     
+    log::emit() << "["   << message.header.source.pan 
+                << ", "  << message.header.source.id 
+                << "]( " << (uint16_t)message.header.size 
+                << ", "   << (uint16_t)message.header.seqNumber 
+                << ")-> ";
     
-    log::emit() << "["    << message.header.source.pan 
-                << ", "   << message.header.source.id 
-                << "]: "  << (uint16_t)message.header.seqNumber 
-                << " -> " << (const char*)(message.payload)
-                << log::endl;
+    for(uint8_t i=0;i<message.header.size;i++)
+        log::emit() << log::hex << (uint16_t)message.payload[i];
 
-
+    log::emit() << log::dec << log::endl;
 }
 
 void init()
@@ -51,9 +53,11 @@ int main() {
     log::emit() << "Sniffer" << log::endl << log::endl;
     sei();
 
-    mac.receive(message);
-    platform::Idler::idle();
-
+    while(true)
+    {
+        mac.receive(message);
+        platform::Idler::idle();
+    }
     return 0;
 }
 

@@ -32,38 +32,8 @@ namespace meta {
                 static const uint16_t payloadSize = sizeof(payload);
 
                 template<class> friend class Extensible;
+                template<class> friend class Customizable;
         } __attribute__((packed));
-    };
-
-    template<typename BaseMsg>
-    struct Extensible
-    {
-        template<typename NewHeader, typename NewProps>
-        struct extend
-        {
-            private:
-                typedef typename concat<typename BaseMsg::Header    , NewHeader>::type ExtHeader;
-                typedef typename concat<typename BaseMsg::Properties, NewProps >::type ExtProps;
-            public:
-                struct type : public assembleMessage< ExtHeader, 
-                                                      ExtProps, 
-                                                      BaseMsg::maxSize
-                                                    >::type,
-                              public Extensible< type >
-                {
-                    typedef BaseMsg BaseMessage;
-                    static BaseMessage& down(type& from)
-                    {
-                        from.header.size += sizeof(NewHeader);
-                        return *reinterpret_cast<BaseMessage*>(&from);
-                    }
-                    static type& up(BaseMessage& from)
-                    {
-                        from.header.size -= sizeof(NewHeader);
-                        return *reinterpret_cast<type*>(&from);
-                    }
-                } __attribute__((packed));
-        };
     };
 
     template<typename BaseMsg>
@@ -82,11 +52,51 @@ namespace meta {
                 typename BaseMsg::Properties properties;
 
                 static const uint16_t payloadSize = sizeof(payload);
+
+                static BaseMessage& down(type& from)
+                {
+                    from.header.size=sizeof(CustomType);
+                    return *reinterpret_cast<BaseMessage*>(&from);
+                }
+                static type& up(BaseMessage& from)
+                {
+                    return *reinterpret_cast<type*>(&from);
+                }
             } __attribute__((packed));
         };
     };
 
-
+    template<typename BaseMsg>
+    struct Extensible
+    {
+        template<typename NewHeader, typename NewProps>
+        struct extend
+        {
+            private:
+                typedef typename concat<typename BaseMsg::Header    , NewHeader>::type ExtHeader;
+                typedef typename concat<typename BaseMsg::Properties, NewProps >::type ExtProps;
+            public:
+                struct type : public assembleMessage< ExtHeader, 
+                                                      ExtProps, 
+                                                      BaseMsg::maxSize
+                                                    >::type,
+                              public Extensible< type >,
+                              public Customizable< type >
+                {
+                    typedef BaseMsg BaseMessage;
+                    static BaseMessage& down(type& from)
+                    {
+                        from.header.size += sizeof(NewHeader);
+                        return *reinterpret_cast<BaseMessage*>(&from);
+                    }
+                    static type& up(BaseMessage& from)
+                    {
+                        from.header.size -= sizeof(NewHeader);
+                        return *reinterpret_cast<type*>(&from);
+                    }
+                } __attribute__((packed));
+        };
+    };
 }
 
 namespace common{
@@ -109,7 +119,8 @@ namespace common{
     struct Message : public meta::assembleMessage< DefaultHeader,
                                                    DefaultProps,
                                                    maxSize >::type, 
-                     public meta::Extensible< Message< maxSize > >
+                     public meta::Extensible< Message< maxSize > >,
+                     public meta::Customizable< Message< maxSize > >
     {};
 }
 }
